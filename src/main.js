@@ -12,7 +12,7 @@ if (!document.querySelector('#inventory-wiki')) {
     const root = document.createElement('div');
     root.id = 'inventory-wiki';
 
-    document.querySelector('header').insertAdjacentElement('afterend', root);
+    document.querySelector('#dokuwiki__content').insertAdjacentElement('beforebegin', root);
 
     const app = createApp(App);
     app.component('MdiIcon', MdiIcon);
