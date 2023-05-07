@@ -4,24 +4,11 @@ import vue from '@vitejs/plugin-vue';
 // Utilities
 import { defineConfig } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
-import { copyFile, readdir } from 'node:fs/promises';
 
 export default defineConfig({
   plugins: [
     vue({
     }),
-    {
-      name: 'copy-dokuwiki',
-      async closeBundle() {
-        const files = await readdir('dist'); 
-        if (files.includes('inventory-wiki.iife.js')) {
-          await copyFile('dist/inventory-wiki.iife.js', 'dokuwiki_data/conf/userscript.js');
-        }
-        if (files.includes('style.css')) {
-          await copyFile('dist/style.css', 'dokuwiki_data/conf/userstyle.css');
-        }
-      }
-    }
   ],
   build: {
     lib: {
