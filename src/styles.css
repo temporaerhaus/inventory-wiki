@@ -1,0 +1,363 @@
+.invwiki {
+  --background-body: #fff;
+  --background: #efefef;
+  --background-alt: #f7f7f7;
+  --selection: #9e9e9e;
+  --text-main: #363636;
+  --text-bright: #000;
+  --text-muted: #70777f;
+  --links: #0076d1;
+  --focus: #0096bfab;
+  --border: #dbdbdb;
+  --code: #000;
+  --animation-duration: 0.1s;
+  --button-base: #d0cfcf;
+  --button-hover: #9b9b9b;
+  --scrollbar-thumb: rgb(170, 170, 170);
+  --scrollbar-thumb-hover: var(--button-hover);
+  --form-placeholder: #949494;
+  --form-text: #1d1d1d;
+  --variable: #39a33c;
+  --highlight: #ff0;
+  --select-arrow: url("data:image/svg+xml;charset=utf-8,%3C?xml version='1.0' encoding='utf-8'?%3E %3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' height='62.5' width='116.9' fill='%23161f27'%3E %3Cpath d='M115.3,1.6 C113.7,0 111.1,0 109.5,1.6 L58.5,52.7 L7.4,1.6 C5.8,0 3.2,0 1.6,1.6 C0,3.2 0,5.8 1.6,7.4 L55.5,61.3 C56.3,62.1 57.3,62.5 58.4,62.5 C59.4,62.5 60.5,62.1 61.3,61.3 L115.2,7.4 C116.9,5.8 116.9,3.2 115.3,1.6Z'/%3E %3C/svg%3E");
+
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif;
+  line-height: 1.4;
+  word-wrap: break-word;
+  color: var(--text-main);
+  text-rendering: optimizeLegibility;
+}
+
+/*
+@media (prefers-color-scheme: dark) {
+  .invwiki {
+    --background-body: #202b38;
+    --background: #161f27;
+    --background-alt: #1a242f;
+    --selection: #1c76c5;
+    --text-main: #dbdbdb;
+    --text-bright: #fff;
+    --text-muted: #a9b1ba;
+    --links: #41adff;
+    --focus: #0096bfab;
+    --border: #526980;
+    --code: #ffbe85;
+    --animation-duration: 0.1s;
+    --button-base: #0c151c;
+    --button-hover: #040a0f;
+    --scrollbar-thumb: var(--button-hover);
+    --scrollbar-thumb-hover: rgb(0, 0, 0);
+    --form-placeholder: #a9a9a9;
+    --form-text: #fff;
+    --variable: #d941e2;
+    --highlight: #efdb43;
+    --select-arrow: url("data:image/svg+xml;charset=utf-8,%3C?xml version='1.0' encoding='utf-8'?%3E %3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' height='62.5' width='116.9' fill='%23efefef'%3E %3Cpath d='M115.3,1.6 C113.7,0 111.1,0 109.5,1.6 L58.5,52.7 L7.4,1.6 C5.8,0 3.2,0 1.6,1.6 C0,3.2 0,5.8 1.6,7.4 L55.5,61.3 C56.3,62.1 57.3,62.5 58.4,62.5 C59.4,62.5 60.5,62.1 61.3,61.3 L115.2,7.4 C116.9,5.8 116.9,3.2 115.3,1.6Z'/%3E %3C/svg%3E");
+  }
+}
+*/
+
+#qrcode-scanner img[alt="Info icon"] {
+  display: none;
+}
+
+.invwiki-autocomplete {
+  position: relative;
+}
+
+.invwiki-autocomplete-results {
+  padding: 0;
+  margin: 0;
+  border: 1px solid #eeeeee;
+  height: 120px;
+  width: 400px;
+  overflow: auto;
+}
+
+.invwiki-autocomplete-result {
+  list-style: none;
+  text-align: left;
+  padding: 4px 2px;
+  cursor: pointer;
+}
+
+.invwiki-autocomplete-result.is-active,
+.invwiki-autocomplete-result:hover {
+  background-color: #4AAE9B;
+  color: white;
+}
+
+.invwiki input, .invwiki textarea {
+  display: block;
+  width: 100%;
+}
+
+.invwiki button, .invwiki input, .invwiki textarea {
+  transition: background-color 0.1s linear, border-color 0.1s linear, color 0.1s linear, box-shadow 0.1s linear, transform 0.1s ease;
+}
+
+.invwiki a[href^='mailto']::before {
+  content: '📧 ';
+}
+
+.invwiki a[href^='tel']::before {
+  content: '📞 ';
+}
+
+.invwiki a[href^='sms']::before {
+  content: '💬 ';
+}
+
+.invwiki button,
+.invwiki input[type='submit'],
+.invwiki input[type='button'],
+.invwiki input[type='checkbox'] {
+  cursor: pointer;
+}
+
+.invwiki input:not([type='checkbox']):not([type='radio']),
+.invwiki select {
+  display: block;
+}
+
+.invwiki select {
+  width: 100%;
+}
+
+.invwiki input, .invwiki select, .invwiki button, .invwiki textarea {
+  color: #000000;
+  background-color: #efefef;
+  font-family: inherit;
+  font-size: inherit;
+  margin-right: 6px;
+  margin-bottom: 6px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  outline: none;
+}
+
+.invwiki input:not([type='checkbox']):not([type='radio']),
+.invwiki button, .invwiki textarea {
+  -webkit-appearance: none;
+}
+
+.invwiki textarea {
+  margin-right: 0;
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+}
+
+.invwiki button, .invwiki input[type='submit'], .invwiki input[type='button'] {
+  padding-right: 16px;
+  padding-left: 16px;
+}
+
+.invwiki button:hover,
+.invwiki input[type='submit']:hover,
+.invwiki input[type='button']:hover {
+  background: #dddddd;
+}
+
+.invwiki input:focus,
+.invwiki select:focus,
+.invwiki button:focus,
+.invwiki textarea:focus {
+  box-shadow: 0 0 0 2px #0096bfab;
+}
+
+.invwiki input[type='checkbox']:active,
+.invwiki input[type='radio']:active,
+.invwiki input[type='submit']:active,
+.invwiki input[type='button']:active,
+.invwiki button:active {
+  transform: translateY(2px);
+}
+
+.invwiki input:disabled,
+.invwiki select:disabled,
+.invwiki button:disabled,
+.invwiki textarea:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.invwiki ::-webkit-input-placeholder {
+  color: #949494;
+}
+
+.invwiki :-ms-input-placeholder {
+  color: #949494;
+}
+
+.invwiki ::-ms-input-placeholder {
+  color: #949494;
+}
+
+.invwiki ::placeholder {
+  color: #949494;
+}
+
+.invwiki a {
+  text-decoration: none;
+  color: #0076d1;
+}
+
+.invwiki a:hover {
+  text-decoration: underline;
+}
+
+.invwiki-autocomplete-indent {
+  margin-left: 1.5em;
+}
+.invwiki-autocomplete-group {
+  margin-left: 0;
+  padding-left: .5em;
+  background-color: #ccc;
+}
+
+.invwiki blockquote {
+  border-left: 4px solid #0096bfab;
+  margin: 1.5em 0em;
+  padding: 0.5em 1em;
+  font-style: italic;
+  width: 350px;
+}
+
+.invwiki blockquote > footer {
+  margin-top: 10px;
+  font-style: normal;
+}
+
+.invwiki blockquote cite {
+  font-style: normal;
+}
+
+.invwiki .overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #0000009c;
+  -webkit-backdrop-filter: blur(4px);
+          backdrop-filter: blur(4px);
+}
+
+.invwiki .dialog {
+  background-color: var(--background-alt);
+  color: var(--text-main);
+  border: none;
+  border-radius: 6px;
+  border-color: var(--border);
+  padding: 0;
+}
+
+.invwiki .dialog > header:first-child {
+  position: relative;
+  background-color: var(--background);
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+  padding: 10px;
+  margin: 0;
+}
+
+.invwiki .dialog > header:first-child button {
+  position: absolute;
+  top: .5em;
+  right: .25em;
+  padding: .2em;
+}
+
+
+.invwiki .flex-row {
+  margin: 10px auto;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+.invwiki .flex-row button {
+  flex-grow: 1;
+}
+
+.invwiki .loader {
+    position: absolute;
+    margin: auto;
+    height: 60px;
+    inset: 0;
+    width: 100px;
+}
+
+.invwiki .loader-line-wrap {
+    animation: invwiki-spin 2000ms cubic-bezier(.175, .885, .32, 1.275) infinite;
+    box-sizing: border-box;
+    height: 50px;
+    left: 0;
+    overflow: hidden;
+    position: absolute;
+    top: 0;
+    transform-origin: 50% 100%;
+    width: 100px;
+}
+.invwiki .loader-line {
+    border: 4px solid transparent;
+    border-radius: 100%;
+    box-sizing: border-box;
+    height: 100px;
+    left: 0;
+    margin: 0 auto;
+    position: absolute;
+    right: 0;
+    top: 0;
+    width: 100px;
+}
+.invwiki .loader-line-wrap:nth-child(1) { animation-delay: -50ms; }
+.invwiki .loader-line-wrap:nth-child(2) { animation-delay: -100ms; }
+.invwiki .loader-line-wrap:nth-child(3) { animation-delay: -150ms; }
+.invwiki .loader-line-wrap:nth-child(4) { animation-delay: -200ms; }
+.invwiki .loader-line-wrap:nth-child(5) { animation-delay: -250ms; }
+.invwiki .loader-line-wrap:nth-child(6) { animation-delay: -300ms; }
+
+.invwiki .loader-line-wrap:nth-child(1) .loader-line {
+    border-color: #E40303;
+    height: 90px;
+    width: 90px;
+    top: 7px;
+}
+.invwiki .loader-line-wrap:nth-child(2) .loader-line {
+    border-color: #FF8C00;
+    height: 76px;
+    width: 76px;
+    top: 14px;
+}
+.invwiki .loader-line-wrap:nth-child(3) .loader-line {
+    border-color: #FFED00;
+    height: 62px;
+    width: 62px;
+    top: 21px;
+}
+.invwiki .loader-line-wrap:nth-child(4) .loader-line {
+    border-color: #008026;
+    height: 48px;
+    width: 48px;
+    top: 28px;
+}
+.invwiki .loader-line-wrap:nth-child(5) .loader-line {
+    border-color: #24408E;
+    height: 34px;
+    width: 34px;
+    top: 35px;
+}
+.invwiki .loader-line-wrap:nth-child(6) .loader-line {
+    border-color: #732982;
+    height: 20px;
+    width: 20px;
+    top: 42px;
+}
+
+@keyframes invwiki-spin {
+  0%, 15% { transform: rotate(0); }
+	100% { transform: rotate(360deg); }
+}
