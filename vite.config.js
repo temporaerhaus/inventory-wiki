@@ -12,7 +12,7 @@ export default defineConfig({
   ],
   build: {
     lib: {
-      entry: fileURLToPath(new URL('./src/main.js', import.meta.url)),
+      entry: fileURLToPath(new URL('./index.html', import.meta.url)),
       name: 'inventoryWiki',
       fileName: 'inventory-wiki',
       formats: ['iife']

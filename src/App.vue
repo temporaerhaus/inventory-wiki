@@ -26,7 +26,7 @@ export default {
 
   computed: {
     active() {
-      return location.pathname.startsWith('/inventar');
+      return location.pathname.startsWith('/inventar') || import.meta.env.MODE === 'development';
     },
 
     id() {
