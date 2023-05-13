@@ -1,5 +1,5 @@
 <template>
-  <button @click="open" v-if="$root.yaml">
+  <button @click="open">
     <mdi-icon icon="home-map-marker" left />
     Ort Aktualisieren
   </button>
@@ -14,15 +14,15 @@
       <div class="flex-row">
         <button @click="saveLocation(0)" :disabled="loading">
           <mdi-icon left icon="map-clock-outline" />
-          Jetzt-Ort Speichern
+          Als aktuellen Ort speichern
         </button>
         <button @click="saveLocation(1)" :disabled="loading">
           <mdi-icon left icon="content-save-alert-outline" />
-          Ist-Ort Speichern
+          Als Soll-Ort speichern
         </button>
         <button @click="saveLocation(2)" :disabled="loading">
           <mdi-icon left icon="undo-variant" />
-          Jetzt-Ort Zurücksetzen
+          Auf Soll-Ort zurücksetzen
         </button>
       </div>
     </div>

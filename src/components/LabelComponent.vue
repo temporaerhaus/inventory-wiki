@@ -1,5 +1,5 @@
 <template>
-  <button @click="genLabel" v-if="$root.yaml">
+  <button @click="genLabel">
     <mdi-icon icon="qrcode-plus" left />
     Inventaraufkleber Erstellen
   </button>
@@ -7,7 +7,7 @@
   <x-dialog title="Inventaraufkleber" icon="qrcode-plus" ref="dialog">
     <iframe style="width: 100%; height: 100%;" :src="dataURL" v-if="dataURL"></iframe>
 
-    <a :href="dataURL" :download="`VSH_Inventaraufkleber_${$root.id}.pdf`">
+    <a :href="dataURL" :download="`VSH_Inventaraufkleber_${inventoryId}.pdf`">
         <mdi-icon icon="file-download-outline" />
         PDF Herunterladen
     </a>
@@ -23,7 +23,8 @@ import pdfMake from 'pdfmake/build/pdfmake';
 
 pdfMake.fonts = {
    freemono: {
-     normal: 'https://cdn.jsdelivr.net/gh/opensourcedesign/fonts@master/gnu-freefont_freemono/FreeMono.ttf'
+     bold: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono@main/fonts/ttf/RobotoMono-Bold.ttf',
+     normal: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono@main/fonts/ttf/RobotoMono-Regular.ttf',
    },
 };
 
@@ -36,6 +37,12 @@ export default {
         dataURL: null
     }),
 
+    props: {
+        title: String,
+        inventoryId: String,
+        description: String
+    },
+
     mounted() {
         if (location.hash === '#print-label') {
             history.replaceState('', '', '#');
@@ -47,6 +54,7 @@ export default {
         createQRCode(s) {
             return new Promise((resolve, reject) => QRCode.toString(s, {
                 version: 1,
+                margin: 0,
                 type: 'svg',
                 mode: 'alphanumeric',
                 errorCorrectionLevel: 'Q'
@@ -79,29 +87,44 @@ export default {
                     margins: 0,
                     columns: [{
                         svg: svg,
-                        width: mm2pt(24)
+                        width: mm2pt(18),
+                        margin: [mm2pt(0), mm2pt(3), mm2pt(3), mm2pt(3)],
                     }, {
                         width: '*',
-                        margin: [mm2pt(0), mm2pt(3)],
-                        text: `${title}\n${id}\n${description}`
+                        margin: [mm2pt(3), mm2pt(1.7), mm2pt(2), mm2pt(3)],
+                        stack: [{
+                            bold: true,
+                            fontSize: 11,
+                            text: id.toUpperCase(),
+                            margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ]
+                        }, {
+                            text: title,
+                            margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ],
+                        }, {
+                            text: description,
+                            lineHeight: .8,
+                            fontSize: 8
+                        }]
                     }, {
                         svg: logo,
                         margin: [mm2pt(0), mm2pt(3)],
-                        width: mm2pt(12.4)
+                        width: mm2pt(13.45)
+                        /*
                     }, {
                         svg: label,
                         margin: [mm2pt(0), mm2pt(3)],
-                        width: mm2pt(1.7)
+                        width: mm2pt(1.86)
                     }, {
                         text: '',
                         width: mm2pt(2)
+                        */
                     }]
                 }]
             }).getDataUrl((dataURL) => resolve(dataURL)));
         },
 
         async genLabel() {
-            this.dataURL = await this.createPDF(this.$root.id, this.$root.title, this.$root.description);
+            this.dataURL = await this.createPDF(this.inventoryId, this.title, this.description);
             this.$refs.dialog.show();
         }
     }

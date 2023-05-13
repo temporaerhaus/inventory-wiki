@@ -88,7 +88,11 @@
 
 .invwiki input, .invwiki textarea {
   display: block;
-  width: 100%;
+  width: calc(100% - 1.5em);
+}
+
+.invwiki label {
+  font-weight: bold;
 }
 
 .invwiki button, .invwiki input, .invwiki textarea {
@@ -360,4 +364,31 @@
 @keyframes invwiki-spin {
   0%, 15% { transform: rotate(0); }
 	100% { transform: rotate(360deg); }
+}
+
+.item-card {
+  width: 20em;
+  float: right;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  margin-top: -4em;
+}
+.item-card ul {
+  list-style: none;
+  margin-left: 0;
+  margin-top: 1.5em;
+}
+.item-card li {
+  margin-top: .25em;
+}
+.item-card > button {
+  margin-left: 1em;
+  width: calc(100% - 2em);
+  text-align: left;
+}
+.invwiki.item-card > blockquote {
+  margin-left: 1em;
+  width: calc(100% - 2em);
+}
+.processed {
+  display: none;
 }

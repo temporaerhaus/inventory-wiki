@@ -1,6 +1,9 @@
 <template>
   <div class="invwiki-autocomplete">
-    <label :for="id">{{ label }}</label>
+    <label :for="id">
+      <mdi-icon :icon="icon" left :title="label" v-if="icon" />
+      {{ label }}
+    </label>
     <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" />
     <ul v-show="isOpen" class="invwiki-autocomplete-results">
       <li class="loading" v-if="loading">
@@ -33,6 +36,7 @@ export default {
     autofocus: Boolean,
     grouped: Boolean,
     label: String,
+    icon: String,
     keys: {
       type: Array,
       required: true

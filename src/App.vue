@@ -1,27 +1,54 @@
 <template>
   <div class="invwiki" v-if="active">
     <scan-component />
-    <label-component />
     <create-component />
-    <location-component />
     <x-dialog />
   </div>
 </template>
 
 <script>
 import YAML from 'yaml';
+import { createApp } from 'vue';
 
+import MdiIcon from '@/components/MdiIcon.vue';
+import XDialog from '@/components/XDialog.vue';
+import ItemComponent from '@/components/ItemComponent.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
-import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
-import LocationComponent from '@/components/LocationComponent.vue';
 
 export default {
   components: {
-    LocationComponent,
     CreateComponent,
-    LabelComponent,
     ScanComponent
+  },
+
+  mounted() {
+    if (!this.active) {
+      return;
+    }
+
+    for (const e of document.querySelectorAll('#dokuwiki__content .code.yaml')) {
+      try {
+        const data = YAML.parse(e.innerText);
+        if (e.classList.contains('processed') || !data?.inventory) {
+          continue;
+        }
+
+        e.classList.add('processed');
+        const stub = document.createElement('div');
+        e.insertAdjacentElement('afterend', stub);
+        data.inventoryId = this.id;
+        data.title = this.title;
+
+        const item = createApp(ItemComponent, data);
+        item.component('MdiIcon', MdiIcon);
+        item.component('XDialog', XDialog);
+        item.mount(stub);
+      } catch (e) {
+        console.log(e);
+        // ignore
+      }
+    }
   },
 
   computed: {
@@ -30,7 +57,7 @@ export default {
     },
 
     id() {
-      return this.active && location.pathname.replaceAll(':', '/').split('/').pop().toUpperCase();
+      return import.meta.env.MODE === 'development' ? 'v-af012345' : this.active && location.pathname.replaceAll(':', '/').split('/').pop().toUpperCase();
     },
 
     title() {
