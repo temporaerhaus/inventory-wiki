@@ -48,6 +48,7 @@ export default {
 
         show() {
             this.dialog = true;
+            requestAnimationFrame(() => this.$emit('open'));
         }
     }
 }

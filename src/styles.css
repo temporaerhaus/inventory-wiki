@@ -67,10 +67,14 @@
 .invwiki-autocomplete-results {
   padding: 0;
   margin: 0;
+  background-color: var(--background-body);
+  position: absolute;
+  top: 40px;
   border: 1px solid #eeeeee;
-  height: 120px;
-  width: 400px;
-  overflow: auto;
+  max-height: 120px;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .invwiki-autocomplete-result {
@@ -78,6 +82,7 @@
   text-align: left;
   padding: 4px 2px;
   cursor: pointer;
+  margin-left: .5em;
 }
 
 .invwiki-autocomplete-result.is-active,
@@ -97,18 +102,6 @@
 
 .invwiki button, .invwiki input, .invwiki textarea {
   transition: background-color 0.1s linear, border-color 0.1s linear, color 0.1s linear, box-shadow 0.1s linear, transform 0.1s ease;
-}
-
-.invwiki a[href^='mailto']::before {
-  content: '📧 ';
-}
-
-.invwiki a[href^='tel']::before {
-  content: '📞 ';
-}
-
-.invwiki a[href^='sms']::before {
-  content: '💬 ';
 }
 
 .invwiki button,

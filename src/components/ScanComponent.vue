@@ -4,7 +4,8 @@
     Inventaraufkleber Scannen
   </button>
 
-  <x-dialog title="Inventaraufkleber Scannen" icon="qrcode-scan" ref="dialog" @close="stopScan()">
+  <x-dialog title="Inventaraufkleber Scannen" icon="qrcode-scan" ref="dialog" @close="stopScan()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
+    <input type="text" autofocus placeholder="V-XX012345..." ref="scan" />
     <div id="qrcode-scanner"></div>
   </x-dialog>
 </template>
@@ -41,7 +42,6 @@ export default {
         location.href = `/start?do=search&q=${encodeURIComponent(decodedText)}`;
       }
     },
-
   }
 }
 </script>

@@ -4,7 +4,7 @@
     Ort Aktualisieren
   </button>
 
-  <x-dialog :title="`Ort Aktualisieren (${$root.id})`" icon="home-map-marker" ref="dialog" :loading="loading">
+  <x-dialog :title="`Ort Aktualisieren (${$parent.inventoryId})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
       <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Ort" autofocus />
 
@@ -34,7 +34,7 @@ import YAML from 'yaml';
 
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 
-const REGEX = /```yaml.*```/s;
+const REGEX = /```yaml\n(.*)\n```/s;
 
 export default {
   components: {
@@ -52,8 +52,8 @@ export default {
     async open() {
       this.$refs.dialog.show();
       this.loading = true;
-      this.location = this.$root.yaml?.temporary?.location || this.$root.yaml?.nominal?.location || '';
-      this.description = this.$root.yaml?.temporary?.description || this.$root.yaml?.nominal?.description || '';
+      this.location = this.$parent.temporary?.location || this.$parent.nominal?.location || '';
+      this.description = this.$parent.temporary?.description || this.$parent.nominal?.description || '';
 
       const res = await fetch(`/inventar/locations`);
       const html = await res.text();
@@ -64,13 +64,23 @@ export default {
     },
 
     async saveLocation(mode) {
-      if (this.loading || !this.$root.yaml) {
+      if (this.loading) {
         return;
       }
 
       this.loading = true;
+      const res = await fetch(`${location.pathname}?do=edit`);
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const data = new FormData(doc.querySelector('form[method="post"]'));
+      if (!REGEX.test(data.get('wikitext'))) {
+        alert('Kein gültiger YAML-Block gefunden');
+        this.loading = false;
+        return;
+      }
 
-      const yaml = JSON.parse(JSON.stringify(this.$root.yaml));
+      const yaml = YAML.parse(REGEX.exec(data.get('wikitext'))[1]);
       switch (mode) {
         case 0:
           yaml.temporary = {
@@ -94,18 +104,6 @@ export default {
           yaml.temporary = {};
           yaml.nominal = yaml.nominal || {};
           break;
-      }
-
-      this.loading = true;
-      const res = await fetch(`${location.pathname}?do=edit`);
-      const html = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const data = new FormData(doc.querySelector('form[method="post"]'));
-      if (!REGEX.test(data.get('wikitext'))) {
-        alert('Kein gültiger YAML-Block gefunden');
-        this.loading = false;
-        return;
       }
 
       data.set('wikitext', data.get('wikitext').replace(REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));

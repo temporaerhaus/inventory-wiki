@@ -22,7 +22,7 @@
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
         Kurzbeschreibung
       </label>
-      <input id="invwiki-form-description" type="text" v-model="description" />
+      <textarea id="invwiki-form-description" v-model="description"></textarea>
       <blockquote>
         Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt und ist daher nur eine Zeile. 
         Weitere Informationen zum Gegenstand und Anhänge können im nächsten Schritt bei der Wiki-Seite hinterlegt werden. 
