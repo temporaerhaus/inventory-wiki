@@ -207,11 +207,13 @@ export default {
           }
         }
 
-        data.set('wikitext', result.join('\n'));
-
-        if (!skip !== 2) {
+        if (skip !== 2) {
+          this.loading = false;
+          alert('Error: unable to patch yaml code block.');
           return;
         }
+
+        data.set('wikitext', result.join('\n'));
       } else {
         data.set('wikitext', [
           '<!DOCTYPE markdown>',
