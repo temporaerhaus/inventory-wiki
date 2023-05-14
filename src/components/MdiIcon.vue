@@ -8,6 +8,7 @@
 <script>
 import {
   mdiClose,
+  mdiPrinter,
   mdiCalendar,
   mdiTagOutline,
   mdiQrcodePlus,
@@ -40,6 +41,7 @@ export default {
   data: () => ({
     icons: {
       mdiClose,
+      mdiPrinter,
       mdiCalendar,
       mdiTagOutline,
       mdiQrcodePlus,

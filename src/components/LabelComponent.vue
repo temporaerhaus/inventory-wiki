@@ -5,11 +5,16 @@
   </button>
 
   <x-dialog title="Inventaraufkleber" icon="qrcode-plus" ref="dialog">
-    <iframe style="width: 100%; height: 100%;" :src="dataURL" v-if="dataURL"></iframe>
+    <iframe style="width: 100%; height: 100%;" :src="dataURL" v-if="dataURL" ref="iframe"></iframe>
 
     <a :href="dataURL" :download="`VSH_Inventaraufkleber_${inventoryId}.pdf`">
         <mdi-icon icon="file-download-outline" />
         PDF Herunterladen
+    </a>
+
+    <a @click.prevent="printLabel()" v-if="dataURL" style="margin-left: 1em;" href="#">
+        <mdi-icon icon="printer" />
+        Aufkleber Drucken
     </a>
   </x-dialog>
 </template>
@@ -18,7 +23,6 @@
 import QRCode from 'qrcode';
 
 import logo from '@/assets/logo.svg?raw';
-import label from '@/assets/label.svg?raw';
 import pdfMake from 'pdfmake/build/pdfmake';
 
 pdfMake.fonts = {
@@ -34,6 +38,7 @@ function mm2pt(mm) {
 
 export default {
     data: () => ({
+        pdf: null,
         dataURL: null
     }),
 
@@ -69,63 +74,62 @@ export default {
 
         async createPDF(id, title, description) {
             const svg = await this.createQRCode(id);
-            return new Promise((resolve) => pdfMake.createPdf({
-                pageSize: {
-                    width: mm2pt(95),
-                    height: mm2pt(24)
-                },
-                pageOrientation: 'landscape',
-                pageMargins: 0,
+            return new Promise((resolve) => {
+                const pdf = pdfMake.createPdf({
+                    pageSize: {
+                        width: mm2pt(95),
+                        height: mm2pt(24)
+                    },
+                    pageOrientation: 'landscape',
+                    pageMargins: 0,
 
-                defaultStyle: {
-                    font: 'freemono',
-                    fontSize: 9,
-                },
+                    defaultStyle: {
+                        font: 'freemono',
+                        fontSize: 9,
+                    },
 
-                content: [{
-                    columnGap: mm2pt(.5),
-                    margins: 0,
-                    columns: [{
-                        svg: svg,
-                        width: mm2pt(18),
-                        margin: [mm2pt(0), mm2pt(3), mm2pt(3), mm2pt(3)],
-                    }, {
-                        width: '*',
-                        margin: [mm2pt(3), mm2pt(1.7), mm2pt(2), mm2pt(3)],
-                        stack: [{
-                            bold: true,
-                            fontSize: 11,
-                            text: id.toUpperCase(),
-                            margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ]
+                    content: [{
+                        columnGap: mm2pt(.5),
+                        margins: 0,
+                        columns: [{
+                            svg: svg,
+                            width: mm2pt(18),
+                            margin: [mm2pt(0), mm2pt(3), mm2pt(3), mm2pt(3)],
                         }, {
-                            text: title,
-                            margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ],
+                            width: '*',
+                            margin: [mm2pt(3), mm2pt(1.7), mm2pt(2), mm2pt(3)],
+                            stack: [{
+                                bold: true,
+                                fontSize: 11,
+                                text: id.toUpperCase(),
+                                margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ]
+                            }, {
+                                text: title,
+                                margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ],
+                            }, {
+                                text: description,
+                                lineHeight: .8,
+                                fontSize: 8
+                            }]
                         }, {
-                            text: description,
-                            lineHeight: .8,
-                            fontSize: 8
+                            svg: logo,
+                            margin: [mm2pt(0), mm2pt(3)],
+                            width: mm2pt(13.45)
                         }]
-                    }, {
-                        svg: logo,
-                        margin: [mm2pt(0), mm2pt(3)],
-                        width: mm2pt(13.45)
-                        /*
-                    }, {
-                        svg: label,
-                        margin: [mm2pt(0), mm2pt(3)],
-                        width: mm2pt(1.86)
-                    }, {
-                        text: '',
-                        width: mm2pt(2)
-                        */
                     }]
-                }]
-            }).getDataUrl((dataURL) => resolve(dataURL)));
+                });
+                pdf.getDataUrl((dataURL) => resolve([pdf, dataURL]));
+            });
         },
 
         async genLabel() {
-            this.dataURL = await this.createPDF(this.inventoryId, this.title, this.description);
+            [this.pdf, this.dataURL] = await this.createPDF(this.inventoryId, this.title, this.description);
             this.$refs.dialog.show();
+        },
+
+        printLabel() {
+            const win = window.open('', '_blank');
+            this.pdf?.print?.({}, win);
         }
     }
 }
