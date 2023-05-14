@@ -186,25 +186,34 @@ export default {
         }
 
         const yaml = YAML.parse(YAML_REGEX.exec(data.get('wikitext'))[1]);
-        yaml.description = this.description;
-        yaml.serial = this.serial;
-        yaml.invoice = this.invoice;
-        yaml.date = this.date;
-        yaml.category = this.category;
-        yaml.origin = this.origin;
+        yaml.description = this.description || '';
+        yaml.serial = this.serial || '';
+        yaml.invoice = this.invoice || '';
+        yaml.date = this.date || '';
+        yaml.category = this.category || '';
+        yaml.origin = this.origin || '';
 
-        data.set('summary', `metadata update`);
+        data.set('summary', `edit metadata`);
         data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
       } else {
+        const yaml = {
+          inventory: true,
+          description: this.description || '',
+          serial: this.serial || '',
+          invoice: this.invoice || '',
+          date: this.date || '',
+          category: this.category || '',
+          origin: this.origin || '',
+          nominal: {},
+          temporary: {},
+        };
+
         data.set('wikitext', [
           '<!DOCTYPE markdown>',
           `# ${this.title}`,
           '',
           '```yaml',
-          'inventory: true',
-          `description: '${this.description.replaceAll(`'`, `''`)}'`,
-          'nominal:',
-          'temporary:',
+          YAML.stringify(yaml),
           '```',
           '',
         ].join('\n'));
