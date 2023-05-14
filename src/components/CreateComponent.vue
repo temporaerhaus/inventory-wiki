@@ -106,6 +106,7 @@ import din6779 from '@/utils/din6779.js';
 const PREFIX = 'inventar';
 const SEP = ':';
 const REGEX = new RegExp(`^/${PREFIX.toUpperCase()}/.*[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
+const YAML_REGEX = /```yaml\n(.*)\n```/s;
 
 export default {
   props: {
@@ -178,42 +179,22 @@ export default {
       const doc = parser.parseFromString(html, 'text/html');
       const data = new FormData(doc.querySelector('form[method="post"]'));
       if (this.edit) {
-        const content = doc.querySelector('#wiki__text').value.split('\n');
-        const result = [];
-        const yaml = [];
-        let skip = 0;
-
-        for (const line of content) {
-          if (line === '```yaml') {
-            skip = 1;
-          } else if (skip && line === '```') {
-            result.push('```yaml');
-
-            const data = YAML.parse(yaml.join('\n'));
-            data.description = this.description;
-            data.serial = this.serial;
-            data.invoice = this.invoice;
-            data.date = this.date;
-            data.category = this.category;
-            data.origin = this.origin;
-
-            result.push(YAML.stringify(data));
-            result.push('```');
-            skip = 2;
-          } else if (skip !== 1) {
-            result.push(line);
-          } else {
-            yaml.push(line);
-          }
-        }
-
-        if (skip !== 2) {
+        if (!YAML_REGEX.test(data.get('wikitext'))) {
+          alert('Kein gültiger YAML-Block gefunden');
           this.loading = false;
-          alert('Error: unable to patch yaml code block.');
           return;
         }
 
-        data.set('wikitext', result.join('\n'));
+        const yaml = YAML.parse(YAML_REGEX.exec(data.get('wikitext'))[1]);
+        yaml.description = this.description;
+        yaml.serial = this.serial;
+        yaml.invoice = this.invoice;
+        yaml.date = this.date;
+        yaml.category = this.category;
+        yaml.origin = this.origin;
+
+        data.set('summary', `metadata update`);
+        data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
       } else {
         data.set('wikitext', [
           '<!DOCTYPE markdown>',
