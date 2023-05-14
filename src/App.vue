@@ -40,6 +40,14 @@ export default {
         data.inventoryId = this.id;
         data.title = this.title;
 
+        const date = new Date(data.date);
+        if (!(date instanceof Date && !isNaN(date))) {
+          data.date = '';
+        } else {
+          date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+          data.date = date.toISOString().slice(0, 10);
+        }
+
         const item = createApp(ItemComponent, data);
         item.component('MdiIcon', MdiIcon);
         item.component('XDialog', XDialog);

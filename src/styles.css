@@ -387,7 +387,7 @@
 }
 .invwiki.item-card > blockquote {
   margin-left: 1em;
-  width: calc(100% - 2em);
+  width: calc(100% - 4em);
 }
 .processed {
   display: none;

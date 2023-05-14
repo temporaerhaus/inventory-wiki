@@ -44,7 +44,7 @@
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
         Anschaffungsdatum
       </label>
-      <input id="invwiki-form-date" type="datetime-local" v-model="date" />
+      <input id="invwiki-form-date" type="date" v-model="date" />
 
       <label for="invwiki-form-serial">
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
@@ -159,13 +159,12 @@ export default {
     async editItem() {
       this.number = '000000';
       this.loading = false;
-      console.log(this.$parent);
 
       this.title = this.$parent.title || '';
       this.description = this.$parent.description || '';
       this.serial = this.$parent.serial || '';
       this.invoice = this.$parent.invoice || '';
-      this.date = this.$parent.date || null;
+      this.date = this.$parent.date || '';
       this.category = this.$parent.category || '';
       this.origin = this.$parent.origin || '';
       this.$refs.dialog.show();
@@ -179,7 +178,7 @@ export default {
       const doc = parser.parseFromString(html, 'text/html');
       const data = new FormData(doc.querySelector('form[method="post"]'));
       if (this.edit) {
-        const content = document.querySelector('#wiki__text').value.split('\n');
+        const content = doc.querySelector('#wiki__text').value.split('\n');
         const result = [];
         const yaml = [];
         let skip = 0;
