@@ -104,7 +104,7 @@ import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import din6779 from '@/utils/din6779.js';
 
 const PREFIX = 'inventar';
-const SEP = ':';
+const SEP = '/';
 const REGEX = new RegExp(`^/${PREFIX.toUpperCase()}/.*[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
 const YAML_REGEX = /```yaml\n(.*)\n```/s;
 
