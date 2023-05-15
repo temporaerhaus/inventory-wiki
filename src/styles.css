@@ -139,9 +139,6 @@
 }
 
 .invwiki textarea {
-  margin-right: 0;
-  width: 100%;
-  box-sizing: border-box;
   resize: vertical;
 }
 
@@ -394,4 +391,12 @@
     margin-bottom: 1.5em;
     width: 100%;
   }
+}
+
+.invwiki-dialog-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(95vh - 55px);
+  max-width: 95vw;
+  padding: 1em 1.5em;
 }

@@ -35,10 +35,16 @@
       <input id="invwiki-form-category" type="text" v-model="category" />
 
       <label for="invwiki-form-origin">
-        <mdi-icon icon="account-question-outline" left title="Ursprung / Besitzer*in" />
-        Ursprung / Besitzer*in
+        <mdi-icon icon="basket-unfill" left title="Ursprung" />
+        Ursprung
       </label>
       <input id="invwiki-form-origin" type="text" v-model="origin" />
+
+      <label for="invwiki-form-owner">
+        <mdi-icon icon="account-question-outline" left title="Besitzer*in" />
+        Besitzer*in
+      </label>
+      <input id="invwiki-form-owner" type="text" v-model="owner" />
 
       <label for="invwiki-form-date">
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
@@ -131,6 +137,7 @@ export default {
     date: null,
     category: '',
     origin: '',
+    owner: '',
 
     classification: null
   }),
@@ -168,6 +175,7 @@ export default {
       this.date = this.$parent.date || '';
       this.category = this.$parent.category || '';
       this.origin = this.$parent.origin || '';
+      this.owner = this.$parent.owner || '';
       this.$refs.dialog.show();
     },
 
@@ -192,6 +200,7 @@ export default {
         yaml.date = this.date || '';
         yaml.category = this.category || '';
         yaml.origin = this.origin || '';
+        yaml.owner = this.owner || '';
 
         data.set('summary', `edit metadata`);
         data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
@@ -204,6 +213,7 @@ export default {
           date: this.date || '',
           category: this.category || '',
           origin: this.origin || '',
+          owner: this.owner || '',
           nominal: {},
           temporary: {},
         };

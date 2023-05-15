@@ -18,6 +18,12 @@ export default {
     scanner: null,
   }),
 
+  mounted() {
+    if (location.hash === '#scan') {
+      this.startScan();
+    }
+  },
+
   methods: {
     startScan() {
       this.$refs.dialog.show();

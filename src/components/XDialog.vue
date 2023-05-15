@@ -10,7 +10,7 @@
                 </button>
             </header>
 
-            <div style="overflow-y: auto; overflow-x: hidden; max-height: calc(95vh - 30px); max-width: 95vw; padding: 1em 1.5em;">
+            <div class="invwiki-dialog-body">
                 <slot></slot>
             </div>
         </div>

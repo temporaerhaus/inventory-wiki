@@ -5,9 +5,13 @@
         <mdi-icon icon="tag-outline" left title="Kategorie" />
         {{ category }}
       </li>
-      <li title="Ursprung / Besitzer*in" v-if="origin">
-        <mdi-icon icon="account-question-outline" left title="Ursprung / Besitzer*in" />
+      <li title="Ursprung" v-if="origin">
+        <mdi-icon icon="basket-unfill" left title="Ursprung" />
         {{ origin }}
+      </li>
+      <li title="Besitzer*in" v-if="owner">
+        <mdi-icon icon="account-question-outline" left title="Besitzer*in" />
+        {{ owner }}
       </li>
       <li title="Anschaffungsdatum" v-if="date">
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
@@ -63,6 +67,7 @@ export default {
     description: String,
     category: String,
     origin: String,
+    owner: String,
     date: String,
     serial: String,
     invoice: String,
