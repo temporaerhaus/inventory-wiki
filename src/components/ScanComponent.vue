@@ -20,6 +20,7 @@ export default {
 
   mounted() {
     if (location.hash === '#scan') {
+      history.replaceState('', '', '#');
       this.startScan();
     }
   },

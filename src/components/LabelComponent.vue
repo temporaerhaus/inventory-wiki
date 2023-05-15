@@ -5,16 +5,29 @@
   </button>
 
   <x-dialog title="Inventaraufkleber" icon="qrcode-plus" ref="dialog">
-    <iframe style="width: 100%; height: 100%;" :src="dataURL" v-if="dataURL" ref="iframe"></iframe>
+    <div class="invwiki-preview" :style="{ width: `${mm2pt(95)}pt`, height: `${mm2pt(24)}pt` }">
+        <img :src="`data:image/svg+xml,${encodeURIComponent(svg)}`" v-if="svg" alt=""  :style="{ width: `${mm2pt(18)}pt`, height: 'auto', marginRight: `${mm2pt(3)}pt` }" />
+        <div :style="{ paddingTop: `${mm2pt(1.7)}pt`, paddingBottom: `${mm2pt(1.7)}pt`, paddingRight: `${mm2pt(1.7)}pt` }">
+            <div style="font-size: 11pt; font-weight: bold;">{{ inventoryId }}</div>
+            <div :style="{paddingTop: `${mm2pt(.5)}pt`, paddingBottom: `${mm2pt(.5)}pt`}">{{ title }}</div>
+            <div style="font-size: 8pt; line-height: 8pt;">{{ description }}</div>
+        </div>
+        <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: `${mm2pt(13.45)}pt`, height: 'auto', marginLeft: `${mm2pt(3)}pt` }" />
+    </div>
 
     <a :href="dataURL" :download="`VSH_Inventaraufkleber_${inventoryId}.pdf`">
         <mdi-icon icon="file-download-outline" />
         PDF Herunterladen
     </a>
 
-    <a @click.prevent="printLabel()" v-if="dataURL" style="margin-left: 1em;" href="#">
+    <a @click.prevent="printLabel()" v-if="dataURL" style="margin-left: 1em;" href="#" class="hide-mobile">
         <mdi-icon icon="printer" />
-        Aufkleber Drucken
+        Lokal Drucken
+    </a>
+
+    <a @click.prevent="printRemote()" v-if="dataURL" style="margin-left: 1em;" href="#">
+        <mdi-icon icon="cloud-print-outline" />
+        Remote Drucken
     </a>
   </x-dialog>
 </template>
@@ -32,14 +45,12 @@ pdfMake.fonts = {
    },
 };
 
-function mm2pt(mm) {
-  return mm / 25.4 * 72;
-}
-
 export default {
     data: () => ({
+        svg: null,
         pdf: null,
-        dataURL: null
+        dataURL: null,
+        logo: logo
     }),
 
     props: {
@@ -56,6 +67,10 @@ export default {
     },
 
     methods: {
+        mm2pt(mm) {
+            return mm / 25.4 * 72;
+        },
+
         createQRCode(s) {
             return new Promise((resolve, reject) => QRCode.toString(s, {
                 version: 1,
@@ -73,12 +88,12 @@ export default {
         },
 
         async createPDF(id, title, description) {
-            const svg = await this.createQRCode(id);
+            this.svg = await this.createQRCode(id);
             return new Promise((resolve) => {
                 const pdf = pdfMake.createPdf({
                     pageSize: {
-                        width: mm2pt(95),
-                        height: mm2pt(24)
+                        width: this.mm2pt(95),
+                        height: this.mm2pt(24)
                     },
                     pageOrientation: 'landscape',
                     pageMargins: 0,
@@ -89,23 +104,23 @@ export default {
                     },
 
                     content: [{
-                        columnGap: mm2pt(.5),
+                        columnGap: this.mm2pt(.5),
                         margins: 0,
                         columns: [{
-                            svg: svg,
-                            width: mm2pt(18),
-                            margin: [mm2pt(0), mm2pt(3), mm2pt(3), mm2pt(3)],
+                            svg: this.svg,
+                            width: this.mm2pt(18),
+                            margin: [this.mm2pt(0), this.mm2pt(3), this.mm2pt(3), this.mm2pt(3)],
                         }, {
                             width: '*',
-                            margin: [mm2pt(3), mm2pt(1.7), mm2pt(2), mm2pt(3)],
+                            margin: [this.mm2pt(3), this.mm2pt(1.7), this.mm2pt(2), this.mm2pt(3)],
                             stack: [{
                                 bold: true,
                                 fontSize: 11,
                                 text: id.toUpperCase(),
-                                margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ]
+                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ]
                             }, {
                                 text: title,
-                                margin: [ mm2pt(0), mm2pt(0), mm2pt(0), mm2pt(.5) ],
+                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ],
                             }, {
                                 text: description,
                                 lineHeight: .8,
@@ -113,8 +128,8 @@ export default {
                             }]
                         }, {
                             svg: logo,
-                            margin: [mm2pt(0), mm2pt(3)],
-                            width: mm2pt(13.45)
+                            margin: [this.mm2pt(0), this.mm2pt(3)],
+                            width: this.mm2pt(13.45)
                         }]
                     }]
                 });
@@ -130,6 +145,10 @@ export default {
         printLabel() {
             const win = window.open('', '_blank');
             this.pdf?.print?.({}, win);
+        },
+
+        printRemote() {
+            alert('Coming soon to a wiki near you!');
         }
     }
 }

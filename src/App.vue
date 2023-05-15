@@ -37,7 +37,7 @@ export default {
         e.classList.add('processed');
         const stub = document.createElement('div');
         e.insertAdjacentElement('afterend', stub);
-        data.inventoryId = this.id;
+        data.inventoryId = this.id.toUpperCase();
         data.title = this.title;
 
         const date = new Date(data.date);

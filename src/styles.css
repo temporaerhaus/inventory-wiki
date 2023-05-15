@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
+
 .invwiki {
   --background-body: #fff;
   --background: #efefef;
@@ -391,12 +393,32 @@
     margin-bottom: 1.5em;
     width: 100%;
   }
+  .hide-mobile {
+    display: none;
+  }
+  .invwiki-preview {
+    transform: scale(.8);
+  }
 }
 
 .invwiki-dialog-body {
   overflow-y: auto;
   overflow-x: hidden;
   max-height: calc(95vh - 55px);
-  max-width: 95vw;
+  max-width: 90vw;
   padding: 1em 1.5em;
+}
+
+.invwiki-preview {
+  display: flex;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 9pt;
+  padding-inline: 1em;
+  border: 1px solid var(--form-placeholder);
+  margin-inline: auto;
+  margin-bottom: 1em;
+}
+
+.invwiki-preview > div {
+  flex-grow: 1;
 }
