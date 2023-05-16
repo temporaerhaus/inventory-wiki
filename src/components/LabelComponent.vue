@@ -147,8 +147,17 @@ export default {
             this.pdf?.print?.({}, win);
         },
 
-        printRemote() {
-            alert('Coming soon to a wiki near you!');
+        async printRemote() {
+            const res = await fetch('/inventar/print-queue?do=edit');
+            const html = await res.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const data = new FormData(doc.querySelector('form[method="post"]'));
+            data.set('wikitext', `${data.get('wikitext')}\n * ${this.inventoryId}`);
+            await fetch('/inventar/print-queue?do=edit', {
+                method: 'post',
+                body: data
+            });
         }
     }
 }
