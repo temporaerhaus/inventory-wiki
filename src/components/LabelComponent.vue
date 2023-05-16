@@ -154,10 +154,13 @@ export default {
             const doc = parser.parseFromString(html, 'text/html');
             const data = new FormData(doc.querySelector('form[method="post"]'));
             data.set('wikitext', `${data.get('wikitext')}\n * ${this.inventoryId}`);
-            await fetch('/inventar/print-queue?do=edit', {
+            data.set('summary', 'add entry');
+            const result = await fetch('/inventar/print-queue?do=edit', {
                 method: 'post',
                 body: data
             });
+            console.log(result.status);
+            console.log(await result.text());
         }
     }
 }
