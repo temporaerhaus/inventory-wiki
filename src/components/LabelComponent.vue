@@ -164,12 +164,7 @@ export default {
                     body: data
                 });
 
-                if (result.status === 302) {
-                    this.$refs.dialog.close();
-                } else {
-                    this.printing = false;
-                    alert(`Fehler: ${result.statusText}`);
-                }
+                this.$refs.dialog.close();
             } catch (e) {
                 this.printing = false;
                 alert(`Fehler: ${e.message}`);
