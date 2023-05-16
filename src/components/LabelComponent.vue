@@ -25,7 +25,7 @@
         Lokal Drucken
     </a>
 
-    <a @click.prevent="printRemote()" v-if="dataURL" style="margin-left: 1em;" href="#">
+    <a @click.prevent="printRemote()" v-if="dataURL" style="margin-left: 1em;" href="#" :disabled="printing">
         <mdi-icon icon="cloud-print-outline" />
         Remote Drucken
     </a>
@@ -50,7 +50,8 @@ export default {
         svg: null,
         pdf: null,
         dataURL: null,
-        logo: logo
+        logo: logo,
+        printing: false
     }),
 
     props: {
@@ -148,19 +149,31 @@ export default {
         },
 
         async printRemote() {
-            const res = await fetch('/inventar/print-queue?do=edit');
-            const html = await res.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const data = new FormData(doc.querySelector('form[method="post"]'));
-            data.set('wikitext', `${data.get('wikitext')}\n * ${this.inventoryId}`);
-            data.set('summary', 'add entry');
-            const result = await fetch('/inventar/print-queue?do=edit', {
-                method: 'post',
-                body: data
-            });
-            console.log(result.status);
-            console.log(await result.text());
+            try {
+                this.printing = true;
+                const res = await fetch('/inventar/print-queue?do=edit');
+                const html = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const data = new FormData(doc.querySelector('form[method="post"]'));
+                data.set('wikitext', `${data.get('wikitext')}\n  * ${this.inventoryId}`);
+                data.set('summary', 'add entry');
+                data.set('do[save]', '1');
+                const result = await fetch('/inventar/print-queue?do=edit', {
+                    method: 'post',
+                    body: data
+                });
+
+                if (result.status === 302) {
+                    this.$refs.dialog.close();
+                } else {
+                    this.printing = false;
+                    alert(`Fehler: ${result.statusText}`);
+                }
+            } catch (e) {
+                this.printing = false;
+                alert(`Fehler: ${e.message}`);
+            }
         }
     }
 }
