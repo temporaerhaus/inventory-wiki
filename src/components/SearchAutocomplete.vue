@@ -197,6 +197,10 @@ export default {
         return [];
       }
 
+      if (!this.search) {
+        return this.results;
+      }
+
       if (this.grouped) {
         return Object.values(this.fuse).flatMap(({fuse, group}) => {
           const results = fuse.search(this.search);
@@ -205,10 +209,6 @@ export default {
           }
           return [];
         });
-      }
-
-      if (!this.search) {
-        return this.results;
       }
 
       return this.fuse.search(this.search).map(e => e.item);

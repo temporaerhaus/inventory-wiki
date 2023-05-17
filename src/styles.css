@@ -71,10 +71,11 @@
   margin: 0;
   background-color: var(--background-body);
   position: absolute;
-  top: 40px;
+  top: 60px;
   border: 1px solid #eeeeee;
-  max-height: 120px;
+  max-height: 200px;
   width: 100%;
+  z-index: 999;
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -398,6 +399,11 @@
   }
   .invwiki-preview {
     transform: scale(.8);
+  }
+
+  .invwiki .dialog {
+    position: fixed;
+    inset: 0;
   }
 }
 
