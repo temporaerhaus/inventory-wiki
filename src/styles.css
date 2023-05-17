@@ -120,7 +120,7 @@
 }
 
 .invwiki select {
-  width: 100%;
+  width: calc(100% - 1.5em);
 }
 
 .invwiki input, .invwiki select, .invwiki button, .invwiki textarea {

@@ -139,14 +139,16 @@ export default {
       e.preventDefault();
 
       this.isOpen = true;
+      let looping = true;
 
       if (this.isOpen && this.arrowCounter < this.results.length) {
-        //do {
-        this.arrowCounter = this.arrowCounter + 1;
-        if (this.arrowCounter >= this.filteredResults.length) {
-          this.arrowCounter = 0;
-        }
-        //} while (this.filteredResults[this.arrowCounter]?.group);
+        do {
+          this.arrowCounter = this.arrowCounter + 1;
+          if (this.arrowCounter >= this.filteredResults.length) {
+            this.arrowCounter = 0;
+            looping = false;
+          }
+        } while (looping && this.filteredResults[this.arrowCounter]?.group);
       }
 
       this.scrollIntoView();
@@ -157,14 +159,16 @@ export default {
       e.preventDefault();
 
       this.isOpen = true;
+      let looping = true;
 
       if (this.isOpen && this.arrowCounter > 0) {
-        //do {
-        this.arrowCounter = this.arrowCounter - 1;
-        if (this.arrowCounter < 0) {
-          this.arrowCounter = this.results.length - 1;
-        }
-        //} while (this.filteredResults[this.arrowCounter]?.group);
+        do {
+          this.arrowCounter = this.arrowCounter - 1;
+          if (this.arrowCounter < 0) {
+            this.arrowCounter = this.results.length - 1;
+            looping = false;
+          }
+        } while (looping && this.filteredResults[this.arrowCounter]?.group);
       }
 
       this.scrollIntoView();
