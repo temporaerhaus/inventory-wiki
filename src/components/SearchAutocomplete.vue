@@ -4,7 +4,7 @@
       <mdi-icon :icon="icon" left :title="label" v-if="icon" />
       {{ label }}
     </label>
-    <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" />
+    <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" @focus="onArrowDown" />
     <ul v-show="isOpen" class="invwiki-autocomplete-results">
       <li class="loading" v-if="loading">
         Loading results...
@@ -140,12 +140,12 @@ export default {
       this.isOpen = true;
 
       if (this.isOpen && this.arrowCounter < this.results.length) {
-        do {
-          this.arrowCounter = this.arrowCounter + 1;
-          if (this.arrowCounter >= this.results.length) {
-            this.arrowCounter = 0;
-          }
-        } while (this.filteredResults[this.arrowCounter]?.group);
+        //do {
+        this.arrowCounter = this.arrowCounter + 1;
+        if (this.arrowCounter >= this.filteredResults.length) {
+          this.arrowCounter = 0;
+        }
+        //} while (this.filteredResults[this.arrowCounter]?.group);
       }
 
       this.scrollIntoView();
@@ -158,12 +158,12 @@ export default {
       this.isOpen = true;
 
       if (this.isOpen && this.arrowCounter > 0) {
-        do {
-          this.arrowCounter = this.arrowCounter - 1;
-          if (this.arrowCounter < 0) {
-            this.arrowCounter = this.results.length - 1;
-          }
-        } while (this.filteredResults[this.arrowCounter]?.group);
+        //do {
+        this.arrowCounter = this.arrowCounter - 1;
+        if (this.arrowCounter < 0) {
+          this.arrowCounter = this.results.length - 1;
+        }
+        //} while (this.filteredResults[this.arrowCounter]?.group);
       }
 
       this.scrollIntoView();
