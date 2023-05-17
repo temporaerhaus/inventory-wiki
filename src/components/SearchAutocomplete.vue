@@ -101,6 +101,7 @@ export default {
       if (this.grouped) {
         this.fuse = Object.fromEntries(this.results.map(e => [e.group, {
           fuse: new Fuse(e.children, { keys: this.keys, minMatchCharLength: 0 }),
+          children: e.children,
           group: e
         }]));
       } else {
@@ -197,18 +198,24 @@ export default {
         return [];
       }
 
-      if (!this.search) {
-        return this.results;
-      }
 
       if (this.grouped) {
-        return Object.values(this.fuse).flatMap(({fuse, group}) => {
+        return Object.values(this.fuse).flatMap(({fuse, group, children}) => {
+          if (!this.search) {
+            return [ group, ...children ];
+          }
+
           const results = fuse.search(this.search);
           if (results.length > 0) {
             return [ group, ...results.map(e => e.item) ];
           }
+
           return [];
         });
+      }
+
+      if (!this.search) {
+        return this.results;
       }
 
       return this.fuse.search(this.search).map(e => e.item);
