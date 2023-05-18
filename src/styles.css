@@ -114,6 +114,13 @@
   cursor: pointer;
 }
 
+.invwiki input[type='checkbox'] {
+  width: auto;
+  display: inline;
+  margin: 0;
+  margin-right: .5em;
+}
+
 .invwiki input:not([type='checkbox']):not([type='radio']),
 .invwiki select {
   display: block;
@@ -177,6 +184,11 @@
 .invwiki textarea:disabled {
   cursor: not-allowed;
   opacity: .5;
+}
+
+.invwiki label[for='invwiki-form-lended'] {
+  display: block;
+  padding-bottom: 1em;
 }
 
 .invwiki ::-webkit-input-placeholder {

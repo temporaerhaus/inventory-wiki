@@ -8,7 +8,7 @@
     Gegenstand Bearbeiten
   </button>
 
-  <x-dialog :title="edit ? 'Gegestand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
+  <x-dialog :title="edit ? 'Gegenstand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
     <div>
       <template v-if="!edit">
         <label for="invwiki-form-title">
@@ -17,6 +17,13 @@
         </label>
         <input id="invwiki-form-title" type="text" v-model="title" />
       </template>
+
+      <!--
+      <template v-if="edit">
+        <label for="invwiki-form-id">Inventarnummer</label>
+        <input id="invwiki-form-id" type="text" :value="id" disabled />
+      </template>
+      -->
 
       <label for="invwiki-form-description">
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
@@ -45,6 +52,12 @@
         Besitzer*in
       </label>
       <input id="invwiki-form-owner" type="text" v-model="owner" />
+
+      <label for="invwiki-form-lended">
+        <input id="invwiki-form-lended" type="checkbox" v-model="lended" />
+        <mdi-icon icon="account-question-outline" left />
+        Leihgabe
+      </label>
 
       <label for="invwiki-form-date">
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
@@ -92,7 +105,7 @@
         </blockquote>
 
         <label for="invwiki-form-id">Zu Vergebene Inventarnummer</label>
-        <input id="invwiki-form-id" type="text" :value="id" disabled />
+        <input id="invwiki-form-id" type="text" :value="id" disabled @click="refreshNumber()" />
       </template>
 
       <div style="text-align: right; margin-right: -.5em;">
@@ -111,6 +124,7 @@ import din6779 from '@/utils/din6779.js';
 
 const PREFIX = 'inventar';
 const SEP = '/';
+const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
 const REGEX = new RegExp(`^/${PREFIX.toUpperCase()}/.*[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
 const YAML_REGEX = /```yaml\n(.*)\n```/s;
 
@@ -138,12 +152,21 @@ export default {
     category: '',
     origin: '',
     owner: '',
+    lended: null,
 
     classification: null
   }),
 
   methods: {
-    async createItem() {
+    async refreshNumber() {
+      if (this.edit) {
+        return
+      }
+      if (import.meta.env.MODE === 'development') {
+        this.number = '000002'
+        return
+      }
+
       const res = await fetch('/lib/exe/ajax.php', {
         method: 'POST',
         body: `call=index&idx=${PREFIX}`,
@@ -160,14 +183,18 @@ export default {
           .map(e => Number(REGEX.exec(String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase())?.[1]))
           .filter(e => !isNaN(e))
       ) + 1).padStart(6, '0');
+    },
+
+    async createItem() {
+      await this.refreshNumber();
       this.loading = false;
       this.$refs.dialog.show();
     },
 
     async editItem() {
-      this.number = '000000';
       this.loading = false;
 
+      this.id = this.$parent.id || '';
       this.title = this.$parent.title || '';
       this.description = this.$parent.description || '';
       this.serial = this.$parent.serial || '';
@@ -176,6 +203,13 @@ export default {
       this.category = this.$parent.category || '';
       this.origin = this.$parent.origin || '';
       this.owner = this.$parent.owner || '';
+      this.number = ID_REGEX.exec(this.$parent.inventoryId)?.[3] || '000000'
+      this.classification = ID_REGEX.exec(this.$parent.inventoryId)?.[2] || '??' // FIXME: doesn't work for edit, how to set value?
+      this.suffix = ID_REGEX.exec(this.$parent.inventoryId)?.[4] || ''
+      if (ID_REGEX.exec(this.$parent.inventoryId)?.[1] == 'L') {
+        this.lended = true;
+      }
+
       this.$refs.dialog.show();
     },
 
@@ -246,7 +280,7 @@ export default {
 
   computed: {
     id() {
-      return `V-${this.classification?.value || '??'}${this.number || '??????'}${this.suffix ? `-${this.suffix}` : ''}`;
+      return `${this.lended ? 'L' : 'V'}-${this.classification?.value || '??'}${this.number || '??????'}${this.suffix ? `-${this.suffix}` : ''}`;
     },
 
     disabled() {
