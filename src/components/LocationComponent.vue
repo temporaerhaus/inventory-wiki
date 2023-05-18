@@ -32,6 +32,8 @@
 <script>
 import YAML from 'yaml';
 
+import { fetchLocations, fetchItems } from '@/utils/api.js';
+
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 
 const REGEX = /```yaml\n(.*)\n```/s;
@@ -55,11 +57,10 @@ export default {
       this.location = this.$parent.temporary?.location || this.$parent.nominal?.location || '';
       this.description = this.$parent.temporary?.description || this.$parent.nominal?.description || '';
 
-      const res = await fetch(`/inventar/locations`);
-      const html = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      this.locations = [...doc.querySelectorAll('#dokuwiki__content li')].map(e => e.innerText.trim());
+      this.locations = (await Promise.all([
+        fetchLocations(),
+        fetchItems()
+      ])).flat();
       this.loading = false;
     },
 

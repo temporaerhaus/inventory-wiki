@@ -122,10 +122,9 @@ import YAML from 'yaml';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import din6779 from '@/utils/din6779.js';
 
-const PREFIX = 'inventar';
-const SEP = '/';
+import { SEP, PREFIX, nextNumber } from '@/utils/api.js';
+
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
-const REGEX = new RegExp(`^/${PREFIX.toUpperCase()}/.*[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
 const YAML_REGEX = /```yaml\n(.*)\n```/s;
 
 export default {
@@ -160,29 +159,13 @@ export default {
   methods: {
     async refreshNumber() {
       if (this.edit) {
-        return
+        return;
       }
       if (import.meta.env.MODE === 'development') {
-        this.number = '000002'
-        return
+        this.number = '000002';
+        return;
       }
-
-      const res = await fetch('/lib/exe/ajax.php', {
-        method: 'POST',
-        body: `call=index&idx=${PREFIX}`,
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded',
-        }
-      });
-      const data = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(data, 'text/html');
-
-      this.number = String(Math.max(
-        ...[...doc.querySelectorAll('a[data-wiki-id]')]
-          .map(e => Number(REGEX.exec(String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase())?.[1]))
-          .filter(e => !isNaN(e))
-      ) + 1).padStart(6, '0');
+      this.number = await nextNumber();
     },
 
     async createItem() {
@@ -239,6 +222,7 @@ export default {
         data.set('summary', `edit metadata`);
         data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
       } else {
+        await this.refreshNumber();
         const yaml = {
           inventory: true,
           description: this.description || '',
@@ -263,7 +247,6 @@ export default {
         ].join('\n'));
       }
       data.set('do[save]', '1');
-
       await fetch(`${this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`}?do=edit`, {
         method: 'post',
         body: data

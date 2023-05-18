@@ -37,5 +37,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    proxy: {
+      '/lib': 'https://wiki.temporaerhaus.de/',
+      '/inventar': 'https://wiki.temporaerhaus.de/',
+    },
   }
 })
