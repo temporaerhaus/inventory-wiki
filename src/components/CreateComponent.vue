@@ -203,10 +203,17 @@ export default {
       this.origin = this.$parent.origin || '';
       this.owner = this.$parent.owner || '';
       this.small = this.$parent.small || null;
-      this.number = ID_REGEX.exec(this.$parent.inventoryId)?.[3] || '000000';
-      this.classification = ID_REGEX.exec(this.$parent.inventoryId)?.[2] || '??'; // FIXME: doesn't work for edit, how to set value?
-      this.suffix = ID_REGEX.exec(this.$parent.inventoryId)?.[4] || '';
-      if (ID_REGEX.exec(this.$parent.inventoryId)?.[1] == 'L') {
+
+      const res = ID_REGEX.exec(this.$parent.inventoryId);
+
+      this.number = res?.[3] || '000000';
+      this.classification = {
+        value: res?.[2] || '??',
+        text: res?.[2] || '??',
+        example: ''
+      };
+      this.suffix = res?.[4] || '';
+      if (res?.[1] == 'L') {
         this.lended = true;
       }
 

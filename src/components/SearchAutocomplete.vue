@@ -71,6 +71,12 @@ export default {
   mounted() {
     document.addEventListener('click', this.handleClickOutside);
     this.registerFuses(this.items);
+
+    if (this.modelValue?.value) {
+      this.search = this.modelValue.value;
+    } else if (typeof this.modelValue === 'string' && this.modelValue) {
+      this.search = this.modelValue;
+    }
   },
 
   destroyed() {
