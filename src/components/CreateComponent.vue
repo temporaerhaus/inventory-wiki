@@ -176,11 +176,6 @@ export default {
     classification: null
   }),
 
-
-  mounted() {
-    this.createItem();
-  },
-
   methods: {
     async refreshNumber() {
       if (this.edit || this.sub) {
