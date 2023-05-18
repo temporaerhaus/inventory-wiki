@@ -9,14 +9,18 @@
       <li class="loading" v-if="loading">
         Loading results...
       </li>
-      <li v-else v-for="(result, i) in filteredResults" :key="i" @click="setResult(result)" :class="{ 'invwiki-autocomplete-result': true, 'is-active': i === arrowCounter, 'invwiki-autocomplete-indent': !result.group, 'invwiki-autocomplete-group': !!result.group }">
-        <slot name="group" v-bind="result" v-if="result.group">
-          {{ result }}
-        </slot>
-        <slot name="item" v-bind="result" v-else>
-          {{ result }}
-        </slot>
-      </li>
+      <template v-for="(result, i) in filteredResults" :key="i">
+        <li class="invwiki-autocomplete-result invwiki-autocomplete-group" v-if="result.first">
+          <slot name="group" v-bind="result">
+            {{ result.group }}
+          </slot>
+        </li>
+        <li @click="setResult(result)" :class="`invwiki-autocomplete-result invwiki-autocomplete-indent ${i === arrowCounter ? 'is-active' : ''}`">
+          <slot name="item" v-bind="result">
+            {{ result }}
+          </slot>
+        </li>
+      </template>
     </ul>
   </div>
 </template>
@@ -52,7 +56,7 @@ export default {
     return {
       id: `invwiki-autocomplete-${Math.round((Math.random()*10000))}`,
       isOpen: false,
-      results: {},
+      results: [],
       fuse: null,
       search: '',
       loading: false,
@@ -85,34 +89,18 @@ export default {
 
   methods: {
     async registerFuses(value) {
-        if (typeof value === 'Function') {
-          const tmp = value();
-          if (typeof tmp === 'object' && typeof tmp.then === 'function') {
-            this.loading = true;
-            this.results = await tmp;
-            this.loading = false;
-          } else {
-            this.loading = false;
-            this.results = tmp;
-          }
-        } else if (typeof value === 'object' && typeof value.then === 'function') {
-          this.loading = true;
-          this.results = await value;
-          this.loading = false;
-        } else {
-          this.results = value;
-          this.loading = false;
-        }
+      this.loading = true;
+      let results = await (typeof(value) === 'Function' ? value() : value);
+      this.loading = false;
 
-      if (this.grouped) {
-        this.fuse = Object.fromEntries(this.results.map(e => [e.group, {
-          fuse: new Fuse(e.children, { keys: this.keys, minMatchCharLength: 0 }),
-          children: e.children,
-          group: e
-        }]));
-      } else {
-        this.fuse = new Fuse(this.results, { keys: this.keys, minMatchCharLength: 0 });
-      }
+      this.results = !this.grouped ? results : results.flatMap((group) => {
+        return group.children.map((e, i) => ({ ...e, first: i === 0, group: { ...group, children: undefined } }));
+      });
+
+      this.fuse = new Fuse(this.results, {
+        keys: this.keys,
+        minMatchCharLength: 0
+      });
 
       if (this.modelValue) {
         this.search = this.modelValue;
@@ -120,18 +108,14 @@ export default {
     },
 
     setResult(result) {
-      if (result.group) {
-        return;
-      }
-
       this.isOpen = false;
       this.$emit('update:modelValue', result);
-      console.log(result);
       this.search = this.serializer ? this.serializer(result) : result;
     },
 
     onChange() {
       this.isOpen = true;
+      this.arrowCounter = 0;
       if (/^[A-Z]{2}$/.test(this.search)) {
         this.$emit('update:modelValue', {
           value: this.search,
@@ -148,44 +132,24 @@ export default {
       }
     },
 
-    onArrowDown(e) {
+    onArrowDown(e, direction=1) {
       e.stopPropagation();
       e.preventDefault();
 
       this.isOpen = true;
-      let looping = true;
+      this.arrowCounter += direction;
 
-      if (this.isOpen && this.arrowCounter < this.results.length) {
-        do {
-          this.arrowCounter = this.arrowCounter + 1;
-          if (this.arrowCounter >= this.filteredResults.length) {
-            this.arrowCounter = 0;
-            looping = false;
-          }
-        } while (looping && this.filteredResults[this.arrowCounter]?.group);
+      if (this.arrowCounter >= this.filteredResults.length) {
+        this.arrowCounter = 0;
+      } else if (this.arrowCounter < 0) {
+        this.arrowCounter = this.filteredResults.length - 1;
       }
 
       this.scrollIntoView();
     },
 
     onArrowUp(e) {
-      e.stopPropagation();
-      e.preventDefault();
-
-      this.isOpen = true;
-      let looping = true;
-
-      if (this.isOpen && this.arrowCounter > 0) {
-        do {
-          this.arrowCounter = this.arrowCounter - 1;
-          if (this.arrowCounter < 0) {
-            this.arrowCounter = this.results.length - 1;
-            looping = false;
-          }
-        } while (looping && this.filteredResults[this.arrowCounter]?.group);
-      }
-
-      this.scrollIntoView();
+      this.onArrowDown(e, -1);
     },
 
     onEnter(e) {
@@ -204,9 +168,9 @@ export default {
     scrollIntoView() {
       setTimeout(() => {
         if (this.isOpen) {
-          this.$el.querySelector('.is-active')?.scrollIntoView?.();
+          this.$el.querySelector('.is-active')?.scrollIntoView?.({ block: 'center' });
         }
-      }, 50);
+      }, 5);
     },
 
     close() {
@@ -218,22 +182,6 @@ export default {
     filteredResults() {
       if (!this.fuse) {
         return [];
-      }
-
-
-      if (this.grouped) {
-        return Object.values(this.fuse).flatMap(({fuse, group, children}) => {
-          if (!this.search) {
-            return [ group, ...children ];
-          }
-
-          const results = fuse.search(this.search);
-          if (results.length > 0) {
-            return [ group, ...results.map(e => e.item) ];
-          }
-
-          return [];
-        });
       }
 
       if (!this.search) {

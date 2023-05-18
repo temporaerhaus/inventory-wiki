@@ -26,12 +26,10 @@
         <input id="invwiki-form-title" type="text" v-model="title" @focus="$refs.c?.close?.()" />
       </template>
 
-      <!--
       <template v-if="edit">
         <label for="invwiki-form-id">Inventarnummer</label>
-        <input id="invwiki-form-id" type="text" :value="id" disabled />
+        <input id="invwiki-form-id" type="text" :value="inventoryId" disabled />
       </template>
-      -->
 
       <label for="invwiki-form-description">
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
@@ -92,19 +90,23 @@
       <input id="invwiki-form-invoice" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
 
       <template v-if="!edit">
-        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" grouped :keys="['value', 'text', 'example']" :serializer="(e) => `${e.value}: ${e.text}`" ref="c" :disabled="sub">
+        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub">
           <template #group="item">
-            <b style="width: 30px; display: inline-block;">{{ item.group }}:</b>
-            {{ item.text }}
+            <b>{{ item.group.group }}:</b>
+            <div>{{ item.group.text }}</div>
           </template>
 
           <template #item="item">
-            <b style="width: 30px; display: inline-block;">{{ item.value }}</b>
-            {{ item.text }}
-
-            <pre v-if="item.example" style="font-size: 80%; margin: 0; width: auto;">{{item.example}}</pre>
+            <b>{{ item.value }}:</b>
+            <div>
+              {{ item.text }}
+              <pre v-if="item.example">{{item.example}}</pre>
+            </div>
           </template>
         </search-autocomplete>
+        <blockquote v-if="classification?.text">
+          {{ classification.text }}
+        </blockquote>
 
         <label for="invwiki-form-number">Fortlaufende Nummer</label>
         <input id="invwiki-form-number" type="text" :value="number" disabled />
@@ -160,6 +162,7 @@ export default {
     number: '',
     title: '',
     suffix: '',
+    inventoryId: '',
     description: '',
     serial: '',
     invoice: '',
@@ -172,6 +175,11 @@ export default {
 
     classification: null
   }),
+
+
+  mounted() {
+    this.createItem();
+  },
 
   methods: {
     async refreshNumber() {
@@ -195,6 +203,7 @@ export default {
       this.loading = false;
 
       this.title = this.$parent.title || '';
+      this.inventoryId = this.$parent.inventoryId || '';
       this.description = this.$parent.description || '';
       this.serial = this.$parent.serial || '';
       this.invoice = this.$parent.invoice || '';
@@ -295,6 +304,22 @@ export default {
 
     disabled() {
       return this.id.includes('?') && !this.edit || this.loading;
+    },
+
+    weights() {
+      return [{
+        name: 'value',
+        weight: 0.4
+      }, {
+        name: 'text',
+        weight: 0.3
+      }, {
+        name: 'group.text',
+        weight: 0.2
+      }, {
+        name: 'example',
+        weight: 0.1
+      }];
     }
   }
 }

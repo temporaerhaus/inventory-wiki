@@ -83,15 +83,59 @@
 .invwiki-autocomplete-result {
   list-style: none;
   text-align: left;
-  padding: 4px 2px;
+  padding-inline: 4px;
+  padding-block: .5em;
   cursor: pointer;
   margin-left: .5em;
+
+  display: grid;
+  grid-template-columns: 3em 1fr;
+  grid-template-rows: 1fr;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
 }
 
-.invwiki-autocomplete-result.is-active,
 .invwiki-autocomplete-result:hover {
+  background-color: var(--button-hover);
+  color: white;
+}
+
+.invwiki-autocomplete-result.is-active {
   background-color: #4AAE9B;
   color: white;
+}
+
+.invwiki-autocomplete-indent {
+  margin-left: 0;
+  padding-left: 1em;
+}
+
+.invwiki-autocomplete-result > b {
+  font-family: monospace;
+  overflow: hidden;
+  display: block;
+}
+.invwiki-autocomplete-group {
+  margin-left: 0;
+  padding-block: 0;
+  background-color: #ccc;
+  cursor: default;
+}
+.invwiki-autocomplete-group > b {
+  padding-left: .5em;
+}
+
+.invwiki-autocomplete-result > div {
+  flex-grow: 1;
+}
+
+.invwiki-autocomplete-result > pre {
+  clear: both;
+  font-size: 80%;
+  margin: 0;
+  width: auto;
+  margin-top: .5em;
+  margin-bottom: 0 !important;
 }
 
 .invwiki input, .invwiki textarea {
@@ -217,30 +261,12 @@
   text-decoration: underline;
 }
 
-.invwiki-autocomplete-indent {
-  margin-left: 1.5em;
-}
-.invwiki-autocomplete-group {
-  margin-left: 0;
-  padding-left: .5em;
-  background-color: #ccc;
-}
-
 .invwiki blockquote {
   border-left: 4px solid #0096bfab;
   margin: 1.5em 0em;
   padding: 0.5em 1em;
   font-style: italic;
   width: 350px;
-}
-
-.invwiki blockquote > footer {
-  margin-top: 10px;
-  font-style: normal;
-}
-
-.invwiki blockquote cite {
-  font-style: normal;
 }
 
 .invwiki .overlay {
@@ -253,6 +279,10 @@
   background: #0000009c;
   -webkit-backdrop-filter: blur(4px);
           backdrop-filter: blur(4px);
+}
+
+.invwiki .dialog blockquote {
+  margin-top: 0;
 }
 
 .invwiki .dialog {
@@ -383,9 +413,6 @@
   list-style: none;
   margin-left: 0;
   padding-top: .25em;
-}
-.item-card li {
-  margin-top: .25em;
 }
 .item-card > button {
   margin-left: 1em;
