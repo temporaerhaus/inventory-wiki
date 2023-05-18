@@ -10,7 +10,7 @@
         <div :style="{ paddingTop: `${mm2pt(1.7)}pt`, paddingBottom: `${mm2pt(1.7)}pt`, paddingRight: `${mm2pt(1.7)}pt` }">
             <div style="font-size: 11pt; font-weight: bold;">{{ inventoryId }}</div>
             <div :style="{paddingTop: `${mm2pt(.5)}pt`, paddingBottom: `${mm2pt(.5)}pt`}">{{ title }}</div>
-            <div style="font-size: 8pt; line-height: 8pt;">{{ description }}</div>
+            <div style="font-size: 8pt; line-height: 8pt; white-space: pre-wrap;">{{ fullDescription }}</div>
         </div>
         <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: `${mm2pt(13.45)}pt`, height: 'auto', marginLeft: `${mm2pt(3)}pt` }" />
     </div>
@@ -57,7 +57,8 @@ export default {
     props: {
         title: String,
         inventoryId: String,
-        description: String
+        description: String,
+        owner: String
     },
 
     mounted() {
@@ -139,7 +140,7 @@ export default {
         },
 
         async genLabel() {
-            [this.pdf, this.dataURL] = await this.createPDF(this.inventoryId, this.title, this.description);
+            [this.pdf, this.dataURL] = await this.createPDF(this.inventoryId, this.title, this.fullDescription);
             this.$refs.dialog.show();
         },
 
@@ -170,6 +171,16 @@ export default {
                 alert(`Fehler: ${e.message}`);
             }
         }
+    },
+
+    computed: {
+        fullDescription() {
+            if (String(this.inventoryId).startsWith('L-') && this.owner) {
+                return `Besitzer*in: ${this.owner}\n${this.description}`;
+            }
+            return this.description;
+        }
+
     }
 }
 </script>

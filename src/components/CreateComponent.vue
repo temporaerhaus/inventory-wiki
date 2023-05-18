@@ -15,7 +15,7 @@
           <mdi-icon icon="toy-brick-outline" left title="Gegenstand" />
           Gegenstand
         </label>
-        <input id="invwiki-form-title" type="text" v-model="title" />
+        <input id="invwiki-form-title" type="text" v-model="title" @focus="$refs.c?.close?.()" />
       </template>
 
       <!--
@@ -29,7 +29,7 @@
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
         Kurzbeschreibung
       </label>
-      <textarea id="invwiki-form-description" v-model="description"></textarea>
+      <textarea id="invwiki-form-description" v-model="description" @focus="$refs.c?.close?.()"></textarea>
       <blockquote>
         Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt und ist daher nur eine Zeile. 
         Weitere Informationen zum Gegenstand und Anhänge können im nächsten Schritt bei der Wiki-Seite hinterlegt werden. 
@@ -39,19 +39,19 @@
         <mdi-icon icon="tag-outline" left title="Kategorie" />
         Kategorie
       </label>
-      <input id="invwiki-form-category" type="text" v-model="category" />
+      <input id="invwiki-form-category" type="text" v-model="category" @focus="$refs.c?.close?.()" />
 
       <label for="invwiki-form-origin">
         <mdi-icon icon="basket-unfill" left title="Ursprung" />
         Ursprung
       </label>
-      <input id="invwiki-form-origin" type="text" v-model="origin" />
+      <input id="invwiki-form-origin" type="text" v-model="origin" @focus="$refs.c?.close?.()" />
 
       <label for="invwiki-form-owner">
         <mdi-icon icon="account-question-outline" left title="Besitzer*in" />
         Besitzer*in
       </label>
-      <input id="invwiki-form-owner" type="text" v-model="owner" />
+      <input id="invwiki-form-owner" type="text" v-model="owner" @focus="$refs.c?.close?.()" />
 
       <label for="invwiki-form-lended">
         <input id="invwiki-form-lended" type="checkbox" v-model="lended" />
@@ -63,22 +63,22 @@
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
         Anschaffungsdatum
       </label>
-      <input id="invwiki-form-date" type="date" v-model="date" />
+      <input id="invwiki-form-date" type="date" v-model="date" @focus="$refs.c?.close?.()" />
 
       <label for="invwiki-form-serial">
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
         Seriennummer
       </label>
-      <input id="invwiki-form-serial" type="text" v-model="serial" />
+      <input id="invwiki-form-serial" type="text" v-model="serial" @focus="$refs.c?.close?.()" />
 
       <label for="invwiki-form-invoice">
         <mdi-icon icon="file-document-outline" left title="Rechnung" />
         Rechnung
       </label>
-      <input id="invwiki-form-invoice" type="text" v-model="invoice" />
+      <input id="invwiki-form-invoice" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
 
       <template v-if="!edit">
-        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" grouped :keys="['value', 'text', 'example']" autofocus :serializer="(e) => `${e.value}: ${e.text}`">
+        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" grouped :keys="['value', 'text', 'example']" :serializer="(e) => `${e.value}: ${e.text}`" ref="c">
           <template #group="item">
             <b style="width: 30px; display: inline-block;">{{ item.group }}:</b>
             {{ item.text }}
@@ -96,7 +96,7 @@
         <input id="invwiki-form-number" type="text" :value="number" disabled />
 
         <label for="invwiki-form-suffix">Optionales Suffix</label>
-        <select id="invwiki-form-suffix" v-model="suffix">
+        <select id="invwiki-form-suffix" v-model="suffix" @focus="$refs.c?.close?.()">
           <option value=""></option>
           <option v-for="s in Array(26).fill(null).map((_, i) => String.fromCharCode(65+i))" :key="s" :value="s">{{s}}</option>
         </select>
@@ -105,7 +105,7 @@
         </blockquote>
 
         <label for="invwiki-form-id">Zu Vergebene Inventarnummer</label>
-        <input id="invwiki-form-id" type="text" :value="id" disabled @click="refreshNumber()" />
+        <input id="invwiki-form-id" type="text" :value="id" disabled @click="refreshNumber()" @focus="$refs.c?.close?.()" />
       </template>
 
       <div style="text-align: right; margin-right: -.5em;">

@@ -43,7 +43,7 @@
     <blockquote v-if="description">{{ description }}</blockquote>
     <location-component />
     <create-component edit />
-    <label-component :inventory-id="inventoryId" :title="title" :description="description" />
+    <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" />
   </div>
 </template>
 

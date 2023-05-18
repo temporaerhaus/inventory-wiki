@@ -120,11 +120,19 @@ export default {
 
       this.isOpen = false;
       this.$emit('update:modelValue', result);
+      console.log(result);
       this.search = this.serializer ? this.serializer(result) : result;
     },
 
     onChange() {
       this.isOpen = true;
+      if (/^[A-Z]{2}$/.test(this.search)) {
+        this.$emit('update:modelValue', {
+          value: this.search,
+          text: this.search,
+          example: ''
+        });
+      }
     },
 
     handleClickOutside(event) {
@@ -193,6 +201,10 @@ export default {
           this.$el.querySelector('.is-active')?.scrollIntoView?.();
         }
       }, 50);
+    },
+
+    close() {
+      this.isOpen = false;
     }
   },
 
