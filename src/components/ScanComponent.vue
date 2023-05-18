@@ -1,5 +1,9 @@
 <template>
-  <button @click="startScan()">
+  <button @click="startScan()" v-if="reprint">
+    <mdi-icon icon="qrcode-plus" left />
+    Scannen und Drucken
+  </button>
+  <button @click="startScan()" v-else>
     <mdi-icon icon="qrcode-scan" left />
     Inventaraufkleber Scannen
   </button>
@@ -13,7 +17,13 @@
 <script>
 import { Html5QrcodeScanner } from 'html5-qrcode';
 
+import { remotePrint } from '@/utils/api.js';
+
 export default {
+  props: {
+    reprint: Boolean,
+  },
+
   data: () => ({
     scanner: null,
   }),
@@ -42,7 +52,11 @@ export default {
     },
 
     onScanSuccess(decodedText) {
-      if (/^[SVL]-[A-Z]{2}[0-9]{6}(-[A-Z])?$/.test(decodedText)) {
+      if (this.reprint) {
+        remotePrint(decodedText)
+          .then(() => this.$refs.dialog.close())
+          .catch((e) => alert(`Fehler: ${e.message}`));
+      } else if (/^[SVL]-[A-Z]{2}[0-9]{6}(-[A-Z])?$/.test(decodedText)) {
         // new inventory number
         location.pathname = `/inventar/${decodedText}`;
       } else {

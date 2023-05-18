@@ -1,11 +1,19 @@
 <template>
-  <button @click="createItem" v-if="!edit">
-    <mdi-icon icon="toy-brick-plus-outline" left />
-    Neuen Gegenstand Anlegen
+  <button @click="editItem" v-if="sub">
+    <mdi-icon icon="subdirectory-arrow-right" left />
+    Unter-Gegenstand Hinzufügen
   </button>
-  <button @click="editItem" v-else>
+  <button @click="editItem" v-else-if="clone">
+    <mdi-icon icon="content-duplicate" left />
+    Gegenstand Duplizieren
+  </button>
+  <button @click="editItem" v-else-if="edit">
     <mdi-icon icon="square-edit-outline" left />
     Gegenstand Bearbeiten
+  </button>
+  <button @click="createItem" v-else>
+    <mdi-icon icon="toy-brick-plus-outline" left />
+    Neuen Gegenstand Anlegen
   </button>
 
   <x-dialog :title="edit ? 'Gegenstand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
@@ -59,6 +67,12 @@
         Leihgabe
       </label>
 
+      <label for="invwiki-form-small">
+        <input id="invwiki-form-small" type="checkbox" v-model="small" />
+        <mdi-icon icon="image-size-select-small" left />
+        Kleines Label
+      </label>
+
       <label for="invwiki-form-date">
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
         Anschaffungsdatum
@@ -78,7 +92,7 @@
       <input id="invwiki-form-invoice" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
 
       <template v-if="!edit">
-        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" grouped :keys="['value', 'text', 'example']" :serializer="(e) => `${e.value}: ${e.text}`" ref="c">
+        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" grouped :keys="['value', 'text', 'example']" :serializer="(e) => `${e.value}: ${e.text}`" ref="c" :disabled="sub">
           <template #group="item">
             <b style="width: 30px; display: inline-block;">{{ item.group }}:</b>
             {{ item.text }}
@@ -105,7 +119,7 @@
         </blockquote>
 
         <label for="invwiki-form-id">Zu Vergebene Inventarnummer</label>
-        <input id="invwiki-form-id" type="text" :value="id" disabled @click="refreshNumber()" @focus="$refs.c?.close?.()" />
+        <input id="invwiki-form-id" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
       </template>
 
       <div style="text-align: right; margin-right: -.5em;">
@@ -129,7 +143,9 @@ const YAML_REGEX = /```yaml\n(.*)\n```/s;
 
 export default {
   props: {
-    edit: Boolean
+    edit: Boolean,
+    clone: Boolean,
+    sub: Boolean
   },
 
   components: {
@@ -152,13 +168,14 @@ export default {
     origin: '',
     owner: '',
     lended: null,
+    small: null,
 
     classification: null
   }),
 
   methods: {
     async refreshNumber() {
-      if (this.edit) {
+      if (this.edit || this.sub) {
         return;
       }
       if (import.meta.env.MODE === 'development') {
@@ -177,7 +194,6 @@ export default {
     async editItem() {
       this.loading = false;
 
-      this.id = this.$parent.id || '';
       this.title = this.$parent.title || '';
       this.description = this.$parent.description || '';
       this.serial = this.$parent.serial || '';
@@ -186,9 +202,10 @@ export default {
       this.category = this.$parent.category || '';
       this.origin = this.$parent.origin || '';
       this.owner = this.$parent.owner || '';
-      this.number = ID_REGEX.exec(this.$parent.inventoryId)?.[3] || '000000'
-      this.classification = ID_REGEX.exec(this.$parent.inventoryId)?.[2] || '??' // FIXME: doesn't work for edit, how to set value?
-      this.suffix = ID_REGEX.exec(this.$parent.inventoryId)?.[4] || ''
+      this.small = this.$parent.small || null;
+      this.number = ID_REGEX.exec(this.$parent.inventoryId)?.[3] || '000000';
+      this.classification = ID_REGEX.exec(this.$parent.inventoryId)?.[2] || '??'; // FIXME: doesn't work for edit, how to set value?
+      this.suffix = ID_REGEX.exec(this.$parent.inventoryId)?.[4] || '';
       if (ID_REGEX.exec(this.$parent.inventoryId)?.[1] == 'L') {
         this.lended = true;
       }
@@ -218,11 +235,13 @@ export default {
         yaml.category = this.category || '';
         yaml.origin = this.origin || '';
         yaml.owner = this.owner || '';
+        yaml.small = this.small || false;
 
         data.set('summary', `edit metadata`);
         data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
       } else {
         await this.refreshNumber();
+
         const yaml = {
           inventory: true,
           description: this.description || '',
@@ -232,6 +251,7 @@ export default {
           category: this.category || '',
           origin: this.origin || '',
           owner: this.owner || '',
+          small: this.small || false,
           nominal: {},
           temporary: {},
         };

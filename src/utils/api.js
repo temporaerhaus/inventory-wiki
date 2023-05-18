@@ -30,3 +30,18 @@ export async function fetchLocations() {
   const doc = parser.parseFromString(html, 'text/html');
   return [...doc.querySelectorAll('#dokuwiki__content li')].map(e => e.innerText.trim());
 }
+
+export async function remotePrint(inventoryId) {
+  const res = await fetch('/inventar/print-queue?do=edit');
+  const html = await res.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const data = new FormData(doc.querySelector('form[method="post"]'));
+  data.set('wikitext', `${data.get('wikitext')}\n  * ${inventoryId}`);
+  data.set('summary', 'add entry');
+  data.set('do[save]', '1');
+  await fetch('/inventar/print-queue?do=edit', {
+    method: 'post',
+    body: data
+  });
+}

@@ -38,6 +38,8 @@ import QRCode from 'qrcode';
 import logo from '@/assets/logo.svg?raw';
 import pdfMake from 'pdfmake/build/pdfmake';
 
+import { remotePrint } from '@/utils/api.js';
+
 pdfMake.fonts = {
    freemono: {
      bold: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono@main/fonts/ttf/RobotoMono-Bold.ttf',
@@ -56,6 +58,7 @@ export default {
 
     props: {
         title: String,
+        small: Boolean,
         inventoryId: String,
         description: String,
         owner: String
@@ -94,8 +97,8 @@ export default {
             return new Promise((resolve) => {
                 const pdf = pdfMake.createPdf({
                     pageSize: {
-                        width: this.mm2pt(95),
-                        height: this.mm2pt(24)
+                        width: this.small ? this.mm2pt(50) : this.mm2pt(95),
+                        height: this.small ? this.mm2pt(12) : this.mm2pt(24)
                     },
                     pageOrientation: 'landscape',
                     pageMargins: 0,
@@ -108,7 +111,32 @@ export default {
                     content: [{
                         columnGap: this.mm2pt(.5),
                         margins: 0,
-                        columns: [{
+                        columns: this.small ? [{
+                            svg: this.svg,
+                            width: this.mm2pt(10),
+                            margin: [this.mm2pt(0), this.mm2pt(1), this.mm2pt(3), this.mm2pt(1)],
+                        }, {
+                            width: '*',
+                            margin: [this.mm2pt(1), this.mm2pt(.3), this.mm2pt(1), this.mm2pt(3)],
+                            stack: [{
+                                bold: true,
+                                fontSize: 6,
+                                text: id.toUpperCase(),
+                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.4) ]
+                            }, {
+                                text: title,
+                                fontSize: 5,
+                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.4) ],
+                            }, {
+                                text: description,
+                                lineHeight: .8,
+                                fontSize: 4
+                            }]
+                        }, {
+                            svg: logo,
+                            margin: [this.mm2pt(0), this.mm2pt(1)],
+                            width: this.mm2pt(7.5)
+                        }] : [{
                             svg: this.svg,
                             width: this.mm2pt(18),
                             margin: [this.mm2pt(0), this.mm2pt(3), this.mm2pt(3), this.mm2pt(3)],
@@ -152,19 +180,7 @@ export default {
         async printRemote() {
             try {
                 this.printing = true;
-                const res = await fetch('/inventar/print-queue?do=edit');
-                const html = await res.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const data = new FormData(doc.querySelector('form[method="post"]'));
-                data.set('wikitext', `${data.get('wikitext')}\n  * ${this.inventoryId}`);
-                data.set('summary', 'add entry');
-                data.set('do[save]', '1');
-                const result = await fetch('/inventar/print-queue?do=edit', {
-                    method: 'post',
-                    body: data
-                });
-
+                await remotePrint(this.inventoryId);
                 this.$refs.dialog.close();
             } catch (e) {
                 this.printing = false;

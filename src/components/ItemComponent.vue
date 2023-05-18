@@ -43,7 +43,9 @@
     <blockquote v-if="description">{{ description }}</blockquote>
     <location-component />
     <create-component edit />
-    <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" />
+    <create-component clone />
+    <create-component sub />
+    <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" :small="small" />
   </div>
 </template>
 
@@ -68,6 +70,7 @@ export default {
     category: String,
     origin: String,
     owner: String,
+    small: Boolean,
     date: String,
     serial: String,
     invoice: String,

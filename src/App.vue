@@ -1,6 +1,7 @@
 <template>
   <div class="invwiki" v-if="active">
     <scan-component />
+    <scan-component reprint />
     <create-component />
     <x-dialog />
   </div>

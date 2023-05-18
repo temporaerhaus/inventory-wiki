@@ -186,7 +186,8 @@
   opacity: .5;
 }
 
-.invwiki label[for='invwiki-form-lended'] {
+.invwiki label[for='invwiki-form-lended'],
+.invwiki label[for='invwiki-form-small'] {
   display: block;
   padding-bottom: 1em;
 }
@@ -415,7 +416,13 @@
 
   .invwiki .dialog {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    min-height: -moz-available;
+    min-height: -webkit-fill-available;
+    min-height: fill-available;
+    background-color: white;
   }
 }
 
