@@ -7,10 +7,10 @@
   <x-dialog title="Inventaraufkleber" icon="qrcode-plus" ref="dialog">
     <div class="invwiki-preview" :style="{ width: `${mm2pt(95)}pt`, height: `${mm2pt(24)}pt` }">
         <img :src="`data:image/svg+xml,${encodeURIComponent(svg)}`" v-if="svg" alt=""  :style="{ width: `${mm2pt(18)}pt`, height: 'auto', marginRight: `${mm2pt(3)}pt` }" />
-        <div :style="{ paddingTop: `${mm2pt(1.7)}pt`, paddingBottom: `${mm2pt(1.7)}pt`, paddingRight: `${mm2pt(1.7)}pt` }">
+        <div :style="{ paddingTop: `${mm2pt(1.7)}pt`, paddingBottom: `${mm2pt(1.7)}pt`, paddingRight: `${mm2pt(1.7)}pt`, width: `${mm2pt(95-18-13.45-3-3-2)}pt` }">
             <div style="font-size: 11pt; font-weight: bold;">{{ inventoryId }}</div>
-            <div :style="{paddingTop: `${mm2pt(.5)}pt`, paddingBottom: `${mm2pt(.5)}pt`}">{{ title }}</div>
-            <div style="font-size: 8pt; line-height: 8pt; white-space: pre-wrap;">{{ fullDescription }}</div>
+            <div :style="{paddingTop: `${mm2pt(.5)}pt`, paddingBottom: `${mm2pt(.5)}pt`, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}">{{ title }}</div>
+            <div style="font-size: 8pt; line-height: 8pt; white-space: pre-wrap; textOverflow: ellipsis; overflow: hidden; max-height: 42px;">{{ fullDescription }}</div>
         </div>
         <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: `${mm2pt(13.45)}pt`, height: 'auto', marginLeft: `${mm2pt(3)}pt` }" />
     </div>
@@ -41,11 +41,93 @@ import pdfMake from 'pdfmake/build/pdfmake';
 import { remotePrint } from '@/utils/api.js';
 
 pdfMake.fonts = {
-   freemono: {
+   Roboto: {
      bold: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono@main/fonts/ttf/RobotoMono-Bold.ttf',
      normal: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono@main/fonts/ttf/RobotoMono-Regular.ttf',
    },
 };
+
+function textMaxWidth(content) {
+  return new Promise((resolve) => pdfMake.createPdf({
+    defaultStyle: { font: 'Roboto' },
+    content: [{text: content, noWrap: true }],
+    pageMargins: [0, 0, 0, 0],
+  }).getStream({}, d => resolve(d.x)));
+}
+
+async function truncateText(text, options) {
+  const { maxWidth, fontSize } = options;
+  const { length } = text;
+  let b = length;
+  const trunc = (len) => {
+    len = Math.max(Math.round(len, 0), 1);
+    return len < length ? `${text.slice(0, len - 1)}…` : text;
+  };
+  const f = async (len) => (await textMaxWidth({ text: trunc(len), fontSize, })) - maxWidth;
+  let bx = await f(b);
+  if (bx > 0) {
+    let a = 0, ax = await f(0);
+    if (ax >= 0) {
+      return '…';
+    }
+    if (Math.abs(ax) < Math.abs(bx)) {
+      [a, ax, b, bx] = [b, bx, a, ax];
+    }
+    const xTol = 1;
+    let c = a, cx = ax, mflag = true, d, maxIter = 20;
+    while (maxIter-- && Math.abs(b - a) > xTol) {
+      const acx = ax - cx;
+      const bcx = bx - cx;
+      const abx = ax - bx;
+      let s = Math.abs(acx) > Number.EPSILON && Math.abs(bcx) > Number.EPSILON ?
+        a * bx * cx / (abx * acx) + b * ax * cx / (-abx * bcx) + c * ax * bx / (acx * bcx) :
+        b - bx * (b - a) / (bx - ax);
+      if (s < (3 * a + b) / 4 || s > b || (
+        mflag ?
+          (Math.abs(s - b) >= Math.abs(b - c) / 2 || Math.abs(b - c) < Math.abs(2 * Number.EPSILON * Math.abs(b))) :
+          (Math.abs(s - b) >= Math.abs(c - d) / 2 || Math.abs(c - d) < Math.abs(2 * Number.EPSILON * Math.abs(b)))
+      )) {
+        s = (a + b) / 2;
+        mflag = true;
+      } else {
+        mflag = false;
+      }
+
+      const sx = await f(s);
+      [d, c, cx] = [c, b, bx];
+      if (ax * sx < 0) {
+        [b, bx] = [s, sx];
+      } else {
+        [a, ax] = [s, sx];
+      }
+
+      if (Math.abs(ax) < Math.abs(bx)) {
+        [a, ax, b, bx] = [b, bx, a, ax];
+      }
+    }
+    return trunc(ax < bx ? a : b);
+  }
+  return text;
+};
+
+async function shortenDescription(text, options) {
+  const output = [];
+  const stack = text.split('\n');
+
+  while (stack.length > 0 && output.length < options.maxLines) {
+    let line = stack.shift();
+    const tmp = await truncateText(line, options);
+    const pos = tmp.indexOf('…');
+    if (pos >= 0) {
+      output.push(tmp.slice(0, pos));
+      stack.unshift(line.slice(pos));
+    } else if (tmp.length > 0) {
+      output.push(tmp);
+    }
+  }
+
+  return output.filter(e => e).slice(0, options.maxLines + 1).join('\n');
+}
 
 export default {
     data: () => ({
@@ -94,7 +176,7 @@ export default {
 
         async createPDF(id, title, description) {
             this.svg = await this.createQRCode(id);
-            return new Promise((resolve) => {
+            return new Promise(async (resolve) => {
                 const pdf = pdfMake.createPdf({
                     pageSize: {
                         width: this.small ? this.mm2pt(50) : this.mm2pt(95),
@@ -104,7 +186,7 @@ export default {
                     pageMargins: 0,
 
                     defaultStyle: {
-                        font: 'freemono',
+                        font: 'Roboto',
                         fontSize: 9,
                     },
 
@@ -124,11 +206,11 @@ export default {
                                 text: id.toUpperCase(),
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.4) ]
                             }, {
-                                text: title,
+                                text: await truncateText(title, { fontSize: 5, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3) }),
                                 fontSize: 5,
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.4) ],
                             }, {
-                                text: description,
+                                text: await shortenDescription(description, { fontSize: 4, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3), maxLines: 3 }),
                                 lineHeight: .8,
                                 fontSize: 4
                             }]
@@ -149,10 +231,11 @@ export default {
                                 text: id.toUpperCase(),
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ]
                             }, {
-                                text: title,
+                                text: await truncateText(title, { fontSize: 9, maxWidth: this.mm2pt(90 - 18 - 13.45 - 2) }),
+                                fontSize: 9,
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ],
                             }, {
-                                text: description,
+                                text: await shortenDescription(description, { fontSize: 8, maxWidth: this.mm2pt(90 - 18 - 13.45 - 2), maxLines: 3 }),
                                 lineHeight: .8,
                                 fontSize: 8
                             }]

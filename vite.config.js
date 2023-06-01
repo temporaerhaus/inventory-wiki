@@ -40,6 +40,6 @@ export default defineConfig({
     proxy: {
       '/lib': 'https://wiki.temporaerhaus.de/',
       '/inventar': 'https://wiki.temporaerhaus.de/',
-    },
+    }
   }
 })

@@ -37,8 +37,8 @@
       </label>
       <textarea id="invwiki-form-description" v-model="description" @focus="$refs.c?.close?.()"></textarea>
       <blockquote>
-        Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt und ist daher nur eine Zeile. 
-        Weitere Informationen zum Gegenstand und Anhänge können im nächsten Schritt bei der Wiki-Seite hinterlegt werden. 
+        Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt und ist daher nur eine Zeile.
+        Weitere Informationen zum Gegenstand und Anhänge können im nächsten Schritt bei der Wiki-Seite hinterlegt werden.
       </blockquote>
 
       <label for="invwiki-form-category">
@@ -138,7 +138,7 @@ import YAML from 'yaml';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import din6779 from '@/utils/din6779.js';
 
-import { SEP, PREFIX, nextNumber } from '@/utils/api.js';
+import { SEP, PREFIX, nextNumber, lock, release } from '@/utils/api.js';
 
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
 const YAML_REGEX = /```yaml\n(.*)\n```/s;
@@ -226,68 +226,82 @@ export default {
 
     async saveItem() {
       this.loading = true;
-      const res = await fetch(`${this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`}?do=edit`);
-      const html = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const data = new FormData(doc.querySelector('form[method="post"]'));
-      if (this.edit) {
-        if (!YAML_REGEX.test(data.get('wikitext'))) {
-          alert('Kein gültiger YAML-Block gefunden');
-          this.loading = false;
-          return;
+      try {
+        const token = await lock();
+        if (!this.edit) {
+          await this.refreshNumber();
         }
 
-        const yaml = YAML.parse(YAML_REGEX.exec(data.get('wikitext'))[1]);
-        yaml.description = this.description || '';
-        yaml.serial = this.serial || '';
-        yaml.invoice = this.invoice || '';
-        yaml.date = this.date || '';
-        yaml.category = this.category || '';
-        yaml.origin = this.origin || '';
-        yaml.owner = this.owner || '';
-        yaml.small = this.small || false;
+        const res = await fetch(`${this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`}?do=edit`);
+        const html = await res.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const data = new FormData(doc.querySelector('form[method="post"]'));
+        if (this.edit) {
+          if (!YAML_REGEX.test(data.get('wikitext'))) {
+            alert('Kein gültiger YAML-Block gefunden');
+            this.loading = false;
+            return;
+          }
 
-        data.set('summary', `edit metadata`);
-        data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
-      } else {
-        await this.refreshNumber();
+          const yaml = YAML.parse(YAML_REGEX.exec(data.get('wikitext'))[1]);
+          yaml.description = this.description || '';
+          yaml.serial = this.serial || '';
+          yaml.invoice = this.invoice || '';
+          yaml.date = this.date || '';
+          yaml.category = this.category || '';
+          yaml.origin = this.origin || '';
+          yaml.owner = this.owner || '';
+          yaml.small = this.small || false;
 
-        const yaml = {
-          inventory: true,
-          description: this.description || '',
-          serial: this.serial || '',
-          invoice: this.invoice || '',
-          date: this.date || '',
-          category: this.category || '',
-          origin: this.origin || '',
-          owner: this.owner || '',
-          small: this.small || false,
-          nominal: {},
-          temporary: {},
-        };
+          data.set('summary', `edit metadata`);
+          data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
+        } else {
+          if (data.get('wikitext')) {
+            throw new Error('Ziel Seite ist nicht leer');
+          }
 
-        data.set('wikitext', [
-          '<!DOCTYPE markdown>',
-          `# ${this.title}`,
-          '',
-          '```yaml',
-          YAML.stringify(yaml),
-          '```',
-          '',
-        ].join('\n'));
-      }
-      data.set('do[save]', '1');
-      await fetch(`${this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`}?do=edit`, {
-        method: 'post',
-        body: data
-      });
+          const yaml = {
+            inventory: true,
+            description: this.description || '',
+            serial: this.serial || '',
+            invoice: this.invoice || '',
+            date: this.date || '',
+            category: this.category || '',
+            origin: this.origin || '',
+            owner: this.owner || '',
+            small: this.small || false,
+            nominal: {},
+            temporary: {},
+          };
 
-      this.loading = false;
-      if (this.edit) {
-        location.reload();
-      } else {
-        location.href = `/${PREFIX}${SEP}${this.id}#print-label`;
+          data.set('wikitext', [
+            '<!DOCTYPE markdown>',
+            `# ${this.title}`,
+            '',
+            '```yaml',
+            YAML.stringify(yaml),
+            '```',
+            '',
+          ].join('\n'));
+        }
+        data.set('do[save]', '1');
+        await fetch(`${this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`}?do=edit`, {
+          method: 'post',
+          body: data
+        });
+
+        await release(token);
+
+        this.loading = false;
+        if (this.edit) {
+          location.reload();
+        } else {
+          location.href = `/${PREFIX}${SEP}${this.id}#print-label`;
+        }
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+        this.loading = false;
       }
     }
   },
