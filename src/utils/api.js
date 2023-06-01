@@ -33,7 +33,8 @@ export async function lock() {
     {
       const res = await fetch('/inventar/lock?do=export_raw');
       const data = await res.text();
-      if (data.split('/')[0] !== lock) {
+      if (data.split('/')[0] === lock) {
+        // lock acquired
         return lock;
       }
 

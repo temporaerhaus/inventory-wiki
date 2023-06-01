@@ -427,6 +427,14 @@
   display: none;
 }
 
+.invwiki-dialog-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: calc(95vh - 55px);
+  max-width: 90vw;
+  padding: 1em 1.5em;
+}
+
 @media only screen and (max-width: 768px) {
   .item-card {
     float: none;
@@ -443,6 +451,9 @@
 
   .invwiki .dialog {
     position: fixed;
+    display: flex;
+    flex-direction: column;
+    z-index: 999999;
     top: 0;
     left: 0;
     right: 0;
@@ -451,14 +462,11 @@
     min-height: fill-available;
     background-color: white;
   }
-}
 
-.invwiki-dialog-body {
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: calc(95vh - 55px);
-  max-width: 90vw;
-  padding: 1em 1.5em;
+  .invwiki-dialog-body {
+    max-height: auto;
+    height: 100%;
+  }
 }
 
 .invwiki-preview {
