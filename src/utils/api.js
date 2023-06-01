@@ -42,7 +42,7 @@ export async function lock() {
   } catch (e) {
     if (e.message === 'retry') {
       console.log('already locked, retrying later');
-      await new Promise(resolve => setTimeout(resolve), Math.round(Math.random() * LOCK_TIMEOUT));
+      await new Promise(resolve => setTimeout(resolve, Math.round(Math.random() * LOCK_TIMEOUT)));
       return lock();
     } else {
       throw e;
