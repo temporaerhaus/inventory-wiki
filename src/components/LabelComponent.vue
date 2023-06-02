@@ -207,17 +207,17 @@ export default {
                             margin: [this.mm2pt(1), this.mm2pt(.3), this.mm2pt(1), this.mm2pt(3)],
                             stack: [{
                                 bold: true,
-                                fontSize: 6,
+                                fontSize: 7,
                                 text: id.toUpperCase(),
-                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.4) ]
+                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.1) ]
                             }, {
-                                text: await truncateText(title, { fontSize: 5, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3) }),
-                                fontSize: 5,
-                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.4) ],
+                                text: await truncateText(title, { fontSize: 6, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3) }),
+                                fontSize: 6,
+                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.1) ],
                             }, {
-                                text: await shortenDescription(description, { fontSize: 4, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3), maxLines: 3 }),
+                                text: await shortenDescription(description, { fontSize: 6, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3), maxLines: 2 }),
                                 lineHeight: .8,
-                                fontSize: 4
+                                fontSize: 6
                             }]
                         }, {
                             svg: logo,
