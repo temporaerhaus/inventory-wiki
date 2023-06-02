@@ -1,5 +1,5 @@
 <template>
-  <div class="invwiki" v-if="active">
+  <div class="invwiki invwiki-toolbar" v-if="active">
     <scan-component />
     <scan-component reprint />
     <create-component />

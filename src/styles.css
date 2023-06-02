@@ -30,6 +30,10 @@
   text-rendering: optimizeLegibility;
 }
 
+.invwiki-toolbar {
+  padding-left: 1em;
+}
+
 /*
 @media (prefers-color-scheme: dark) {
   .invwiki {
@@ -490,4 +494,12 @@ ul.invwiki {
 
 ul.invwiki li>label {
   font-family: monospace;
+}
+
+.invwiki .dialog label {
+  display: block;
+  margin-top: 2em;
+}
+.invwiki .dialog label:first-child {
+  margin-top: 0em;
 }

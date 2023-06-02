@@ -18,13 +18,11 @@
 
   <x-dialog :title="edit ? 'Gegenstand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
     <div>
-      <template v-if="!edit">
-        <label for="invwiki-form-title">
-          <mdi-icon icon="toy-brick-outline" left title="Gegenstand" />
-          Gegenstand
-        </label>
-        <input id="invwiki-form-title" type="text" v-model="title" @focus="$refs.c?.close?.()" />
-      </template>
+      <label for="invwiki-form-title">
+        <mdi-icon icon="toy-brick-outline" left title="Gegenstand" />
+        Gegenstand
+      </label>
+      <input id="invwiki-form-title" type="text" v-model="title" @focus="$refs.c?.close?.()" />
 
       <template v-if="edit">
         <label for="invwiki-form-id">Inventarnummer</label>
@@ -124,9 +122,9 @@
         <input id="invwiki-form-id" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
       </template>
 
-      <div style="text-align: right; margin-right: -.5em; padding-bottom: 20em;">
-        <button @click="saveItem()" :disabled="disabled" v-if="!edit">Gegenstand Anlegen</button>
-        <button @click="saveItem()" :disabled="disabled" v-else>Speichern</button>
+      <div style="text-align: right; padding-bottom: 5em; padding-right: 1em;">
+        <button @click="saveItem()" :disabled="disabled" v-if="!edit">💾 Gegenstand Anlegen</button>
+        <button @click="saveItem()" :disabled="disabled" v-else>💾 Speichern</button>
       </div>
     </div>
   </x-dialog>
@@ -251,7 +249,7 @@ export default {
           yaml.small = this.small || false;
 
           data.set('summary', `edit metadata`);
-          data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
+          data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```').replace(/\n# .*/, `\n# ${this.title}`));
         } else {
           if (data.get('wikitext')) {
             throw new Error('Ziel Seite ist nicht leer');
