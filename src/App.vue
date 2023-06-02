@@ -110,16 +110,20 @@ export default {
               this.previousInteraction = e.shiftKey ? null : c.id;
             });
 
-            const label = e.innerText.slice(0, 12);
-            const link = e.innerText.slice(12);
+            const res = /\[([^\]]*)\][^\[]*\[inventar:([^\]]*)\] (.*)/.exec(e.innerText);
 
             const l = document.createElement('label');
             l.setAttribute('for', id);
-            l.innerText = label;
-            e.innerText = link;
+            l.innerText = `[${res[1]}]`;
+
+            const s = document.createElement('span');
+            s.innerText = `[${res[2]}]`;
+
+            e.innerText = res[3];
 
             e.insertAdjacentElement('beforebegin', c);
             e.insertAdjacentElement('beforebegin', l);
+            e.insertAdjacentElement('afterbegin', s);
           }
         }
       }

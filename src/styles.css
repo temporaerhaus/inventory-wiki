@@ -464,14 +464,16 @@ ul.invwiki {
   list-style-type: none;
 }
 
-ul.invwiki li>label {
+ul.invwiki li a>span, ul.invwiki li label {
   font-family: monospace;
+  margin-right: .5em;
 }
 
 .invwiki .dialog label {
   display: block;
   margin-top: 2em;
 }
+
 .invwiki .dialog label:first-child {
   margin-top: 0em;
 }
