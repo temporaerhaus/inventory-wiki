@@ -4,7 +4,11 @@
     Inventaraufkleber Erstellen
   </button>
 
-  <x-dialog title="Inventaraufkleber" icon="qrcode-plus" ref="dialog" :loading="printing">
+  <x-dialog icon="qrcode-plus" ref="dialog" :loading="printing">
+    <template #title>
+      Inventaraufkleber
+      <span title="Kleiner Aufkleber" style="float: right;margin-right:2em;" v-if="small">🤏</span>
+    </template>
     <div class="invwiki-preview" :style="{ width: `${mm2pt(95)}pt`, height: `${mm2pt(24)}pt` }">
         <img :src="`data:image/svg+xml,${encodeURIComponent(svg)}`" v-if="svg" alt=""  :style="{ width: `${mm2pt(18)}pt`, height: 'auto', marginRight: `${mm2pt(3)}pt` }" />
         <div :style="{ paddingTop: `${mm2pt(1.7)}pt`, paddingBottom: `${mm2pt(1.7)}pt`, paddingRight: `${mm2pt(1.7)}pt`, width: `${mm2pt(95-18-13.45-3-3-2)}pt` }">
@@ -143,6 +147,7 @@ export default {
         small: Boolean,
         inventoryId: String,
         description: String,
+        serial: String,
         owner: String
     },
 
@@ -275,10 +280,17 @@ export default {
 
     computed: {
         fullDescription() {
+            let description = this.description;
+
             if (String(this.inventoryId).startsWith('L-') && this.owner) {
-                return `Besitzer*in: ${this.owner}\n${this.description}`;
+                description = `Besitzer*in: ${this.owner}\n${description}`;
             }
-            return this.description;
+
+            if (this.serial) {
+                description = `S/N: ${this.serial}\n${description}`;
+            }
+
+            return description;
         }
 
     }

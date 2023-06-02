@@ -124,7 +124,7 @@
         <input id="invwiki-form-id" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
       </template>
 
-      <div style="text-align: right; margin-right: -.5em;">
+      <div style="text-align: right; margin-right: -.5em; padding-bottom: 20em;">
         <button @click="saveItem()" :disabled="disabled" v-if="!edit">Gegenstand Anlegen</button>
         <button @click="saveItem()" :disabled="disabled" v-else>Speichern</button>
       </div>

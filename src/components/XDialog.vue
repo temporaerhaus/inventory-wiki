@@ -3,7 +3,7 @@
     <div class="dialog">
       <header>
         <mdi-icon :icon="icon" v-if="icon" left />
-        {{ title }}
+        <slot name="title">{{ title }}</slot>
 
         <button @click="close()">
           <mdi-icon icon="close" color="white" />

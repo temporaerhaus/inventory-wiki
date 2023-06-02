@@ -1,5 +1,6 @@
 <template>
   <div class="invwiki item-card">
+    <span v-if="small" title="Kleiner Aufkleber" style="float: right; margin-right: 1em;">🤏</span>
     <ul>
       <li title="Kategorie" v-if="category">
         <mdi-icon icon="tag-outline" left title="Kategorie" />
@@ -45,7 +46,7 @@
     <create-component edit />
     <create-component clone />
     <create-component sub />
-    <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" :small="small" />
+    <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" :small="small" :serial="serial" />
   </div>
 </template>
 
