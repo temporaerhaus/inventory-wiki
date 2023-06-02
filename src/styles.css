@@ -482,3 +482,11 @@
 .invwiki-preview > div {
   flex-grow: 1;
 }
+
+ul.invwiki {
+  list-style-type: none;
+}
+
+ul.invwiki li>label {
+  font-family: monospace;
+}

@@ -109,7 +109,11 @@ export async function remotePrint(inventoryId) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const data = new FormData(doc.querySelector('form[method="post"]'));
-  data.set('wikitext', `${data.get('wikitext')}\n  * ${inventoryId}`);
+  if (Array.isArray(inventoryId)) {
+    data.set('wikitext', `${data.get('wikitext')}\n  * ${inventoryId.join('\n  * ')}`);
+  } else {
+    data.set('wikitext', `${data.get('wikitext')}\n  * ${inventoryId}`);
+  }
   data.set('summary', 'add entry');
   data.set('do[save]', '1');
   await fetch('/inventar/print-queue?do=edit', {
