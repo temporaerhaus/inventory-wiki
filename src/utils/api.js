@@ -5,7 +5,7 @@ const REGEX = new RegExp(`^[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
 export const PREFIX = 'inventar';
 export const SEP = '/';
 
-const LOCK_TIMEOUT = 90 * 1000;
+const LOCK_TIMEOUT = 10 * 1000;
 
 export async function lock() {
   try {
@@ -83,6 +83,7 @@ export async function fetchItems() {
   const data = await res.text();
   const parser = new DOMParser();
   const doc = parser.parseFromString(data, 'text/html');
+  console.log([...doc.querySelectorAll('a[data-wiki-id]')]);
 
   return [...doc.querySelectorAll('a[data-wiki-id]')]
     .map(e => String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase().split('/').pop())
@@ -102,6 +103,7 @@ export async function fetchLocations() {
 }
 
 export async function remotePrint(inventoryId) {
+  const token = await lock();
   const res = await fetch('/inventar/print-queue?do=edit');
   const html = await res.text();
   const parser = new DOMParser();
@@ -114,4 +116,5 @@ export async function remotePrint(inventoryId) {
     method: 'post',
     body: data
   });
+  await release(token);
 }

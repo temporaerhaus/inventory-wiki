@@ -181,10 +181,6 @@ export default {
       if (this.edit || this.sub) {
         return;
       }
-      if (import.meta.env.MODE === 'development') {
-        this.number = '000002';
-        return;
-      }
       this.number = await nextNumber();
     },
 

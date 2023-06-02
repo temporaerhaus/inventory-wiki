@@ -66,7 +66,7 @@ export default {
     },
 
     id() {
-      return (import.meta.env.MODE === 'development' ? document.querySelector('#dev-inv-id')?.innerHTML?.trim() : this.active && location.pathname.replaceAll(':', '/').split('/').pop()).toUpperCase();
+      return String(this.active && location.pathname.replaceAll(':', '/').split('/').pop()).toUpperCase();
     },
 
     title() {

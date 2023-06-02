@@ -4,7 +4,7 @@
     Inventaraufkleber Erstellen
   </button>
 
-  <x-dialog title="Inventaraufkleber" icon="qrcode-plus" ref="dialog">
+  <x-dialog title="Inventaraufkleber" icon="qrcode-plus" ref="dialog" :loading="printing">
     <div class="invwiki-preview" :style="{ width: `${mm2pt(95)}pt`, height: `${mm2pt(24)}pt` }">
         <img :src="`data:image/svg+xml,${encodeURIComponent(svg)}`" v-if="svg" alt=""  :style="{ width: `${mm2pt(18)}pt`, height: 'auto', marginRight: `${mm2pt(3)}pt` }" />
         <div :style="{ paddingTop: `${mm2pt(1.7)}pt`, paddingBottom: `${mm2pt(1.7)}pt`, paddingRight: `${mm2pt(1.7)}pt`, width: `${mm2pt(95-18-13.45-3-3-2)}pt` }">
@@ -264,6 +264,7 @@ export default {
             try {
                 this.printing = true;
                 await remotePrint(this.inventoryId);
+                this.printing = false;
                 this.$refs.dialog.close();
             } catch (e) {
                 this.printing = false;
