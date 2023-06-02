@@ -8,9 +8,9 @@
     Inventaraufkleber Scannen
   </button>
 
-  <x-dialog title="Inventaraufkleber Scannen" icon="qrcode-scan" ref="dialog" @close="stopScan()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
+  <x-dialog title="Inventaraufkleber Scannen" icon="qrcode-scan" ref="dialog" @close="stopScan()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)" v-if="id">
     <input type="text" autofocus placeholder="V-XX012345..." ref="scan" />
-    <div id="qrcode-scanner"></div>
+    <div :id="id"></div>
   </x-dialog>
 </template>
 
@@ -25,10 +25,12 @@ export default {
   },
 
   data: () => ({
+    id: null,
     scanner: null,
   }),
 
   mounted() {
+    this.id = `qrcode-scan-${(Math.random() + 1).toString(36).substring(7)}`;
     if (location.hash === '#scan') {
       history.replaceState('', '', '#');
       this.startScan();
@@ -36,9 +38,10 @@ export default {
   },
 
   methods: {
-    startScan() {
-      this.$refs.dialog.show();
-      this.scanner = new Html5QrcodeScanner('qrcode-scanner', {
+    async startScan() {
+      await this.$refs.dialog.show();
+      this.scanner = new Html5QrcodeScanner(this.id, {
+        rememberLastUsedCamera: true,
         formatsToSupport: [0],
         fps: 1,
       });

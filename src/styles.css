@@ -283,6 +283,7 @@
 
 .invwiki .dialog blockquote {
   margin-top: 0;
+  width: calc(100% - 4em);
 }
 
 .invwiki .dialog {
