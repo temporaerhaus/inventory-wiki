@@ -54,11 +54,20 @@ export default {
       }
     },
 
-    onScanSuccess(decodedText) {
+    async onScanSuccess(decodedText) {
       if (this.reprint) {
-        remotePrint(decodedText)
-          .then(() => this.$refs.dialog.close())
-          .catch((e) => alert(`Fehler: ${e.message}`));
+        try {
+          this.$refs.scan.value = '';
+          const res = await fetch(`/inventar/${decodedText}`);
+          if (res.status === 404) {
+            throw new Error('Gegenstand existiert nicht');
+          }
+          await remotePrint(decodedText);
+        } catch (e) {
+          alert(`Fehler: ${e.message}`);
+        } finally {
+          await this.$refs.dialog.close();
+        }
       } else if (/^[SVL]-[A-Z]{2}[0-9]{6}(-[A-Z])?$/.test(decodedText)) {
         // new inventory number
         location.pathname = `/inventar/${decodedText}`;

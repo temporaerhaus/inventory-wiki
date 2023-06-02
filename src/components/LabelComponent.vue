@@ -231,8 +231,8 @@ export default {
                                 text: id.toUpperCase(),
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ]
                             }, {
-                                text: await truncateText(title, { fontSize: 9, maxWidth: this.mm2pt(90 - 18 - 13.45 - 2) }),
                                 fontSize: 9,
+                                text: await truncateText(title, { fontSize: 9, maxWidth: this.mm2pt(90 - 18 - 13.45 - 2) }),
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ],
                             }, {
                                 text: await shortenDescription(description, { fontSize: 8, maxWidth: this.mm2pt(90 - 18 - 13.45 - 2), maxLines: 3 }),
