@@ -8,21 +8,25 @@
 <script>
 import {
   mdiClose,
+  mdiBarcode,
   mdiPrinter,
   mdiCalendar,
   mdiTagOutline,
   mdiQrcodePlus,
   mdiQrcodeScan,
   mdiUndoVariant,
+  mdiShapeOutline,
   mdiClockOutline,
   mdiBasketUnfill,
   mdiHomeMapMarker,
   mdiToyBrickOutline,
   mdiMapClockOutline,
   mdiPoundBoxOutline,
+  mdiNumericPositive1,
   mdiContentDuplicate,
   mdiSquareEditOutline,
   mdiCloudPrintOutline,
+  mdiContentSaveOutline,
   mdiFileDocumentOutline,
   mdiFileDownloadOutline,
   mdiToyBrickPlusOutline,
@@ -32,6 +36,7 @@ import {
   mdiSubdirectoryArrowRight,
   mdiAccountQuestionOutline,
   mdiContentSaveAlertOutline,
+  mdiSortAlphabeticalDescending,
 } from '@mdi/js';
 
 export default {
@@ -46,21 +51,25 @@ export default {
   data: () => ({
     icons: {
       mdiClose,
+      mdiBarcode,
       mdiPrinter,
       mdiCalendar,
       mdiTagOutline,
       mdiQrcodePlus,
       mdiQrcodeScan,
       mdiUndoVariant,
+      mdiShapeOutline,
       mdiClockOutline,
       mdiBasketUnfill,
       mdiHomeMapMarker,
       mdiToyBrickOutline,
       mdiMapClockOutline,
       mdiPoundBoxOutline,
+      mdiNumericPositive1,
       mdiContentDuplicate,
       mdiSquareEditOutline,
       mdiCloudPrintOutline,
+      mdiContentSaveOutline,
       mdiFileDocumentOutline,
       mdiFileDownloadOutline,
       mdiToyBrickPlusOutline,
@@ -70,6 +79,7 @@ export default {
       mdiSubdirectoryArrowRight,
       mdiAccountQuestionOutline,
       mdiContentSaveAlertOutline,
+      mdiSortAlphabeticalDescending,
     }
   }),
 

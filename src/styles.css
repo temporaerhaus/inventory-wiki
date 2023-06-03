@@ -469,7 +469,7 @@ ul.invwiki li a>span, ul.invwiki li label {
   margin-right: .5em;
 }
 
-.invwiki .dialog label {
+.invwiki .dialog label, .invwiki .dialog .invwiki-autocomplete {
   display: block;
   margin-top: 2em;
 }

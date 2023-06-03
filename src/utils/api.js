@@ -83,7 +83,6 @@ export async function fetchItems() {
   const data = await res.text();
   const parser = new DOMParser();
   const doc = parser.parseFromString(data, 'text/html');
-  console.log([...doc.querySelectorAll('a[data-wiki-id]')]);
 
   return [...doc.querySelectorAll('a[data-wiki-id]')]
     .map(e => String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase().split('/').pop())

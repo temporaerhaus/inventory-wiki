@@ -4,7 +4,7 @@
       <mdi-icon :icon="icon" left :title="label" v-if="icon" />
       {{ label }}
     </label>
-    <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" @focus="onArrowDown" />
+    <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" @focus="onFocus" ref="input" />
     <ul v-show="isOpen" class="invwiki-autocomplete-results">
       <li class="loading" v-if="loading">
         Loading results...
@@ -133,8 +133,10 @@ export default {
     },
 
     onArrowDown(e, direction=1) {
-      e.stopPropagation();
-      e.preventDefault();
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
 
       this.isOpen = true;
       this.arrowCounter += direction;
@@ -150,6 +152,11 @@ export default {
 
     onArrowUp(e) {
       this.onArrowDown(e, -1);
+    },
+
+    onFocus() {
+      this.$refs.input.scrollIntoView({ block: 'start', inline: 'nearest' });
+      requestAnimationFrame(() => this.onArrowDown());
     },
 
     onEnter(e) {

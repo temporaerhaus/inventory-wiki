@@ -88,7 +88,7 @@
       <input id="invwiki-form-invoice" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
 
       <template v-if="!edit">
-        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub">
+        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub">
           <template #group="item">
             <b>{{ item.group.group }}:</b>
             <div>{{ item.group.text }}</div>
@@ -106,25 +106,40 @@
           {{ classification.text }}
         </blockquote>
 
-        <label for="invwiki-form-number">Fortlaufende Nummer</label>
+        <label for="invwiki-form-number">
+          <mdi-icon icon="numeric-positive1" left title="Fortlaufende Nummer" />
+          Fortlaufende Nummer
+        </label>
         <input id="invwiki-form-number" type="text" :value="number" disabled />
 
-        <label for="invwiki-form-suffix">Optionales Suffix</label>
+        <label for="invwiki-form-suffix">
+          <mdi-icon icon="sort-alphabetical-descending" left title="Optionales Suffix" />
+          Optionales Suffix
+        </label>
         <select id="invwiki-form-suffix" v-model="suffix" @focus="$refs.c?.close?.()">
           <option value=""></option>
-          <option v-for="s in Array(26).fill(null).map((_, i) => String.fromCharCode(65+i))" :key="s" :value="s">{{s}}</option>
+          <option v-for="s in suffixOptions" :key="s" :value="s">{{s}}</option>
         </select>
         <blockquote>
           Wenn Netzteile ein eigenes Label erhalten, aber nicht extra inventarisiert werden, so endet der QR-Code und die Nummer auf -N. Bei sonstigen Zubehör, auf -Z (und dann das Alphabet rückwärts).
         </blockquote>
 
-        <label for="invwiki-form-id">Zu Vergebene Inventarnummer</label>
+        <label for="invwiki-form-id">
+          <mdi-icon icon="barcode" left title="Rechnung" />
+          Zu Vergebene Inventarnummer
+        </label>
         <input id="invwiki-form-id" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
       </template>
 
-      <div style="text-align: right; padding-bottom: 5em; padding-right: 1em;">
-        <button @click="saveItem()" :disabled="disabled" v-if="!edit">💾 Gegenstand Anlegen</button>
-        <button @click="saveItem()" :disabled="disabled" v-else>💾 Speichern</button>
+      <div style="text-align: right; padding-top: 1em; padding-bottom: 5em; padding-right: 1em;">
+        <button @click="saveItem()" :disabled="disabled" v-if="!edit">
+          <mdi-icon icon="toy-brick-plus-outline" left title="Gegenstand Anlegen" />
+          Gegenstand Anlegen
+        </button>
+        <button @click="saveItem()" :disabled="disabled" v-else>
+          <mdi-icon icon="content-save-outline" left title="Speichern" />
+          Speichern
+        </button>
       </div>
     </div>
   </x-dialog>
@@ -171,7 +186,8 @@ export default {
     lended: null,
     small: null,
 
-    classification: null
+    classification: null,
+    suffixOptions: ['N', ...Array(26).fill(null).map((_, i) => String.fromCharCode(90-i)).filter(e => e !== 'N')]
   }),
 
   methods: {
