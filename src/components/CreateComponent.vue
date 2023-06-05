@@ -57,7 +57,7 @@
       </label>
       <input id="invwiki-form-owner" type="text" v-model="owner" @focus="$refs.c?.close?.()" />
 
-      <label for="invwiki-form-lended">
+      <label for="invwiki-form-lended" v-if="!edit">
         <input id="invwiki-form-lended" type="checkbox" v-model="lended" />
         <mdi-icon icon="account-question-outline" left />
         Leihgabe
