@@ -477,3 +477,7 @@ ul.invwiki li a>span, ul.invwiki li label {
 .invwiki .dialog label:first-child {
   margin-top: 0em;
 }
+
+.invwiki video {
+  width: min(90vw, 400px);
+}

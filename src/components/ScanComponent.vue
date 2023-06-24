@@ -8,14 +8,18 @@
     Inventaraufkleber Scannen
   </button>
 
-  <x-dialog title="Inventaraufkleber Scannen" icon="qrcode-scan" ref="dialog" @close="stopScan()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)" v-if="id">
+  <x-dialog title="Inventaraufkleber Scannen" icon="qrcode-scan" ref="dialog" @close="stopScan()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
     <input type="text" autofocus placeholder="V-XX012345..." ref="scan" />
-    <div :id="id"></div>
+    <video ref="scanner"></video>
+    <div style="margin-top: -5.5em; padding: 2em; text-align: right; margin-bottom: .5em;">
+      <mdi-icon :icon="!flash ? 'flashlight' : 'flashlight-off'" style="filter: invert(1); scale: 200%; margin-right: 2em;" @click="toggleFlash()" v-if="hasFlash || true" />
+      <mdi-icon icon="sync-circle" style="filter: invert(1); scale: 200%;" @click="swapCamera()" v-if="cameras?.length > 1" />
+    </div>
   </x-dialog>
 </template>
 
 <script>
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import QrScanner from 'qr-scanner';
 
 import { remotePrint } from '@/utils/api.js';
 
@@ -25,36 +29,50 @@ export default {
   },
 
   data: () => ({
-    id: null,
     scanner: null,
+    cameras: null,
+    current: null,
+    hasFlash: false,
+    flash: false
   }),
 
   mounted() {
-    this.id = `qrcode-scan-${(Math.random() + 1).toString(36).substring(7)}`;
     if (location.hash === '#scan') {
       history.replaceState('', '', '#');
       this.startScan();
     }
   },
 
+  destroy() {
+    this.scanner?.stop?.();
+    this.scanner?.destroy?.();
+  },
+
   methods: {
     async startScan() {
       await this.$refs.dialog.show();
-      this.scanner = new Html5QrcodeScanner(this.id, {
-        rememberLastUsedCamera: true,
-        formatsToSupport: [0],
-        fps: 1,
+      this.scanner = new QrScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data), {
+        highlightScanRegion: true
       });
-      this.scanner.render(this.onScanSuccess);
+      await this.scanner.start();
+      this.cameras = await QrScanner.listCameras();
+      this.hasFlash = await this.scanner.hasFlash();
+      this.flash = await this.scanner.isFlashOn();
     },
 
     stopScan() {
-      if (this.scanner) {
-        this.scanner.clear();
-      }
+      this.scanner?.stop?.();
+      this.scanner?.destroy?.();
+      this.scanner = null;
+      this.cameras = null;
+      this.current = null;
     },
 
     async onScanSuccess(decodedText) {
+      if (!decodedText) {
+        return;
+      }
+
       if (this.reprint) {
         try {
           this.$refs.scan.value = '';
@@ -75,6 +93,19 @@ export default {
         location.href = `/start?do=search&q=${encodeURIComponent(decodedText)}`;
       }
     },
+
+    async swapCamera() {
+      this.current = ((this.current || 0) + 1) % this.cameras.length;
+      console.log(this.current);
+      await this.scanner.setCamera(this.cameras[this.current].id);
+      this.hasFlash = await this.scanner.hasFlash();
+      this.flash = await this.scanner.isFlashOn();
+    },
+
+    async toggleFlash() {
+      await this.scanner.toggleFlash();
+      this.flash = await this.scanner.isFlashOn();
+    }
   }
 }
 </script>
