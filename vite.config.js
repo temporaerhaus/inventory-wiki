@@ -82,7 +82,7 @@ export default defineConfig({
         proxyTimeout: 10000,
         changeOrigin: true
       },
-      '/inventar': {
+      '^\/(?!src|node_modules|@id|@vite).*': {
         target: 'https://wiki.temporaerhaus.de/',
         configure: handleAuthenticatedProxy,
         proxyTimeout: 10000,
