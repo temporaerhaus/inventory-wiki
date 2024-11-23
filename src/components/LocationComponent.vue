@@ -6,7 +6,20 @@
 
   <x-dialog :title="`Ort Aktualisieren (${$parent.inventoryId})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
-      <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Ort" autofocus />
+      <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Ort" autofocus>
+        <template #group="item">
+          <b>{{ item.group.group }}:</b>
+          <div>{{ item.group.text }}</div>
+        </template>
+
+        <template #item="item">
+          <b>{{ item.value }}:</b>
+          <div>
+            {{ item.text }}
+            <pre v-if="item.example">{{item.example}}</pre>
+          </div>
+        </template>
+      </search-autocomplete>
 
       <label for="invwiki-location-description">Weitere Infos</label>
       <textarea id="invwiki-location-description" v-model="description" />
@@ -54,8 +67,9 @@ export default {
     async open() {
       this.$refs.dialog.show();
       this.loading = true;
-      this.location = this.$parent.temporary?.location || this.$parent.nominal?.location || '';
-      this.description = this.$parent.temporary?.description || this.$parent.nominal?.description || '';
+
+      this.location = this.$parent?.temporary?.location || this.$parent?.nominal?.location || '';
+      this.description = this.$parent?.temporary?.description || this.$parent?.nominal?.description || '';
 
       this.locations = (await Promise.all([
         fetchLocations(),

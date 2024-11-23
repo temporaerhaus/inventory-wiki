@@ -11,14 +11,18 @@
       </li>
       <template v-for="(result, i) in filteredResults" :key="i">
         <li class="invwiki-autocomplete-result invwiki-autocomplete-group" v-if="result.first">
-          <slot name="group" v-bind="result">
-            {{ result.group }}
-          </slot>
+          <b>{{ result.group.group }}:</b>
+          <div>{{ result.group.text }}</div>
         </li>
         <li @click="setResult(result)" :class="`invwiki-autocomplete-result invwiki-autocomplete-indent ${i === arrowCounter ? 'is-active' : ''}`">
-          <slot name="item" v-bind="result">
-            {{ result }}
-          </slot>
+          <template v-if="typeof(result) === 'object'">
+            <b>{{ result.value }}:</b>
+            <div>
+              {{ result.text }}
+              <pre v-if="result.example">{{result.example}}</pre>
+            </div>
+          </template>
+          <div style="grid-column: 1 / 3" v-else>{{ result }}</div>
         </li>
       </template>
     </ul>

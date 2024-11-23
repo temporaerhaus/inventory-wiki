@@ -88,20 +88,7 @@
       <input id="invwiki-form-invoice" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
 
       <template v-if="!edit">
-        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub">
-          <template #group="item">
-            <b>{{ item.group.group }}:</b>
-            <div>{{ item.group.text }}</div>
-          </template>
-
-          <template #item="item">
-            <b>{{ item.value }}:</b>
-            <div>
-              {{ item.text }}
-              <pre v-if="item.example">{{item.example}}</pre>
-            </div>
-          </template>
-        </search-autocomplete>
+        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub" />
         <blockquote v-if="classification?.text">
           {{ classification.text }}
         </blockquote>
