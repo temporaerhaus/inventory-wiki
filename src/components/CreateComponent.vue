@@ -254,7 +254,7 @@ export default {
           data.set('summary', `edit metadata`);
           data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```').replace(/\n# .*/, `\n# ${this.title}`));
         } else {
-          if (data.get('wikitext')) {
+          if (data.get('wikitext') && data.get('wikitext') !== "Please use the inventory system to create items") {
             throw new Error('Ziel Seite ist nicht leer');
           }
 
