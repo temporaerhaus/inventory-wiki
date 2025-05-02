@@ -45,7 +45,7 @@
 <script>
 import YAML from 'yaml';
 
-import { fetchLocations, fetchItems } from '@/utils/api.js';
+import { fetchLocations, fetchItems, writeItem } from '@/utils/api.js';
 
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 
@@ -75,6 +75,7 @@ export default {
         fetchLocations(),
         fetchItems()
       ])).flat();
+
       this.loading = false;
     },
 
@@ -84,53 +85,45 @@ export default {
       }
 
       this.loading = true;
-      const res = await fetch(`${location.pathname}?do=edit`);
-      const html = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      const data = new FormData(doc.querySelector('form[method="post"]'));
-      if (!REGEX.test(data.get('wikitext'))) {
-        alert('Kein gültiger YAML-Block gefunden');
+      try {
+        await writeItem(location.pathname, {}, {
+          summary: `location update (mode=${mode})`,
+          replacer: (yaml) => {
+            switch (mode) {
+              case 0:
+                yaml.temporary = {
+                  location: this.location,
+                  description: this.description,
+                  timestamp: new Date().toJSON()
+                };
+                yaml.nominal = yaml.nominal ?? {};
+                break;
+
+              case 1:
+                yaml.nominal = {
+                  location: this.location,
+                  description: this.description,
+                  timestamp: new Date().toJSON()
+                };
+                yaml.temporary = yaml.temporary ?? {};
+                break;
+
+              case 2:
+                yaml.temporary = {};
+                yaml.nominal = yaml.nominal ?? {};
+                break;
+            }
+
+            return yaml;
+          }
+        });
+
+        location.reload();
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+      } finally {
         this.loading = false;
-        return;
       }
-
-      const yaml = YAML.parse(REGEX.exec(data.get('wikitext'))[1]);
-      switch (mode) {
-        case 0:
-          yaml.temporary = {
-            location: this.location,
-            description: this.description,
-            timestamp: new Date().toJSON()
-          };
-          yaml.nominal = yaml.nominal || {};
-          break;
-
-        case 1:
-          yaml.nominal = {
-            location: this.location,
-            description: this.description,
-            timestamp: new Date().toJSON()
-          };
-          yaml.temporary = yaml.temporary || {};
-          break;
-
-        case 2:
-          yaml.temporary = {};
-          yaml.nominal = yaml.nominal || {};
-          break;
-      }
-
-      data.set('wikitext', data.get('wikitext').replace(REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```'));
-      data.set('do[save]', '1');
-      data.set('summary', `location update (mode=${mode})`);
-      await fetch(`${location.pathname}?do=edit`, {
-        method: 'post',
-        body: data
-      });
-
-      this.loading = false;
-      location.reload();
     }
   }
 }

@@ -133,15 +133,12 @@
 </template>
 
 <script>
-import YAML from 'yaml';
-
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import din6779 from '@/utils/din6779.js';
 
-import { SEP, PREFIX, nextNumber, lock, release } from '@/utils/api.js';
+import { SEP, PREFIX, nextNumber, writeItem } from '@/utils/api.js';
 
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
-const YAML_REGEX = /```yaml\n(.*)\n```/s;
 
 export default {
   props: {
@@ -223,74 +220,25 @@ export default {
 
     async saveItem() {
       this.loading = true;
+
       try {
-        const token = await lock();
-        if (!this.edit) {
-          await this.refreshNumber();
-        }
-
-        const res = await fetch(`${this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`}?do=edit`);
-        const html = await res.text();
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, 'text/html');
-        const data = new FormData(doc.querySelector('form[method="post"]'));
-        if (this.edit) {
-          if (!YAML_REGEX.test(data.get('wikitext'))) {
-            alert('Kein gültiger YAML-Block gefunden');
-            this.loading = false;
-            return;
-          }
-
-          const yaml = YAML.parse(YAML_REGEX.exec(data.get('wikitext'))[1]);
-          yaml.description = this.description || '';
-          yaml.serial = this.serial || '';
-          yaml.invoice = this.invoice || '';
-          yaml.date = this.date || '';
-          yaml.category = this.category || '';
-          yaml.origin = this.origin || '';
-          yaml.owner = this.owner || '';
-          yaml.small = this.small || false;
-
-          data.set('summary', `edit metadata`);
-          data.set('wikitext', data.get('wikitext').replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml) + '\n```').replace(/\n# .*/, `\n# ${this.title}`));
-        } else {
-          if (data.get('wikitext') && data.get('wikitext') !== "Please use the inventory system to create items") {
-            throw new Error('Ziel Seite ist nicht leer');
-          }
-
-          const yaml = {
-            inventory: true,
-            description: this.description || '',
-            serial: this.serial || '',
-            invoice: this.invoice || '',
-            date: this.date || '',
-            category: this.category || '',
-            origin: this.origin || '',
-            owner: this.owner || '',
-            small: this.small || false,
-            nominal: {},
-            temporary: {},
-          };
-
-          data.set('wikitext', [
-            '<!DOCTYPE markdown>',
-            `# ${this.title}`,
-            '',
-            '```yaml',
-            YAML.stringify(yaml),
-            '```',
-            '',
-          ].join('\n'));
-        }
-        data.set('do[save]', '1');
-        await fetch(`${this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`}?do=edit`, {
-          method: 'post',
-          body: data
+        await writeItem(this.edit ? location.pathname : `/${PREFIX}${SEP}${this.id}`, {
+          title: this.title || '',
+          description: this.description || '',
+          serial: this.serial || '',
+          invoice: this.invoice || '',
+          date: this.date || '',
+          category: this.category || '',
+          origin: this.origin || '',
+          owner: this.owner || '',
+          small: this.small || false,
+        }, {
+          create: !this.edit,
+          summary: this.edit ? 'update metadata' : 'create inventory item'
         });
 
-        await release(token);
-
         this.loading = false;
+
         if (this.edit) {
           location.reload();
         } else {

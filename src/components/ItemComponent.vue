@@ -40,6 +40,10 @@
         {{ temporary.description }}
         <mdi-icon icon="clock-outline" :title="`Zuletzt geändert: ${temporary.timestamp}`" style="float: right; margin-right: 1em;" color="#999999" />
       </li>
+      <li :title="`Zuletzt Gesehen am: ${lastSeenAt}`" v-if="lastSeenAt">
+        <mdi-icon icon="eye-outline" left :title="`Zuletzt Gesehen am: ${lastSeenAt}`" />
+        <b>{{ lastSeenAtRelative }}</b>
+      </li>
     </ul>
     <blockquote v-if="description">{{ description }}</blockquote>
     <location-component />
@@ -54,6 +58,21 @@
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
+
+// taken from https://stackoverflow.com/a/78704662
+const millisecondsPerSecond = 1000;
+const secondsPerMinute = 60;
+const minutesPerHour = 60;
+const hoursPerDay = 24;
+const daysPerWeek = 7;
+const intervals = {
+    'week':         millisecondsPerSecond * secondsPerMinute * minutesPerHour * hoursPerDay * daysPerWeek,
+    'day':          millisecondsPerSecond * secondsPerMinute * minutesPerHour * hoursPerDay,
+    'hour':         millisecondsPerSecond * secondsPerMinute * minutesPerHour,
+    'minute':       millisecondsPerSecond * secondsPerMinute,
+    'second':       millisecondsPerSecond,
+}
+const relativeDateFormat = new Intl.RelativeTimeFormat('de', { style: 'long' });
 
 export default {
 
@@ -76,7 +95,8 @@ export default {
     serial: String,
     invoice: String,
     nominal: Object,
-    temporary: Object
+    temporary: Object,
+    lastSeenAt: String,
   },
 
   data: () => ({
@@ -89,6 +109,17 @@ export default {
   },
 
   computed: {
+    lastSeenAtRelative() {
+      const diff = new Date(this.lastSeenAt) - new Date();
+
+      for (const interval in intervals) {
+          if (intervals[interval] <= Math.abs(diff)) {
+              return relativeDateFormat.format(Math.trunc(diff / intervals[interval]), interval);
+          }
+      }
+
+      return relativeDateFormat.format(diff / 1000, 'second');
+    }
   }
 }
 </script>

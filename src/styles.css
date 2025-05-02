@@ -384,12 +384,12 @@
   float: right;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   padding-block: .5em;
-  padding-top: 0em;
 }
 .item-card ul {
   list-style: none;
   margin-left: 0;
   padding-top: .25em;
+  padding-left: 1.25em !important;
 }
 .item-card > button {
   margin-left: 1em;
@@ -399,6 +399,9 @@
 .invwiki.item-card > blockquote {
   margin-left: 1em;
   width: calc(100% - 4em);
+}
+.item-card ul > li > svg:nth-child(1) {
+  margin-left: -1.75em; 
 }
 .processed {
   display: none;
