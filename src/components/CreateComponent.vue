@@ -205,6 +205,9 @@ export default {
       const res = ID_REGEX.exec(this.$parent.inventoryId);
 
       this.number = res?.[3] || '000000';
+      if (this.clone) {
+        await this.refreshNumber();
+      }
       this.classification = {
         value: res?.[2] || '??',
         text: res?.[2] || '??',
