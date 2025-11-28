@@ -34,6 +34,7 @@ export default defineConfig({
       fileName: 'inventory-wiki',
       formats: ['iife']
     },
+    sourcemap: true,
   },
   define: {
     'process.env': {}
