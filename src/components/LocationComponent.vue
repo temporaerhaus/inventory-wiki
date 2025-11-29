@@ -86,7 +86,7 @@ export default {
 
       this.loading = true;
       try {
-        await writeItem(location.pathname, {}, {
+        await writeItem(location.pathname, { title: this.$parent.title }, {
           summary: `location update (mode=${mode})`,
           replacer: (yaml) => {
             switch (mode) {
