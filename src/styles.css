@@ -207,7 +207,8 @@
 }
 
 .invwiki label[for='invwiki-form-lended'],
-.invwiki label[for='invwiki-form-small'] {
+.invwiki label[for='invwiki-form-small'],
+.invwiki label[for='invwiki-form-container'] {
   display: block;
   padding-bottom: 1em;
 }

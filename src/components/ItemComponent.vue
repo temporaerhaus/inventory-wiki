@@ -1,6 +1,7 @@
 <template>
   <div class="invwiki item-card">
     <span v-if="small" title="Kleiner Aufkleber" style="float: right; margin-right: 1em;">🤏</span>
+    <span v-if="container" title="Kann andere Gegenstände beherbergen" style="float: right; margin-right: 1em;">📦</span>
     <ul>
       <li title="Kategorie" v-if="category">
         <mdi-icon icon="tag-outline" left title="Kategorie" />
@@ -91,6 +92,7 @@ export default {
     origin: String,
     owner: String,
     small: Boolean,
+    container: Boolean,
     date: String,
     serial: String,
     invoice: String,

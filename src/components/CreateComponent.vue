@@ -69,6 +69,12 @@
         Kleines Label
       </label>
 
+      <label for="invwiki-form-container">
+        <input id="invwiki-form-container" type="checkbox" v-model="container" />
+        <mdi-icon icon="package-variant" left />
+        Kann andere Gegenstände beherbergen
+      </label>
+
       <label for="invwiki-form-date">
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
         Anschaffungsdatum
@@ -169,6 +175,7 @@ export default {
     owner: '',
     lended: null,
     small: null,
+    container: null,
 
     classification: null,
     suffixOptions: ['N', ...Array(26).fill(null).map((_, i) => String.fromCharCode(90-i)).filter(e => e !== 'N')]
@@ -201,6 +208,7 @@ export default {
       this.origin = this.$parent.origin || '';
       this.owner = this.$parent.owner || '';
       this.small = this.$parent.small || null;
+      this.container = this.$parent.container || null;
 
       const res = ID_REGEX.exec(this.$parent.inventoryId);
 
@@ -235,6 +243,7 @@ export default {
           origin: this.origin || '',
           owner: this.owner || '',
           small: this.small || false,
+          container: this.container || false,
         }, {
           create: !this.edit,
           summary: this.edit ? 'update metadata' : 'create inventory item'
