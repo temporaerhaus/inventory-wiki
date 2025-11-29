@@ -128,7 +128,7 @@ export async function fetchLocations() {
 }
 
 export async function searchItems(query) {
-  const res = await fetch('/' + PREFIX + new URLSearchParams({
+  const res = await fetch('/' + PREFIX + '?' + new URLSearchParams({
       do: 'search',
       // sf: 1,
       q: `${query} @${PREFIX}`
