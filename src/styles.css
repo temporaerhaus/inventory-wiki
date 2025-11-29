@@ -472,13 +472,15 @@ ul.invwiki li a>span, ul.invwiki li label {
   margin-right: .5em;
 }
 
-.invwiki .dialog label, .invwiki .dialog .invwiki-autocomplete {
+.invwiki .dialog label,
+.invwiki .dialog .invwiki-autocomplete {
   display: block;
   margin-top: 2em;
 }
 
-.invwiki .dialog label:first-child {
-  margin-top: 0em;
+.invwiki .dialog label:first-child,
+.invwiki .dialog .invwiki-autocomplete:first-child {
+  margin-top: 0;
 }
 
 .invwiki video {
@@ -578,3 +580,4 @@ ul.invwiki li a>span, ul.invwiki li label {
     text-align: right;
   }
 }
+
