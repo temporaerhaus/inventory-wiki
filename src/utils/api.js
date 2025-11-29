@@ -127,6 +127,20 @@ export async function fetchLocations() {
   return [...doc.querySelectorAll('#dokuwiki__content li')].map(e => e.innerText.trim());
 }
 
+export async function searchItems(query) {
+  const res = await fetch('/' + PREFIX + new URLSearchParams({
+      do: 'search',
+      // sf: 1,
+      q: `${query} @${PREFIX}`
+  }).toString());
+  const data = await res.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(data, 'text/html');
+
+  return [...doc.querySelectorAll('.search_results a[data-wiki-id]')]
+    .map(e => String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase().split('/').pop())
+};
+
 export async function remotePrint(inventoryId) {
   const token = await lock();
   const res = await fetch('/inventar/print-queue?do=edit');

@@ -45,7 +45,7 @@
 <script>
 import YAML from 'yaml';
 
-import { fetchLocations, fetchItems, writeItem } from '@/utils/api.js';
+import { fetchLocations, fetchItems, searchItems, writeItem } from '@/utils/api.js';
 
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 
@@ -73,7 +73,8 @@ export default {
 
       this.locations = (await Promise.all([
         fetchLocations(),
-        fetchItems()
+        // fetchItems(),
+        searchItems('"container: true"'),
       ])).flat();
 
       this.loading = false;
