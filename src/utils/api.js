@@ -138,7 +138,7 @@ export async function searchItems(query) {
   const doc = parser.parseFromString(data, 'text/html');
 
   return [...doc.querySelectorAll('.search_results a[data-wiki-id]')]
-    .map(e => String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase().split('/').pop())
+    .map(e => String(e.getAttribute('data-wiki-id')).replaceAll(':', '/').toUpperCase().split('/').pop())
 };
 
 export async function remotePrint(inventoryId) {
