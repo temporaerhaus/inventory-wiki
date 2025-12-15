@@ -30,6 +30,14 @@
   text-rendering: optimizeLegibility;
 }
 
+.invwiki-main  {
+  width: calc(100% - 24.5em);
+  float: left;
+}
+.invwiki-main > ul {
+  padding-left: 1em;
+}
+
 .invwiki-toolbar {
   padding-left: 1em;
 }
@@ -243,7 +251,6 @@
   margin: 1.5em 0em;
   padding: 0.5em 1em;
   font-style: italic;
-  width: 350px;
 }
 
 .invwiki .overlay {
@@ -378,6 +385,29 @@
 @keyframes invwiki-spin {
   0%, 15% { transform: rotate(0); }
 	100% { transform: rotate(360deg); }
+}
+
+.invwiki-sidebar {
+  width: 20em;
+  float: right;
+  display: flex;
+  flex-direction: column;
+  gap: 2em;
+}
+
+.invwiki-sidebar > .item-card {
+  width: 100%;
+  float: unset;
+}
+
+.location-card {
+  width: 20em;
+  float: right;
+  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  padding-block: .5em;
+  color: #856404;
+  background-color: #fff3cd;
+  border-color: #ffeeba;
 }
 
 .item-card {

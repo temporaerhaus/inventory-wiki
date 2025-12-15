@@ -141,6 +141,36 @@ export async function searchItems(query) {
     .map(e => String(e.getAttribute('data-wiki-id')).replaceAll(':', '/').toUpperCase().split('/').pop())
 };
 
+export async function fetchInventoryItem(inventoryId) {
+  const res = await fetch(`/${PREFIX}/${inventoryId}`);
+  const data = await res.text();
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(data, 'text/html');
+
+  for (const e of doc.querySelectorAll('#dokuwiki__content .code.yaml')) {
+    try {
+      const data = YAML.parse(e.innerText);
+      if (data.inventory) {
+        data.title = doc.querySelector('#dokuwiki__content h1')?.innerText || '';
+
+        const date = new Date(data.date);
+        if (!(date instanceof Date && !isNaN(date))) {
+          data.date = '';
+        } else {
+          date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+          data.date = date.toISOString().slice(0, 10);
+        }
+
+        return data;
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return null;
+};
+
 export async function remotePrint(inventoryId) {
   const token = await lock();
   const res = await fetch('/inventar/print-queue?do=edit');

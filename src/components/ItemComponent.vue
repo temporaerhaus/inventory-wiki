@@ -1,61 +1,85 @@
 <template>
-  <div class="invwiki item-card">
-    <span v-if="small" title="Kleiner Aufkleber" style="float: right; margin-right: 1em;">🤏</span>
-    <span v-if="container" title="Kann andere Gegenstände beherbergen" style="float: right; margin-right: 1em;">📦</span>
-    <ul>
-      <li title="Kategorie" v-if="category">
-        <mdi-icon icon="tag-outline" left title="Kategorie" />
-        {{ category }}
-      </li>
-      <li title="Ursprung" v-if="origin">
-        <mdi-icon icon="basket-unfill" left title="Ursprung" />
-        {{ origin }}
-      </li>
-      <li title="Besitzer*in" v-if="owner">
-        <mdi-icon icon="account-question-outline" left title="Besitzer*in" />
-        {{ owner }}
-      </li>
-      <li title="Anschaffungsdatum" v-if="date">
-        <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
-        {{ date }}
-      </li>
-      <li title="Seriennummer" v-if="serial">
-        <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
-        {{ serial }}
-      </li>
-      <li title="Rechnung" v-if="invoice">
-        <mdi-icon icon="file-document-outline" left title="Rechnung" />
-        {{ invoice }}
-      </li>
-      <li title="Soll-Ort" v-if="nominal?.location">
-        <mdi-icon icon="map-marker-alert-outline" left title="Soll-Ort" />
-        <b>{{ nominal.location }}</b>
-        <b v-if="nominal?.description">:</b>
-        {{ nominal.description }}
-        <mdi-icon icon="clock-outline" :title="`Zuletzt geändert: ${nominal.timestamp}`" style="float: right; margin-right: 1em;" color="#999999" />
-      </li>
-      <li title="Aktueller Ort" v-if="temporary?.location">
-        <mdi-icon icon="map-clock-outline" left title="Aktueller Ort" />
-        <b>{{ temporary.location }}</b>
-        <b v-if="temporary?.description">:</b>
-        {{ temporary.description }}
-        <mdi-icon icon="clock-outline" :title="`Zuletzt geändert: ${temporary.timestamp}`" style="float: right; margin-right: 1em;" color="#999999" />
-      </li>
-      <li :title="`Zuletzt Gesehen am: ${lastSeenAt}`" v-if="lastSeenAt">
-        <mdi-icon icon="eye-outline" left :title="`Zuletzt Gesehen am: ${lastSeenAt}`" />
-        <b>{{ lastSeenAtRelative }}</b>
+  <div class="invwiki invwiki-main">
+    <b v-if="description">💬 Kurzbeschreibung:</b>
+    <blockquote v-if="description">{{ description }}</blockquote>
+
+    <b v-if="container">📦 Beinhaltete Gegenstände:</b>
+    <ul v-if="container">
+      <li v-for="(item, id) in containedItems" :key="id">
+        <a :href="id">
+          <b>{{ id }}:</b>
+          {{ item.title }}
+        </a>
       </li>
     </ul>
-    <blockquote v-if="description">{{ description }}</blockquote>
-    <location-component />
-    <create-component edit />
-    <create-component clone />
-    <create-component sub />
-    <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" :small="small" :serial="serial" />
   </div>
+  <div class="invwiki invwiki-sidebar">
+    <div class="invwiki item-card location-card">
+      <ul>
+        <li title="Soll-Ort" v-if="nominal?.location">
+          <mdi-icon icon="map-marker-alert-outline" left title="Soll-Ort" />
+          <a v-if="nominalLocation" :href="nominal.location"><b>{{ nominal.location }}: </b></a>
+          <b v-else>{{ nominal.location }}</b>
+          <span v-if="nominalLocation">{{ nominalLocation.title }}</span>
+          <mdi-icon icon="clock-outline" :title="`Zuletzt geändert: ${nominal.timestamp}`" style="float: right; margin-right: 1em;" color="#999999" />
+          <blockquote>{{ nominal.description }}</blockquote>
+        </li>
+        <li title="Aktueller Ort" v-if="temporary?.location">
+          <mdi-icon icon="map-clock-outline" left title="Aktueller Ort" />
+          <a v-if="temporaryLocation" :href="temporary.location"><b>{{ temporary.location }}: </b></a>
+          <b v-else>{{ temporary.location }}</b>
+          <span v-if="temporaryLocation">{{ temporaryLocation.title }}</span>
+          <mdi-icon icon="clock-outline" :title="`Zuletzt geändert: ${temporary.timestamp}`" style="float: right; margin-right: 1em;" color="#999999" />
+          <blockquote>{{ temporary.description }}</blockquote>
+        </li>
+        <li :title="`Zuletzt Gesehen am: ${lastSeenAt}`" v-if="lastSeenAt">
+          <mdi-icon icon="eye-outline" left :title="`Zuletzt Gesehen am: ${lastSeenAt}`" />
+          <b>{{ lastSeenAtRelative }}</b>
+        </li>
+      </ul>
+      <location-component />
+    </div>
+
+    <div class="invwiki item-card">
+      <span v-if="small" title="Kleiner Aufkleber" style="float: right; margin-right: 1em;">🤏</span>
+      <span v-if="container" title="Kann andere Gegenstände beherbergen" style="float: right; margin-right: 1em;">📦</span>
+      <ul>
+        <li title="Kategorie" v-if="category">
+          <mdi-icon icon="tag-outline" left title="Kategorie" />
+          {{ category }}
+        </li>
+        <li title="Ursprung" v-if="origin">
+          <mdi-icon icon="basket-unfill" left title="Ursprung" />
+          {{ origin }}
+        </li>
+        <li title="Besitzer*in" v-if="owner">
+          <mdi-icon icon="account-question-outline" left title="Besitzer*in" />
+          {{ owner }}
+        </li>
+        <li title="Anschaffungsdatum" v-if="date">
+          <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
+          {{ date }}
+        </li>
+        <li title="Seriennummer" v-if="serial">
+          <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
+          {{ serial }}
+        </li>
+        <li title="Rechnung" v-if="invoice">
+          <mdi-icon icon="file-document-outline" left title="Rechnung" />
+          {{ invoice }}
+        </li>
+      </ul>
+      <create-component edit />
+      <create-component clone />
+      <create-component sub />
+      <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" :small="small" :serial="serial" />
+    </div>
+  </div>
+  <div style="clear: both"></div>
 </template>
 
 <script>
+import { fetchInventoryItem, searchItems } from '@/utils/api.js';
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
@@ -102,9 +126,24 @@ export default {
   },
 
   data: () => ({
+    containedItems: [],
+    nominalLocation: null,
+    temporaryLocation: null,
   }),
 
-  mounted() {
+  async mounted() {
+    this.containedItems = [];
+    if (this.container) {
+      this.containedItems = Object.fromEntries(
+        await Promise.all((await searchItems(`location: ${this.inventoryId}`)).map(async (id) => [id, await fetchInventoryItem(id)]))
+      );
+    }
+    if (this.nominal?.location) {
+      this.nominalLocation = await fetchInventoryItem(this.nominal?.location);
+    }
+    if (this.temporary?.location) {
+      this.temporaryLocation = await fetchInventoryItem(this.temporary?.location);
+    }
   },
 
   methods: {
