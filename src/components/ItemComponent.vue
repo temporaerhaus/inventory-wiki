@@ -4,8 +4,10 @@
     <blockquote v-if="description">{{ description }}</blockquote>
 
     <b v-if="container">📦 Beinhaltete Gegenstände:</b>
+    <small v-if="Object.values(selected)?.filter?.(e => e)?.length > 0">&emsp;(Auswahl: {{ Object.values(selected).filter(e => e).length }} von {{ Object.keys(containedItems).length }})</small>
     <ul v-if="container">
       <li v-for="(item, id) in containedItems" :key="id">
+        <input type="checkbox" v-model="selected[id]">
         <a :href="id">
           <b>{{ id }}:</b>
           {{ item.title }}
@@ -126,6 +128,7 @@ export default {
   },
 
   data: () => ({
+    selected: {},
     containedItems: [],
     nominalLocation: null,
     temporaryLocation: null,
