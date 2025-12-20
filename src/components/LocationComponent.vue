@@ -135,6 +135,8 @@ export default {
         if (this.singleItem) {
           location.reload();
         } else {
+          // refresh cache by loading all items
+          await Promise.all(this.selected.map(e => fetch(e)));
           alert(`${this.selected.length} ${this.selected.length > 1 ? 'Gegenstände' : 'Gegenstand'} aktualisiert`);
           this.$refs.dialog.close();
         }
