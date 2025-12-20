@@ -30,12 +30,15 @@
   text-rendering: optimizeLegibility;
 }
 
-.invwiki-main  {
-  width: calc(100% - 24.5em);
-  float: left;
+.invwiki-main {
+  display: grid;
+  gap: 2em;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
 }
-.invwiki-main > ul {
-  padding-left: 1em;
+
+.invwiki-main > div > ul {
+  margin-top: 1em !important;
+  padding-left: 1.5em !important;
 }
 
 .invwiki-toolbar {
@@ -387,22 +390,7 @@
 	100% { transform: rotate(360deg); }
 }
 
-.invwiki-sidebar {
-  width: 20em;
-  float: right;
-  display: flex;
-  flex-direction: column;
-  gap: 2em;
-}
-
-.invwiki-sidebar > .item-card {
-  width: 100%;
-  float: unset;
-}
-
 .location-card {
-  width: 20em;
-  float: right;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   padding-block: .5em;
   color: #856404;
@@ -411,8 +399,6 @@
 }
 
 .item-card {
-  width: 20em;
-  float: right;
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   padding-block: .5em;
 }
@@ -448,7 +434,6 @@
 
 @media only screen and (max-width: 768px) {
   .item-card {
-    float: none;
     margin-top: 0.5em;
     margin-bottom: 1.5em;
     width: 100%;

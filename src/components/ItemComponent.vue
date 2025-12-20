@@ -1,21 +1,21 @@
 <template>
   <div class="invwiki invwiki-main">
-    <b v-if="description">💬 Kurzbeschreibung:</b>
-    <blockquote v-if="description">{{ description }}</blockquote>
+    <div>
+      <b v-if="description">💬 Kurzbeschreibung:</b>
+      <blockquote v-if="description">{{ description }}</blockquote>
 
-    <b v-if="container">📦 Beinhaltete Gegenstände:</b>
-    <small v-if="Object.values(selected)?.filter?.(e => e)?.length > 0">&emsp;(Auswahl: {{ Object.values(selected).filter(e => e).length }} von {{ Object.keys(containedItems).length }})</small>
-    <ul v-if="container">
-      <li v-for="(item, id) in containedItems" :key="id">
-        <input type="checkbox" v-model="selected[id]">
-        <a :href="id">
-          <b>{{ id }}:</b>
-          {{ item.title }}
-        </a>
-      </li>
-    </ul>
-  </div>
-  <div class="invwiki invwiki-sidebar">
+      <b v-if="container">📦 Beinhaltete Gegenstände:</b>
+      <small v-if="Object.values(selected)?.filter?.(e => e)?.length > 0">&emsp;(Auswahl: {{ Object.values(selected).filter(e => e).length }} von {{ Object.keys(containedItems).length }})</small>
+      <ul v-if="container">
+        <li v-for="(item, id) in containedItems" :key="id">
+          <input type="checkbox" v-model="selected[id]">
+          <a :href="id">
+            <b>{{ id }}:</b>
+            {{ item.title }}
+          </a>
+        </li>
+      </ul>
+    </div>
     <div class="invwiki item-card location-card">
       <ul>
         <li title="Soll-Ort" v-if="nominal?.location">
@@ -77,7 +77,7 @@
       <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" :small="small" :serial="serial" />
     </div>
   </div>
-  <div style="clear: both"></div>
+  <hr>
 </template>
 
 <script>
