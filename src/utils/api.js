@@ -255,9 +255,13 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
         '',
       ].join('\n'));
     } else {
-      const wikitext = data.get('wikitext')
-        .replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml, { sortMapEntries }) + '\n```')
-        .replace(/\n# .*/, `\n# ${entry.title}`);
+      let wikitext = data.get('wikitext')
+        .replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml, { sortMapEntries }) + '\n```');
+
+      if (entry.title) {
+        wikitext = wikitext.replace(/\n# .*/, `\n# ${entry.title}`);
+      }
+
       data.set('wikitext', wikitext);
     }
 

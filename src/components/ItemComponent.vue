@@ -39,7 +39,7 @@
           <b>{{ lastSeenAtRelative }}</b>
         </li>
       </ul>
-      <location-component />
+      <location-component single-item />
     </div>
 
     <div class="invwiki item-card">

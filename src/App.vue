@@ -3,10 +3,11 @@
     <scan-component />
     <scan-component reprint />
     <create-component />
-    <button @click="printRemote()" v-if="selected > 0">
+    <button @click="printRemote()" v-if="selected.length > 0">
       <mdi-icon icon="cloud-print-outline" left />
-      {{ selected > 1 ? selected : '' }} ausgewählte{{  selected > 1 ? '' : 'n' }} Aufkleber Remote Drucken
+      {{ selected.length > 1 ? selected.length : '' }} ausgewählte{{  selected.length > 1 ? '' : 'n' }} Aufkleber Remote Drucken
     </button>
+    <location-component :selected="selected" />
     <x-dialog ref="dialog" :loading="loading" />
   </div>
 </template>
@@ -21,9 +22,11 @@ import XDialog from '@/components/XDialog.vue';
 import ItemComponent from '@/components/ItemComponent.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
+import LocationComponent from '@/components/LocationComponent.vue';
 
 export default {
   components: {
+    LocationComponent,
     CreateComponent,
     ScanComponent
   },
@@ -175,7 +178,7 @@ export default {
     },
 
     selected() {
-      return Object.values(this.selection).filter(e => e).length;
+      return Object.entries(this.selection).filter(e => e[1]).map(e => e[0].replace(/^check:/, '/').replace(/:/g, '/'));
     }
   }
 }

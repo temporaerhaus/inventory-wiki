@@ -1,10 +1,15 @@
 <template>
-  <button @click="open">
+  <button @click="open" v-if="singleItem">
     <mdi-icon icon="home-map-marker" left />
     Ort Aktualisieren
   </button>
 
-  <x-dialog :title="`Ort Aktualisieren (${$parent.inventoryId})`" icon="home-map-marker" ref="dialog" :loading="loading">
+  <button @click="open" v-if="selected?.length > 0">
+    <mdi-icon icon="home-map-marker" left />
+    {{ selected.length > 1 ? selected.length : '' }} ausgewählte{{  selected.length > 1 ? '' : 'n' }} einen neuen Ort zuweisen
+  </button>
+
+  <x-dialog :title="`Ort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
       <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Ort" autofocus>
         <template #group="item">
@@ -43,17 +48,17 @@
 </template>
 
 <script>
-import YAML from 'yaml';
-
-import { fetchLocations, fetchItems, searchItems, writeItem } from '@/utils/api.js';
-
+import { fetchLocations, searchItems, writeItem } from '@/utils/api.js';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
-
-const REGEX = /```yaml\n(.*)\n```/s;
 
 export default {
   components: {
     SearchAutocomplete
+  },
+
+  props: {
+    selected: Array,
+    singleItem: Boolean
   },
 
   data: () => ({
@@ -68,12 +73,16 @@ export default {
       this.$refs.dialog.show();
       this.loading = true;
 
-      this.location = this.$parent?.temporary?.location || this.$parent?.nominal?.location || '';
-      this.description = this.$parent?.temporary?.description || this.$parent?.nominal?.description || '';
+      if (this.singleItem) {
+        this.location = this.$parent?.temporary?.location || this.$parent?.nominal?.location || '';
+        this.description = this.$parent?.temporary?.description || this.$parent?.nominal?.description || '';
+      } else {
+        this.location = '';
+        this.description = '';
+      }
 
       this.locations = (await Promise.all([
         fetchLocations(),
-        // fetchItems(),
         searchItems('"container: true"'),
       ])).flat();
 
@@ -87,39 +96,48 @@ export default {
 
       this.loading = true;
       try {
-        await writeItem(location.pathname, { title: this.$parent.title }, {
-          summary: `location update (mode=${mode})`,
-          replacer: (yaml) => {
-            switch (mode) {
-              case 0:
-                yaml.temporary = {
-                  location: this.location,
-                  description: this.description,
-                  timestamp: new Date().toJSON()
-                };
-                yaml.nominal = yaml.nominal ?? {};
-                break;
+        await Promise.all(
+          (this.singleItem ? [location.pathname] : this.selected).map((e) => {
+            return writeItem(e, {}, {
+              summary: `location update (mode=${mode})`,
+              replacer: (yaml) => {
+                switch (mode) {
+                  case 0:
+                    yaml.temporary = {
+                      location: this.location,
+                      description: this.description,
+                      timestamp: new Date().toJSON()
+                    };
+                    yaml.nominal = yaml.nominal ?? {};
+                    break;
 
-              case 1:
-                yaml.nominal = {
-                  location: this.location,
-                  description: this.description,
-                  timestamp: new Date().toJSON()
-                };
-                yaml.temporary = yaml.temporary ?? {};
-                break;
+                  case 1:
+                    yaml.nominal = {
+                      location: this.location,
+                      description: this.description,
+                      timestamp: new Date().toJSON()
+                    };
+                    yaml.temporary = yaml.temporary ?? {};
+                    break;
 
-              case 2:
-                yaml.temporary = {};
-                yaml.nominal = yaml.nominal ?? {};
-                break;
-            }
+                  case 2:
+                    yaml.temporary = {};
+                    yaml.nominal = yaml.nominal ?? {};
+                    break;
+                }
 
-            return yaml;
-          }
-        });
+                return yaml;
+              }
+            });
+          })
+        );
 
-        location.reload();
+        if (this.singleItem) {
+          location.reload();
+        } else {
+          alert(`${this.selected.length} ${this.selected.length > 1 ? 'Gegenstände' : 'Gegenstand'} aktualisiert`);
+          this.$refs.dialog.close();
+        }
       } catch (e) {
         alert(`Fehler: ${e.message}`);
       } finally {

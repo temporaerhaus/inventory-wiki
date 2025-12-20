@@ -316,6 +316,7 @@
     height: 60px;
     inset: 0;
     width: 100px;
+    z-index: 999999;
 }
 
 .invwiki .loader-line-wrap {
