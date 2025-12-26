@@ -5,16 +5,10 @@
       <blockquote v-if="description">{{ description }}</blockquote>
 
       <b v-if="container">📦 Beinhaltete Gegenstände:</b>
+      <button v-if="container && Object.values(containedItems || {}).some(e => e.container)" :class="`invwiki-expand-all ${loading ? 'loading' : ''}`" title="Alle ausklappen" @click="expand(null, null, true)" :disabled="loading"></button>
+      <button v-else-if="container && loading && Object.values(containedItems || {}).length == 0" :class="`invwiki-expand-all loading`" disabled></button>
       <small v-if="Object.values(selected)?.filter?.(e => e)?.length > 0">&emsp;(Auswahl: {{ Object.values(selected).filter(e => e).length }} von {{ Object.keys(containedItems).length }})</small>
-      <ul v-if="container">
-        <li v-for="(item, id) in containedItems" :key="id">
-          <input type="checkbox" v-model="selected[id]">
-          <a :href="id">
-            <b>{{ id }}:</b>
-            {{ item.title }}
-          </a>
-        </li>
-      </ul>
+      <ContainedItemsList v-if="container" :containedItems="containedItems" v-model="selected" @expand="expand($event.id, $event.item, false)" :loading="loading" />
     </div>
     <div class="invwiki item-card location-card">
       <ul>
@@ -85,6 +79,7 @@ import { fetchInventoryItem, searchItems } from '@/utils/api.js';
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
+import ContainedItemsList from '@/components/ContainedItemsList.vue';
 
 // taken from https://stackoverflow.com/a/78704662
 const millisecondsPerSecond = 1000;
@@ -102,11 +97,11 @@ const intervals = {
 const relativeDateFormat = new Intl.RelativeTimeFormat('de', { style: 'long' });
 
 export default {
-
   components: {
     LabelComponent,
     CreateComponent,
-    LocationComponent
+    LocationComponent,
+    ContainedItemsList
   },
 
   props: {
@@ -129,27 +124,82 @@ export default {
 
   data: () => ({
     selected: {},
+    loading: false,
     containedItems: [],
     nominalLocation: null,
     temporaryLocation: null,
   }),
 
   async mounted() {
+    this.loading = true;
     this.containedItems = [];
-    if (this.container) {
-      this.containedItems = Object.fromEntries(
-        await Promise.all((await searchItems(`location: ${this.inventoryId}`)).map(async (id) => [id, await fetchInventoryItem(id)]))
-      );
-    }
     if (this.nominal?.location) {
       this.nominalLocation = await fetchInventoryItem(this.nominal?.location);
     }
     if (this.temporary?.location) {
       this.temporaryLocation = await fetchInventoryItem(this.temporary?.location);
     }
+    if (this.container) {
+      Promise.all((await searchItems(`location: ${this.inventoryId}`)).map(async (id) => [id, {
+        ...await fetchInventoryItem(id),
+        expanded: false,
+        depth: 0
+      }])).then((res) => {
+        this.containedItems = Object.fromEntries(res);
+        this.loading = false;
+      });
+    } else {
+      this.loading = false;
+    }
   },
 
   methods: {
+    async expand(parentId = null, parent = null, recursive = true) {
+      console.log('expand', parentId, parent);
+      if (!this.container) {
+        return;
+      }
+
+      if (!recursive) {
+        this.loading = true;
+      }
+
+      if (parentId === null || parent === null) {
+        this.loading = true;
+        try {
+          await Promise.all(Object.entries(this.containedItems || {}).map(([id, e]) => this.expand(id, e, recursive)));
+        } catch (e) {
+          console.log(e);
+        } finally {
+          this.loading = false;
+        }
+      }
+
+      // do not go deeper than 10 layers, to deal with potential circular links
+      if (parent?.container && !parent?.children && (parent?.depth || 0) < 10) {
+        parent.expanded = true;
+        parent.children = Object.fromEntries(
+          await Promise.all(
+            (await searchItems(`location: ${parentId}`))
+              .map(async (id) => [id, {
+                ...await fetchInventoryItem(id),
+                expanded: true,
+                depth: (parent.depth || 0) + 1
+              }])
+          )
+        );
+
+        if (this.recursive) {
+          await Promise.all(Object.entries(parent.children || {}).map(([id, e]) => this.expand(id, e, recursive)));
+        }
+      } else if (parent?.container && parent?.children && !parent?.expanded) {
+        parent.expanded = true;
+      }
+
+      if (!recursive) {
+        this.loading = false;
+      }
+    }
   },
 
   computed: {
