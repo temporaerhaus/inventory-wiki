@@ -8,17 +8,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@mdi/js": "^7.1.96",
-    "fuse.js": "^6.6.2",
-    "pdfmake": "^0.2.7",
+    "@mdi/js": "^7.4.47",
+    "fuse.js": "^7.1.0",
+    "pdfmake": "^0.2.21",
     "qr-scanner": "^1.4.2",
     "qrcode": "^1.5.1",
-    "uuid": "^9.0.0",
-    "vue": "^3.2.38",
-    "yaml": "^2.2.1"
+    "uuid": "^13.0.0",
+    "vue": "^3.5.26",
+    "yaml": "^2.8.2"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^3.0.3",
-    "vite": "^3.1.9"
+    "@vitejs/plugin-vue": "^6.0.3",
+    "vite": "^7.3.0"
   }
 }
