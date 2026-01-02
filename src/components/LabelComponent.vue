@@ -283,7 +283,7 @@ export default {
             let description = this.description;
 
             if (String(this.inventoryId).startsWith('L-') && this.owner) {
-                description = `Besitzer*in: ${this.owner}\n${description}`;
+                description = `Eigentümer*in: ${this.owner}\n${description}`;
             }
 
             if (this.serial) {

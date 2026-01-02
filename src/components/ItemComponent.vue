@@ -48,8 +48,8 @@
           <mdi-icon icon="basket-unfill" left title="Ursprung" />
           {{ origin }}
         </li>
-        <li title="Besitzer*in" v-if="owner">
-          <mdi-icon icon="account-question-outline" left title="Besitzer*in" />
+        <li title="Eigentümer*in" v-if="owner">
+          <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
           {{ owner }}
         </li>
         <li title="Anschaffungsdatum" v-if="date">

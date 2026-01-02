@@ -52,8 +52,8 @@
       <input id="invwiki-form-origin" type="text" v-model="origin" @focus="$refs.c?.close?.()" />
 
       <label for="invwiki-form-owner">
-        <mdi-icon icon="account-question-outline" left title="Besitzer*in" />
-        Besitzer*in
+        <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
+        Eigentümer*in
       </label>
       <input id="invwiki-form-owner" type="text" v-model="owner" @focus="$refs.c?.close?.()" />
 
