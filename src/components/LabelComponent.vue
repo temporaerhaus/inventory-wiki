@@ -19,7 +19,7 @@
         <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: `${mm2pt(13.45)}pt`, height: 'auto', marginLeft: `${mm2pt(3)}pt` }" />
     </div>
 
-    <a :href="dataURL" :download="`VSH_Inventaraufkleber_${inventoryId}.pdf`">
+    <a :href="dataURL" :download="`Inventaraufkleber_${inventoryId}.pdf`">
         <mdi-icon icon="file-download-outline" />
         PDF Herunterladen
     </a>
