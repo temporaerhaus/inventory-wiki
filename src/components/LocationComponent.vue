@@ -28,7 +28,12 @@
 
       <label for="invwiki-location-description">Weitere Infos</label>
       <textarea id="invwiki-location-description" v-model="description" />
-
+      
+      <label for="invwiki-location-update-last-seen">
+        <input type="checkbox" id="invwiki-location-update-last-seen" v-model="updateLastSeen" />
+        <mdi-icon left icon="eye-outline" />
+        Zeitstempel "<em>Zuletzt gesehen am</em>" auf die aktuelle Zeit setzen
+      </label>
       <div class="flex-row">
         <button @click="saveLocation(0)" :disabled="loading">
           <mdi-icon left icon="map-clock-outline" />
@@ -65,7 +70,8 @@ export default {
     loading: false,
     locations: [],
     location: '',
-    description: ''
+    description: '',
+    updateLastSeen: true
   }),
 
   methods: {
@@ -101,28 +107,32 @@ export default {
             return writeItem(e, {}, {
               summary: `location update (mode=${mode})`,
               replacer: (yaml) => {
+                const currentDate = new Date().toJSON();
                 switch (mode) {
                   case 0:
                     yaml.temporary = {
                       location: this.location,
                       description: this.description,
-                      timestamp: new Date().toJSON()
+                      timestamp: currentDate
                     };
                     yaml.nominal = yaml.nominal ?? {};
+                    if (this.updateLastSeen) yaml.lastSeenAt = currentDate;
                     break;
 
                   case 1:
                     yaml.nominal = {
                       location: this.location,
                       description: this.description,
-                      timestamp: new Date().toJSON()
+                      timestamp: currentDate
                     };
                     yaml.temporary = yaml.temporary ?? {};
+                    if (this.updateLastSeen) yaml.lastSeenAt = currentDate;
                     break;
 
                   case 2:
                     yaml.temporary = {};
                     yaml.nominal = yaml.nominal ?? {};
+                    if (this.updateLastSeen) yaml.lastSeenAt = currentDate;
                     break;
                 }
 
