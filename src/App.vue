@@ -79,6 +79,16 @@ export default {
         if (e.dataset.wikiId.startsWith('inventar:')) {
           const id = `check:${e.dataset.wikiId}`;
           if (!document.getElementById(id)) {
+            // Not every page in the namespace is an item: data pages such as
+            // lock, print-queue or enrichment carry no title, so there is
+            // nothing to split into date, id and name. Skip them rather than
+            // letting exec() return null and take the whole handler — and with
+            // it the checkboxes and the scan buttons — down with it.
+            const res = /\[([^\]]*)\][^\[]*\[inventar:([^\]]*)\] (.*)/.exec(e.innerText);
+            if (!res) {
+              continue;
+            }
+
             const c = document.createElement('input');
             c.className='invwiki-index';
             c.style.marginTop = '-2px';
@@ -112,8 +122,6 @@ export default {
 
               this.previousInteraction = e.shiftKey ? null : c.id;
             });
-
-            const res = /\[([^\]]*)\][^\[]*\[inventar:([^\]]*)\] (.*)/.exec(e.innerText);
 
             const l = document.createElement('label');
             l.setAttribute('for', id);
