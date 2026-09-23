@@ -94,7 +94,37 @@
       <input id="invwiki-form-invoice" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
 
       <template v-if="!edit">
-        <search-autocomplete v-model="classification" :items="din6779" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub" />
+        <label v-if="suggestionsVisible">
+          <mdi-icon icon="lightbulb-on-outline" left title="Vorschläge" />
+          Vorschläge
+        </label>
+        <div class="invwiki-suggestions" v-if="suggestionsVisible">
+          <p class="invwiki-suggestions-hint" v-if="suggestLoading">
+            Vergleiche mit bisherigen Gegenständen …
+          </p>
+          <p class="invwiki-suggestions-hint" v-else-if="suggestError">
+            Vorschläge nicht verfügbar ({{ suggestError }}).
+          </p>
+          <p class="invwiki-suggestions-hint" v-else-if="!suggestions.length">
+            Keine vergleichbaren Gegenstände gefunden — bitte unten selbst auswählen.
+          </p>
+          <button
+            v-for="suggestion in suggestions"
+            :key="suggestion.code"
+            type="button"
+            :class="`invwiki-suggestion ${classification?.value === suggestion.code ? 'is-active' : ''}`"
+            @click="applySuggestion(suggestion)"
+          >
+            <b>{{ suggestion.code }}</b>
+            <span class="invwiki-suggestion-share">{{ Math.round(suggestion.confidence * 100) }}%</span>
+            <span class="invwiki-suggestion-text">{{ describe(suggestion.code) }}</span>
+            <span class="invwiki-suggestion-items">
+              wie {{ suggestion.items.slice(0, 3).map(e => e.title).join(' · ') }}
+            </span>
+          </button>
+        </div>
+
+        <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub" />
         <blockquote v-if="classification?.text">
           {{ classification.text }}
         </blockquote>
@@ -140,11 +170,14 @@
 
 <script>
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
-import din6779 from '@/utils/din6779.js';
+import categories from '@/utils/categories.js';
+import { buildIndex, suggest } from '@/utils/suggest.js';
+import { itemText, loadEnrichment } from '@/utils/enrichment.js';
 
-import { SEP, PREFIX, nextNumber, writeItem } from '@/utils/api.js';
+import { SEP, PREFIX, nextNumber, writeItem, fetchInventory } from '@/utils/api.js';
 
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
+const SUGGEST_DEBOUNCE = 150;
 
 export default {
   props: {
@@ -158,9 +191,15 @@ export default {
   },
 
   data: () => ({
-    din6779,
+    categories: categories(),
 
     loading: true,
+
+    suggestions: [],
+    suggestIndex: null,
+    suggestLoading: false,
+    suggestError: '',
+    suggestTimeout: null,
 
     number: '',
     title: '',
@@ -181,7 +220,78 @@ export default {
     suffixOptions: ['N', ...Array(26).fill(null).map((_, i) => String.fromCharCode(90-i)).filter(e => e !== 'N')]
   }),
 
+  watch: {
+    title() {
+      this.scheduleSuggestions();
+    },
+
+    description() {
+      this.scheduleSuggestions();
+    }
+  },
+
   methods: {
+    scheduleSuggestions() {
+      if (this.edit || this.sub) {
+        return;
+      }
+
+      clearTimeout(this.suggestTimeout);
+      this.suggestTimeout = setTimeout(() => this.refreshSuggestions(), SUGGEST_DEBOUNCE);
+    },
+
+    // The index is built from the existing inventory, so it always reflects how
+    // the house classifies right now. Loading it must never block the dialog.
+    async loadSuggestIndex() {
+      if (this.suggestIndex || this.suggestLoading) {
+        return;
+      }
+
+      this.suggestLoading = true;
+      this.suggestError = '';
+
+      try {
+        // the generated descriptions are a separate chunk, fetched the first
+        // time somebody opens this dialog rather than on every wiki page
+        await loadEnrichment();
+        this.categories = categories();
+
+        const inventory = await fetchInventory();
+        this.suggestIndex = buildIndex(inventory.map(e => ({ ...e, extra: itemText(e.title) })));
+      } catch (e) {
+        this.suggestError = e.message;
+      } finally {
+        this.suggestLoading = false;
+        this.refreshSuggestions();
+      }
+    },
+
+    refreshSuggestions() {
+      if (!this.suggestIndex) {
+        this.suggestions = [];
+        return;
+      }
+
+      // the short description is the user's own words for the same thing, and
+      // is exactly the everyday vocabulary the item name usually lacks
+      this.suggestions = suggest(this.suggestIndex, {
+        title: this.title,
+        extra: this.description
+      }, { limit: 3 });
+    },
+
+    applySuggestion(suggestion) {
+      this.classification = this.classificationsByCode[suggestion.code] || {
+        value: suggestion.code,
+        text: suggestion.code,
+        example: ''
+      };
+    },
+
+    describe(code) {
+      return this.classificationsByCode[code]?.text || 'Nicht in der Liste — bisher im Haus verwendet';
+    },
+
     async refreshNumber() {
       if (this.edit || this.sub) {
         return;
@@ -190,12 +300,17 @@ export default {
     },
 
     async createItem() {
+      this.loadSuggestIndex();
       await this.refreshNumber();
       this.loading = false;
       this.$refs.dialog.show();
     },
 
     async editItem() {
+      if (!this.edit && !this.sub) {
+        this.loadSuggestIndex();
+      }
+
       this.loading = false;
 
       this.title = this.$parent.title || '';
@@ -264,6 +379,16 @@ export default {
   },
 
   computed: {
+    classificationsByCode() {
+      return Object.fromEntries(this.categories.flatMap(
+        group => (group.children || []).map(entry => [entry.value, { ...entry, group: { ...group, children: undefined } }])
+      ));
+    },
+
+    suggestionsVisible() {
+      return !this.edit && !this.sub && Boolean(this.title.trim());
+    },
+
     id() {
       return `${this.lended ? 'L' : 'V'}-${this.classification?.value || '??'}${this.number || '??????'}${this.suffix ? `-${this.suffix}` : ''}`;
     },

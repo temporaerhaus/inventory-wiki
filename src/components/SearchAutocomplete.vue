@@ -73,6 +73,19 @@ export default {
       if (value !== oldValue) {
         this.registerFuses(value);
       }
+    },
+
+    // keep the visible text in sync when the value is set from the outside,
+    // e.g. by accepting a suggested Kennbuchstabe
+    modelValue(value) {
+      if (!value) {
+        return;
+      }
+
+      const text = this.serializer ? this.serializer(value) : value;
+      if (typeof text === 'string' && text !== this.search) {
+        this.search = text;
+      }
     }
   },
 

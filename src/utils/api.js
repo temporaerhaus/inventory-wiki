@@ -114,6 +114,49 @@ export async function fetchItems() {
     .map(e => String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase().split('/').pop())
 };
 
+// The overview page lists every item as "[date] - [ns:id] Title"; that is the
+// only place where inventory numbers and titles appear together, which is what
+// the Kennbuchstabe suggestions are built from.
+const ENTRY_ID_REGEX = /^([SVL])-([A-Z]{2})([0-9]{6})(?:-([A-Z0-9]+))?$/;
+const ENTRY_PREFIX_REGEX = /^(?:\s*\[[^\]]*\]\s*-?\s*)+/;
+
+let inventoryCache = null;
+
+export async function fetchInventory({ reload = false } = {}) {
+  if (!inventoryCache || reload) {
+    inventoryCache = (async () => {
+      const res = await fetch(`/${PREFIX}`);
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+
+      return [...doc.querySelectorAll('#dokuwiki__content a[data-wiki-id]')]
+        .map((e) => {
+          const id = String(e.getAttribute('data-wiki-id')).split(':').pop().toUpperCase();
+          const res = ENTRY_ID_REGEX.exec(id);
+          if (!res) {
+            return null;
+          }
+
+          return {
+            id,
+            lended: res[1] === 'L',
+            code: res[2],
+            number: res[3],
+            suffix: res[4] || '',
+            title: e.innerText.replace(ENTRY_PREFIX_REGEX, '').trim(),
+          };
+        })
+        .filter(e => e && e.title);
+    })().catch((e) => {
+      inventoryCache = null;
+      throw e;
+    });
+  }
+
+  return inventoryCache;
+};
+
 export async function nextNumber() {
   const items = await fetchItems();
   return String(Math.max(...items.map(e => Number(REGEX.exec(e)?.[1])).filter(e => !isNaN(e))) + 1).padStart(6, '0');

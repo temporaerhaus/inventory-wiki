@@ -655,3 +655,56 @@ button.invwiki-container.expanded {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+.invwiki-suggestions {
+  display: flex;
+  flex-direction: column;
+  gap: .25em;
+  margin-bottom: .5em;
+}
+
+.invwiki-suggestions-hint {
+  margin: 0;
+  padding: .25em 0;
+  font-size: 90%;
+  opacity: .7;
+}
+
+.invwiki-suggestion {
+  display: grid;
+  grid-template-columns: auto auto 1fr;
+  gap: 0 .5em;
+  text-align: left;
+  width: 100%;
+  margin: 0;
+  padding: .4em .6em;
+}
+
+.invwiki-suggestion.is-active {
+  background-color: #4AAE9B;
+  color: white;
+}
+
+.invwiki-suggestion > b {
+  font-family: monospace;
+}
+
+.invwiki-suggestion-share {
+  font-size: 85%;
+  opacity: .7;
+}
+
+.invwiki-suggestion-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.invwiki-suggestion-items {
+  grid-column: 1 / 4;
+  font-size: 85%;
+  opacity: .7;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

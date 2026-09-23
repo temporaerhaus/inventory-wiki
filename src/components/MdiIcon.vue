@@ -42,6 +42,7 @@ import {
   mdiContentSaveAlertOutline,
   mdiSortAlphabeticalDescending,
   mdiPackageVariant,
+  mdiLightbulbOnOutline,
 } from '@mdi/js';
 
 export default {
@@ -88,6 +89,7 @@ export default {
       mdiSubdirectoryArrowRight,
       mdiAccountQuestionOutline,
       mdiContentSaveAlertOutline,
+      mdiLightbulbOnOutline,
       mdiSortAlphabeticalDescending,
       mdiPackageVariant,
     }
