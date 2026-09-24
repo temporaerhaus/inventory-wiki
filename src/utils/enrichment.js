@@ -18,6 +18,7 @@
 // installation — every accessor returns nothing and the suggestions fall back
 // to matching item names alone.
 
+import YAML from 'yaml';
 import { PREFIX, SEP } from '@/utils/api.js';
 
 export const ENRICHMENT_PAGE = `${PREFIX}${SEP}enrichment`;
@@ -27,8 +28,11 @@ let pending = null;
 
 export function loadEnrichment() {
   if (!pending) {
+    // YAML, one item per line so the page stays readable and diffable on the
+    // wiki; JSON is valid YAML, so older pages written as JSON read the same
     pending = fetch(`/${ENRICHMENT_PAGE}?do=export_raw`)
-      .then(res => (res.ok ? res.json() : { items: {}, codes: {} }))
+      .then(res => (res.ok ? res.text() : ''))
+      .then(text => YAML.parse(text || '{}'))
       .then((loaded) => {
         data = loaded && loaded.items ? loaded : { items: {}, codes: {} };
         return data;
@@ -44,11 +48,16 @@ export function loadEnrichment() {
   return pending;
 }
 
-// Supporting text for one item name, for the suggestion index.
+// Supporting text for one item name, for the suggestion index. The page holds
+// either the compact form — a string of search words per name — or the older
+// form with a description and a keyword list; both index the same way.
 export function itemText(title) {
   const entry = data.items[title];
   if (!entry) {
     return '';
+  }
+  if (typeof entry === 'string') {
+    return entry;
   }
 
   return [entry.description, ...(entry.keywords || [])].filter(Boolean).join(' ');
