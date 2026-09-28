@@ -20,25 +20,29 @@
     </div>
     <div class="invwiki item-card location-card">
       <ul>
-        <li title="Soll-Ort" v-if="nominal?.location">
-          <mdi-icon icon="map-marker-alert-outline" left title="Soll-Ort" />
-          <a v-if="nominalLocation" :href="nominal.location"><b>{{ nominal.location }}: </b></a>
-          <b v-else>{{ nominal.location }}</b>
-          <span v-if="nominalLocation">{{ nominalLocation.title }}</span>
-          <mdi-icon icon="clock-outline" :title="`Zuletzt geändert: ${nominal.timestamp}`" style="float: right; margin-right: 1em;" color="#999999" />
-          <blockquote>{{ nominal.description }}</blockquote>
-        </li>
-        <li title="Aktueller Ort" v-if="temporary?.location">
-          <mdi-icon icon="map-clock-outline" left title="Aktueller Ort" />
-          <a v-if="temporaryLocation" :href="temporary.location"><b>{{ temporary.location }}: </b></a>
-          <b v-else>{{ temporary.location }}</b>
-          <span v-if="temporaryLocation">{{ temporaryLocation.title }}</span>
-          <mdi-icon icon="clock-outline" :title="`Zuletzt geändert: ${temporary.timestamp}`" style="float: right; margin-right: 1em;" color="#999999" />
-          <blockquote>{{ temporary.description }}</blockquote>
+        <li v-for="entry in locations" :key="entry.key" :class="{ 'invwiki-location': true, 'invwiki-location-elsewhere': entry.elsewhere }">
+          <mdi-icon :icon="entry.icon" left :title="entry.label" />
+          <small class="invwiki-location-label">
+            {{ entry.label }}
+            <span v-if="entry.timestamp" :title="`Zuletzt geändert: ${entry.timestamp}`">· geändert {{ relative(entry.timestamp) }}</span>
+          </small>
+          <div>
+            <a v-if="entry.item" :href="entry.location"><b>{{ entry.location }}: </b></a>
+            <b v-else>{{ entry.location }}</b>
+            <span v-if="entry.item">{{ entry.item.title }}</span>
+          </div>
+          <div v-if="entry.chain.length" class="invwiki-location-chain">
+            <template v-for="(place, i) in entry.chain" :key="place.id">
+              {{ i === 0 ? 'in' : '›' }}
+              <a v-if="place.title" :href="place.id" :title="place.title">{{ place.id }}{{ samePlace(place.title, place.id) ? '' : `: ${place.title}` }}</a>
+              <span v-else>{{ place.id }}</span>
+            </template>
+          </div>
+          <blockquote v-if="entry.description">{{ entry.description }}</blockquote>
         </li>
         <li :title="`Zuletzt Gesehen am: ${lastSeenAt}`" v-if="lastSeenAt">
           <mdi-icon icon="eye-outline" left :title="`Zuletzt Gesehen am: ${lastSeenAt}`" />
-          <b>{{ lastSeenAtRelative }}</b>
+          <b>zuletzt gesehen {{ relative(lastSeenAt) }}</b>
         </li>
       </ul>
       <location-component single-item />
@@ -92,6 +96,11 @@ import BulkEditComponent from '@/components/BulkEditComponent.vue';
 import ContentsListComponent from '@/components/ContentsListComponent.vue';
 import ContainedItemsList from '@/components/ContainedItemsList.vue';
 
+// how many places up the chain of "where is the location itself" is followed
+const MAX_CHAIN = 4;
+
+const samePlace = (a, b) => String(a || '').trim().toUpperCase() === String(b || '').trim().toUpperCase();
+
 // taken from https://stackoverflow.com/a/78704662
 const millisecondsPerSecond = 1000;
 const secondsPerMinute = 60;
@@ -141,17 +150,19 @@ export default {
     containedItems: [],
     nominalLocation: null,
     temporaryLocation: null,
+    nominalChain: [],
+    temporaryChain: [],
   }),
 
   async mounted() {
     this.loading = true;
     this.containedItems = [];
-    if (this.nominal?.location) {
-      this.nominalLocation = await fetchInventoryItem(this.nominal?.location);
+
+    // both locations and the contained items load at the same time
+    for (const key of ['nominal', 'temporary']) {
+      this.resolveLocation(key);
     }
-    if (this.temporary?.location) {
-      this.temporaryLocation = await fetchInventoryItem(this.temporary?.location);
-    }
+
     if (this.container) {
       Promise.all((await searchItems(`location: ${this.inventoryId}`)).map(async (id) => [id, {
         ...await fetchInventoryItem(id),
@@ -167,6 +178,55 @@ export default {
   },
 
   methods: {
+    // the item a location refers to, and where that item is in turn
+    async resolveLocation(key) {
+      const location = this[key]?.location;
+      if (!location) {
+        return;
+      }
+
+      const item = await fetchInventoryItem(String(location)).catch(() => null);
+      this[`${key}Location`] = item;
+      if (item) {
+        this[`${key}Chain`] = await this.locationChain(item, [this.inventoryId, location]);
+      }
+    },
+
+    // where a location item is right now, and where that place is, and so on
+    async locationChain(item, seen) {
+      const chain = [];
+      let current = item;
+      while (current && chain.length < MAX_CHAIN) {
+        const next = String(current.temporary?.location || current.nominal?.location || '').trim();
+        if (!next || seen.some(e => samePlace(e, next))) {
+          break;
+        }
+        seen.push(next);
+
+        current = await fetchInventoryItem(next).catch(() => null);
+        chain.push({ id: next, title: current?.title || '' });
+      }
+
+      return chain;
+    },
+
+    samePlace,
+
+    relative(date) {
+      const diff = new Date(date) - new Date();
+      if (isNaN(diff)) {
+        return date;
+      }
+
+      for (const interval in intervals) {
+        if (intervals[interval] <= Math.abs(diff)) {
+          return relativeDateFormat.format(Math.trunc(diff / intervals[interval]), interval);
+        }
+      }
+
+      return relativeDateFormat.format(Math.trunc(diff / 1000), 'second');
+    },
+
     toggleAll(value) {
       for (const id of this.visibleIds) {
         this.selected[id] = value;
@@ -239,16 +299,27 @@ export default {
       return Object.entries(this.selected).filter(([, value]) => value).map(([id]) => `/${PREFIX}/${id}`);
     },
 
-    lastSeenAtRelative() {
-      const diff = new Date(this.lastSeenAt) - new Date();
-
-      for (const interval in intervals) {
-          if (intervals[interval] <= Math.abs(diff)) {
-              return relativeDateFormat.format(Math.trunc(diff / intervals[interval]), interval);
-          }
-      }
-
-      return relativeDateFormat.format(diff / 1000, 'second');
+    locations() {
+      const elsewhere = Boolean(this.temporary?.location && this.nominal?.location && !samePlace(this.temporary.location, this.nominal.location));
+      return [{
+        key: 'nominal',
+        label: 'Soll-Ort',
+        icon: 'map-marker-alert-outline',
+        data: this.nominal,
+        item: this.nominalLocation,
+        chain: this.nominalChain,
+        elsewhere: false
+      }, {
+        key: 'temporary',
+        label: elsewhere ? 'Aktueller Ort, nicht am Soll-Ort' : 'Aktueller Ort',
+        icon: 'map-clock-outline',
+        data: this.temporary,
+        item: this.temporaryLocation,
+        chain: this.temporaryChain,
+        elsewhere
+      }]
+        .filter(e => e.data?.location)
+        .map(e => ({ ...e, location: e.data.location, timestamp: e.data.timestamp, description: e.data.description }));
     }
   }
 }

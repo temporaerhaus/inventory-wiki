@@ -478,6 +478,33 @@
   border-color: #ffeeba;
 }
 
+.location-card .invwiki-location-label {
+  opacity: .8;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  font-size: 75%;
+}
+
+.location-card .invwiki-location-chain {
+  font-size: 85%;
+  opacity: .9;
+}
+
+/* a bar left of the icon marks an item that is not at its target location, without moving the entry */
+.location-card li.invwiki-location-elsewhere {
+  position: relative;
+}
+
+.location-card li.invwiki-location-elsewhere::before {
+  content: '';
+  position: absolute;
+  left: -2.1em;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #d39e00;
+}
+
 .item-card {
   box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
   padding-block: .5em;
