@@ -47,6 +47,7 @@ import {
   mdiUpload,
   mdiCheckboxBlankOutline,
   mdiCheckboxMultipleMarkedOutline,
+  mdiFormatListChecks,
 } from '@mdi/js';
 
 export default {
@@ -98,6 +99,7 @@ export default {
       mdiUpload,
       mdiCheckboxBlankOutline,
       mdiCheckboxMultipleMarkedOutline,
+      mdiFormatListChecks,
       mdiSortAlphabeticalDescending,
       mdiPackageVariant,
     }

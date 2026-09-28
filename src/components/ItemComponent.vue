@@ -76,6 +76,7 @@
       <create-component edit />
       <create-component clone />
       <create-component sub />
+      <contents-list-component v-if="container" :inventory-id="inventoryId" :title="title" />
       <label-component :inventory-id="inventoryId" :title="title" :description="description" :owner="owner" :small="small" :serial="serial" />
     </div>
   </div>
@@ -88,6 +89,7 @@ import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
 import BulkEditComponent from '@/components/BulkEditComponent.vue';
+import ContentsListComponent from '@/components/ContentsListComponent.vue';
 import ContainedItemsList from '@/components/ContainedItemsList.vue';
 
 // taken from https://stackoverflow.com/a/78704662
@@ -111,6 +113,7 @@ export default {
     CreateComponent,
     LocationComponent,
     BulkEditComponent,
+    ContentsListComponent,
     ContainedItemsList
   },
 

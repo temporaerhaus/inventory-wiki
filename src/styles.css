@@ -287,6 +287,15 @@
   font-weight: normal;
 }
 
+.invwiki .invwiki-contents-preview {
+  display: block;
+  /* the dialog shrinks to its content, so give the preview the width of a page */
+  width: min(210mm, 80vw);
+  height: 60vh;
+  border: 1px solid var(--border);
+  margin: .5em 0 1em;
+}
+
 .invwiki-selection-actions {
   display: flex;
   flex-wrap: wrap;

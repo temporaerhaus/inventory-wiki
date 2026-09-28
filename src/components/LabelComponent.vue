@@ -40,20 +40,9 @@
 import QRCode from 'qrcode';
 
 import logo from '@/assets/logo.svg?raw';
-import pdfMake from 'pdfmake/build/pdfmake';
+import pdfMake from '@/utils/pdf.js';
 
 import { remotePrint } from '@/utils/api.js';
-
-// fonts are served from public/fonts, next to the bundle (or by the vite dev server)
-const scriptUrl = import.meta.url;
-const fontBaseUrl = import.meta.env.DEV ? new URL('/fonts/', location.href) : new URL('fonts/', scriptUrl);
-
-pdfMake.fonts = {
-   Roboto: {
-     bold: new URL('RobotoMono-Bold.ttf', fontBaseUrl).href,
-     normal: new URL('RobotoMono-Regular.ttf', fontBaseUrl).href,
-   },
-};
 
 function textMaxWidth(content) {
   return new Promise((resolve) => pdfMake.createPdf({
