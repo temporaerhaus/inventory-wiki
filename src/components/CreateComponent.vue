@@ -36,7 +36,7 @@
       <textarea id="invwiki-form-description" v-model="description" @focus="$refs.c?.close?.()"></textarea>
       <blockquote>
         Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt und ist daher nur eine Zeile.
-        Weitere Informationen zum Gegenstand und Anhänge können im nächsten Schritt bei der Wiki-Seite hinterlegt werden.
+        Weitere Informationen zum Gegenstand und Anhänge können unten bei <em>Weitere Inhalte</em> hinterlegt werden.
       </blockquote>
 
       <label for="invwiki-form-category">
@@ -154,6 +154,16 @@
         <input id="invwiki-form-id" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
       </template>
 
+      <label for="invwiki-form-content">
+        <mdi-icon icon="language-markdown-outline" left title="Weitere Inhalte" />
+        Weitere Inhalte
+      </label>
+      <markdown-editor id="invwiki-form-content" v-model="content" :preview-path="pagePath" :media-namespace="mediaNamespace" />
+      <blockquote>
+        Beliebiger Markdown-Inhalt, der auf der Wiki-Seite unterhalb der Gegenstandsdaten angezeigt wird, z.B. Notizen, Links oder Anhänge.
+        Bilder und Dateien können per Drag &amp; Drop in das Feld gezogen werden.
+      </blockquote>
+
       <div style="text-align: right; padding-top: 1em; padding-bottom: 5em; padding-right: 1em;">
         <button @click="saveItem()" :disabled="disabled" v-if="!edit">
           <mdi-icon icon="toy-brick-plus-outline" left title="Gegenstand Anlegen" />
@@ -170,11 +180,12 @@
 
 <script>
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
+import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import categories from '@/utils/categories.js';
 import { buildIndex, suggest } from '@/utils/suggest.js';
 import { itemText, loadEnrichment } from '@/utils/enrichment.js';
 
-import { SEP, PREFIX, nextNumber, writeItem, fetchInventory } from '@/utils/api.js';
+import { SEP, PREFIX, nextNumber, writeItem, fetchInventory, fetchItemContent } from '@/utils/api.js';
 
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
 const SUGGEST_DEBOUNCE = 150;
@@ -187,7 +198,8 @@ export default {
   },
 
   components: {
-    SearchAutocomplete
+    SearchAutocomplete,
+    MarkdownEditor
   },
 
   data: () => ({
@@ -215,6 +227,9 @@ export default {
     lended: null,
     small: null,
     container: null,
+    content: '',
+    // content as loaded, so that the page content is only written if it was changed
+    initialContent: '',
 
     classification: null,
     suffixOptions: ['N', ...Array(26).fill(null).map((_, i) => String.fromCharCode(90-i)).filter(e => e !== 'N')]
@@ -300,6 +315,8 @@ export default {
     },
 
     async createItem() {
+      this.content = '';
+      this.initialContent = '';
       this.loadSuggestIndex();
       await this.refreshNumber();
       this.loading = false;
@@ -324,6 +341,8 @@ export default {
       this.owner = this.$parent.owner || '';
       this.small = this.$parent.small || null;
       this.container = this.$parent.container || null;
+      this.content = '';
+      this.initialContent = '';
 
       const res = ID_REGEX.exec(this.$parent.inventoryId);
 
@@ -342,6 +361,15 @@ export default {
       }
 
       this.$refs.dialog.show();
+
+      this.loading = true;
+      try {
+        this.content = this.initialContent = await fetchItemContent(location.pathname);
+      } catch (e) {
+        alert(`Fehler beim Laden der Inhalte: ${e.message}`);
+      } finally {
+        this.loading = false;
+      }
     },
 
     async saveItem() {
@@ -361,6 +389,7 @@ export default {
           container: this.container || false,
         }, {
           create: !this.edit,
+          content: !this.edit || this.content !== this.initialContent ? this.content : undefined,
           summary: this.edit ? 'update metadata' : 'create inventory item'
         });
 
@@ -383,6 +412,21 @@ export default {
       return Object.fromEntries(this.categories.flatMap(
         group => (group.children || []).map(entry => [entry.value, { ...entry, group: { ...group, children: undefined } }])
       ));
+    },
+
+    // page of the item, known once the inventory number is complete
+    pagePath() {
+      if (this.edit) {
+        return location.pathname;
+      }
+
+      return this.id.includes('?') ? null : `/${PREFIX}${SEP}${this.id}`;
+    },
+
+    // uploads of an item are kept in a namespace of their own
+    mediaNamespace() {
+      const id = this.edit ? this.inventoryId : this.id;
+      return !id || id.includes('?') ? null : `${PREFIX}:${id.toLowerCase()}`;
     },
 
     suggestionsVisible() {

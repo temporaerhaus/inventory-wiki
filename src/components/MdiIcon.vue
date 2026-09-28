@@ -43,6 +43,8 @@ import {
   mdiSortAlphabeticalDescending,
   mdiPackageVariant,
   mdiLightbulbOnOutline,
+  mdiLanguageMarkdownOutline,
+  mdiUpload,
 } from '@mdi/js';
 
 export default {
@@ -90,6 +92,8 @@ export default {
       mdiAccountQuestionOutline,
       mdiContentSaveAlertOutline,
       mdiLightbulbOnOutline,
+      mdiLanguageMarkdownOutline,
+      mdiUpload,
       mdiSortAlphabeticalDescending,
       mdiPackageVariant,
     }

@@ -183,6 +183,52 @@
   resize: vertical;
 }
 
+.invwiki textarea.invwiki-content {
+  font-family: monospace;
+}
+
+.invwiki textarea.invwiki-content.is-dragging {
+  outline: 2px dashed #0096bf;
+}
+
+.invwiki-markdown-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5em;
+  margin-bottom: .5em;
+}
+
+.invwiki .invwiki-markdown-tabs button.is-active {
+  background-color: #4AAE9B;
+  background-image: none;
+  color: white;
+}
+
+.invwiki-markdown-preview {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: .5em 1em;
+  margin-bottom: 1em;
+  min-height: 10em;
+  font-style: normal;
+}
+
+.invwiki-markdown-preview img {
+  max-width: 100%;
+}
+
+.invwiki .invwiki-markdown-preview ul li {
+  list-style: disc;
+}
+
+.invwiki .invwiki-markdown-preview ol li {
+  list-style: decimal;
+}
+
+.invwiki blockquote.invwiki-error {
+  border-left-color: #d9534f;
+}
+
 .invwiki button, .invwiki input[type='submit'], .invwiki input[type='button'] {
   padding-right: 16px;
   padding-left: 16px;

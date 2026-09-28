@@ -1,7 +1,10 @@
 import YAML from 'yaml';
 import { v4 as uuidv4 } from 'uuid';
 
-const YAML_REGEX = /```yaml\n(.*)\n```/s;
+// lazy, so that code blocks in the content below the yaml block are not swallowed
+const YAML_REGEX = /```yaml\n(.*?)\n```/s;
+// marks a page for the commonmark plugin, every item page should start with it
+const DOCTYPE = '<!DOCTYPE markdown>';
 const REGEX = new RegExp(`^[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
 
 export const PREFIX = 'inventar';
@@ -214,6 +217,76 @@ export async function fetchInventoryItem(inventoryId) {
   return null;
 };
 
+// only strip surrounding blank lines, leading spaces are syntax (e.g. dokuwiki lists)
+const cleanContent = (content) => content.replace(/^\s*\n/, '').trimEnd();
+
+// free content of an item page, everything below the yaml block
+export async function fetchItemContent(path) {
+  const res = await fetch(`${path}?do=export_raw`);
+  const wikitext = (await res.text()).replaceAll('\r\n', '\n');
+  const match = YAML_REGEX.exec(wikitext);
+  return match ? cleanContent(wikitext.slice(match.index + match[0].length)) : '';
+}
+
+// hidden fields of the media manager's upload form: security token and namespace
+async function uploadForm(ns) {
+  const res = await fetch(`/${PREFIX}?` + new URLSearchParams({ do: 'media', ns, tab_files: 'upload' }));
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+  const form = doc.querySelector('#dw__upload');
+  if (!form) {
+    throw new Error('Keine Berechtigung zum Hochladen');
+  }
+
+  return new URLSearchParams([...new FormData(form)].filter(([, value]) => typeof value === 'string'));
+}
+
+// upload a file into a media namespace the way dokuwiki's media manager does,
+// returns the media id of the stored file
+export async function uploadMedia(ns, file) {
+  const params = await uploadForm(ns);
+  params.delete('mediaid');
+  params.delete('ow');
+  params.set('ns', ns);
+  params.set('call', 'mediaupload');
+  params.set('qqfile', file.name);
+
+  const res = await fetch(`/lib/exe/ajax.php?${params}`, {
+    method: 'post',
+    headers: {
+      'X-Requested-With': 'XMLHttpRequest',
+      'X-File-Name': encodeURIComponent(file.name),
+      'Content-Type': 'application/octet-stream'
+    },
+    body: file
+  });
+  const result = await res.json();
+  if (!result.success) {
+    throw new Error(new DOMParser().parseFromString(result.error || 'Hochladen fehlgeschlagen', 'text/html').body.textContent);
+  }
+
+  return result.id;
+}
+
+// render markdown content with dokuwiki's own preview, so it looks exactly like the page
+export async function renderPreview(path, content) {
+  const sectok = (await uploadForm(PREFIX)).get('sectok');
+  const res = await fetch(`${path}?do=edit`, {
+    method: 'post',
+    body: new URLSearchParams({ sectok, wikitext: `${DOCTYPE}\n${content}`, 'do[preview]': '1' })
+  });
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+
+  // a preview locks the page and saves a draft, cancelling releases both again
+  await fetch(path, { method: 'post', body: new URLSearchParams({ sectok, do: 'cancel' }) });
+
+  const preview = doc.querySelector('.preview');
+  if (!preview) {
+    throw new Error('Vorschau nicht verfügbar, wird die Seite gerade von jemand anderem bearbeitet?');
+  }
+
+  return preview.innerHTML;
+}
+
 export async function remotePrint(inventoryId) {
   const token = await lock();
   const res = await fetch('/inventar/print-queue?do=edit');
@@ -235,7 +308,7 @@ export async function remotePrint(inventoryId) {
   await release(token);
 }
 
-export async function writeItem(path, entry = { }, opts = { create: false, summary: '', replacer: null }) {
+export async function writeItem(path, entry = { }, opts = { create: false, summary: '', replacer: null, content: undefined }) {
   const token = await lock();
   try {
     const res = await fetch(`${path}?do=edit`);
@@ -289,17 +362,28 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
 
     if (opts.create) {
       data.set('wikitext', [
-        '<!DOCTYPE markdown>',
+        DOCTYPE,
         `# ${entry.title}`,
         '',
         '```yaml',
         YAML.stringify(yaml, { sortMapEntries }),
         '```',
         '',
+        ...(cleanContent(opts.content ?? '') ? [cleanContent(opts.content), ''] : []),
       ].join('\n'));
     } else {
       let wikitext = data.get('wikitext')
         .replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml, { sortMapEntries }) + '\n```');
+
+      if (typeof opts.content === 'string') {
+        const match = YAML_REGEX.exec(wikitext);
+        const content = cleanContent(opts.content);
+        wikitext = wikitext.slice(0, match.index + match[0].length) + '\n' + (content ? `\n${content}\n` : '');
+      }
+
+      if (!wikitext.startsWith(DOCTYPE)) {
+        wikitext = `${DOCTYPE}\n${wikitext}`;
+      }
 
       if (entry.title) {
         wikitext = wikitext.replace(/\n# .*/, `\n# ${entry.title}`);
