@@ -11,7 +11,7 @@
 
   <x-dialog :title="`Ort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
-      <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Ort" autofocus>
+      <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Ort" autofocus restrict>
         <template #group="item">
           <b>{{ item.group.group }}:</b>
           <div>{{ item.group.text }}</div>
@@ -26,6 +26,10 @@
         </template>
       </search-autocomplete>
 
+      <blockquote v-if="!loading && !validLocation">
+        Bitte einen bestehenden Ort aus der Liste auswählen.
+      </blockquote>
+
       <label for="invwiki-location-description">Weitere Infos</label>
       <textarea id="invwiki-location-description" v-model="description" />
       
@@ -35,11 +39,11 @@
         Zeitstempel "<em>Zuletzt gesehen am</em>" auf die aktuelle Zeit setzen
       </label>
       <div class="flex-row">
-        <button @click="saveLocation(0)" :disabled="loading">
+        <button @click="saveLocation(0)" :disabled="loading || !validLocation">
           <mdi-icon left icon="map-clock-outline" />
           Als aktuellen Ort speichern
         </button>
-        <button @click="saveLocation(1)" :disabled="loading">
+        <button @click="saveLocation(1)" :disabled="loading || !validLocation">
           <mdi-icon left icon="content-save-alert-outline" />
           Als Soll-Ort speichern
         </button>
@@ -74,6 +78,12 @@ export default {
     updateLastSeen: true
   }),
 
+  computed: {
+    validLocation() {
+      return this.locations.includes(this.location);
+    }
+  },
+
   methods: {
     async open() {
       this.$refs.dialog.show();
@@ -96,7 +106,7 @@ export default {
     },
 
     async saveLocation(mode) {
-      if (this.loading) {
+      if (this.loading || (mode !== 2 && !this.validLocation)) {
         return;
       }
 

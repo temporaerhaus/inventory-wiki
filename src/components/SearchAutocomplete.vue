@@ -42,6 +42,9 @@ export default {
     },
     serializer: Function,
     autofocus: Boolean,
+    // only allow existing items as value: typed text is emitted as the item it
+    // matches exactly, otherwise as null
+    restrict: Boolean,
     grouped: Boolean,
     label: String,
     icon: String,
@@ -133,7 +136,11 @@ export default {
     onChange() {
       this.isOpen = true;
       this.arrowCounter = 0;
-      if (/^[A-Z]{2}$/.test(this.search)) {
+      if (this.restrict) {
+        const search = this.search.trim().toLowerCase();
+        const match = this.results.find((e) => String(this.serializer ? this.serializer(e) : e).toLowerCase() === search);
+        this.$emit('update:modelValue', match ?? null);
+      } else if (/^[A-Z]{2}$/.test(this.search)) {
         this.$emit('update:modelValue', {
           value: this.search,
           text: this.search,
@@ -182,8 +189,10 @@ export default {
 
       if (this.isOpen) {
         const result = this.filteredResults[this.arrowCounter];
-        this.$emit('update:modelValue', result);
-        this.search = this.serializer ? this.serializer(result) : result;
+        if (result !== undefined) {
+          this.$emit('update:modelValue', result);
+          this.search = this.serializer ? this.serializer(result) : result;
+        }
         this.isOpen = false;
         this.arrowCounter = -1;
       }
