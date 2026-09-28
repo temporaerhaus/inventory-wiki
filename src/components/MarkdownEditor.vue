@@ -13,7 +13,12 @@
         <mdi-icon icon="upload" left />
         Datei hochladen
       </button>
+      <button type="button" class="only-touch" @click="$refs.camera.click()" :disabled="!mediaNamespace || uploading > 0" :title="mediaNamespace ? '' : 'Erst möglich, wenn die Inventarnummer feststeht'">
+        <mdi-icon icon="camera" left />
+        Foto aufnehmen
+      </button>
       <input type="file" ref="file" multiple style="display: none" @change="onFileInput" />
+      <input type="file" ref="camera" accept="image/*" capture="environment" style="display: none" @change="onCameraInput" />
     </div>
 
     <div class="invwiki-markdown-preview" v-if="preview">
@@ -92,6 +97,19 @@ export default {
 
     onFileInput(event) {
       this.upload([...event.target.files]);
+      event.target.value = '';
+    },
+
+    // phones name every photo taken this way alike (iOS: "image.jpg"), which the
+    // second photo of an item would collide with, so it is named after the time
+    onCameraInput(event) {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+      this.upload([...event.target.files].map((file, i) => {
+        const extension = /\.[a-z0-9]+$/i.exec(file.name)?.[0] || '.jpg';
+        return new File([file], `foto-${stamp}${i ? `-${i}` : ''}${extension.toLowerCase()}`, { type: file.type });
+      }));
       event.target.value = '';
     },
 

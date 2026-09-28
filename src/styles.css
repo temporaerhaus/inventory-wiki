@@ -198,6 +198,17 @@
   margin-bottom: .5em;
 }
 
+/* only offered where there is a camera to hand, i.e. on touch devices */
+.invwiki .only-touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .invwiki .only-touch {
+    display: inline-block;
+  }
+}
+
 .invwiki .invwiki-markdown-tabs button.is-active {
   background-color: #4AAE9B;
   background-image: none;
