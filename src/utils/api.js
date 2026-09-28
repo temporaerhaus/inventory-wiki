@@ -11,7 +11,8 @@ export const PREFIX = 'inventar';
 export const SEP = '/';
 
 const LOCK_TIMEOUT = 10 * 1000;
-// shared with the label printer, which takes the same lock around emptying the print queue
+// shared with the label printer, which takes the same lock around emptying the print queue,
+// see saveViaEditor for why both are not saved through the API
 const LOCK_PAGE = `${PREFIX}:lock`;
 const PRINT_QUEUE_PAGE = `${PREFIX}:print-queue`;
 
@@ -78,6 +79,39 @@ const sortMapEntries = (a, b) => {
   return (inventorySyntaxOrder[a.key.value] || 99) - (inventorySyntaxOrder[b.key.value] || 99);
 };
 
+// The print station reads and writes the lock page and the print queue through
+// the wiki's editor, which keeps them locked for editing nearly all the time
+// (it renews that lock on every look at an empty queue). The editor's save
+// ignores such locks, the API's savePage refuses them ("The page is currently
+// locked"), so these two pages are saved through the editor as well. Whether
+// the save happened is checked in the page history afterwards: the content is
+// no proof, the print station may already have emptied the queue again.
+let currentUser = null;
+
+async function saveViaEditor(page, update, summary) {
+  const path = `/${page.replaceAll(':', '/')}`;
+  const before = await rpc('core.getWikiTime');
+
+  const res = await fetch(`${path}?do=edit`);
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+  const form = doc.querySelector('form#dw__editform');
+  if (!form) {
+    throw new Error(`${page} kann nicht bearbeitet werden`);
+  }
+
+  const data = new FormData(form);
+  data.set('wikitext', update(String(data.get('wikitext') || '').replaceAll('\r\n', '\n')));
+  data.set('summary', summary);
+  data.set('do[save]', '1');
+  await fetch(`${path}?do=edit`, { method: 'post', body: data });
+
+  currentUser = currentUser || (await rpc('core.whoAmI')).login;
+  const history = await rpc('core.getPageHistory', { page });
+  if (!history.some(e => e.revision >= before && e.summary === summary && e.author === currentUser)) {
+    throw new Error(`${page} konnte nicht gespeichert werden`);
+  }
+}
+
 // The lock is the content of a wiki page, "<token>/<date>", so that the label
 // printer can take part in it too. A lock older than LOCK_TIMEOUT counts as stale.
 //
@@ -116,7 +150,7 @@ async function acquireLock() {
   }
 
   const token = uuidv4();
-  await rpc('core.savePage', { page: LOCK_PAGE, text: `${token}/${now.toUTCString()}`, summary: 'lock' });
+  await saveViaEditor(LOCK_PAGE, () => `${token}/${now.toUTCString()}`, 'lock');
 
   if ((await rpc('core.getPage', { page: LOCK_PAGE })).split('/')[0] !== token) {
     // somebody else was faster
@@ -133,7 +167,7 @@ export async function release(token) {
       throw Error('not holding correct lock');
     }
 
-    await rpc('core.savePage', { page: LOCK_PAGE, text: '', summary: 'release' });
+    await saveViaEditor(LOCK_PAGE, () => '', 'release');
   } finally {
     localHolders.get(token)?.();
     localHolders.delete(token);
@@ -308,7 +342,7 @@ export async function renderPreview(path, content) {
 async function queuePrint(entries) {
   const token = await lock();
   try {
-    await rpc('core.appendPage', { page: PRINT_QUEUE_PAGE, text: `\n  * ${entries.join('\n  * ')}`, summary: 'add entry' });
+    await saveViaEditor(PRINT_QUEUE_PAGE, (text) => `${text}\n  * ${entries.join('\n  * ')}`, 'add entry');
   } finally {
     await release(token);
   }
