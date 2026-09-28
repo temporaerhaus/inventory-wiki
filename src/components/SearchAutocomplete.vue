@@ -4,7 +4,7 @@
       <mdi-icon :icon="icon" left :title="label" v-if="icon" />
       {{ label }}
     </label>
-    <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" @focus="onFocus" ref="input" />
+    <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" :disabled="disabled" @focus="onFocus" ref="input" />
     <ul v-show="isOpen" class="invwiki-autocomplete-results">
       <li class="loading" v-if="loading">
         Loading results...
@@ -42,6 +42,7 @@ export default {
     },
     serializer: Function,
     autofocus: Boolean,
+    disabled: Boolean,
     // only allow existing items as value: typed text is emitted as the item it
     // matches exactly, otherwise as null
     restrict: Boolean,
@@ -86,7 +87,10 @@ export default {
       }
 
       const text = this.serializer ? this.serializer(value) : value;
-      if (typeof text === 'string' && text !== this.search) {
+      // a restricted field shows the chosen entry as it is spelled in the list; otherwise a value
+      // that only differs in case comes from what is being typed, and the input is left alone
+      const differs = this.restrict ? text !== this.search : String(text).toUpperCase() !== this.search.trim().toUpperCase();
+      if (typeof text === 'string' && differs) {
         this.search = text;
       }
     }
@@ -140,12 +144,19 @@ export default {
         const search = this.search.trim().toLowerCase();
         const match = this.results.find((e) => String(this.serializer ? this.serializer(e) : e).toLowerCase() === search);
         this.$emit('update:modelValue', match ?? null);
-      } else if (/^[A-Z]{2}$/.test(this.search)) {
-        this.$emit('update:modelValue', {
-          value: this.search,
-          text: this.search,
-          example: ''
-        });
+      } else {
+        // a typed code counts in any case, and a known one comes with its description
+        const search = this.search.trim().toUpperCase();
+        const match = this.results.find((e) => String(this.serializer ? this.serializer(e) : e).toUpperCase() === search);
+        if (match) {
+          this.$emit('update:modelValue', match);
+        } else if (/^[A-Z]{2}$/.test(search)) {
+          // codes in use in the house that are not in the list
+          this.$emit('update:modelValue', { value: search, text: search, example: '' });
+        } else {
+          // anything else is a search, it must not leave a previously chosen code behind
+          this.$emit('update:modelValue', null);
+        }
       }
     },
 
