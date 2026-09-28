@@ -44,10 +44,14 @@ import pdfMake from 'pdfmake/build/pdfmake';
 
 import { remotePrint } from '@/utils/api.js';
 
+// fonts are served from public/fonts, next to the bundle (or by the vite dev server)
+const scriptUrl = import.meta.url;
+const fontBaseUrl = import.meta.env.DEV ? new URL('/fonts/', location.href) : new URL('fonts/', scriptUrl);
+
 pdfMake.fonts = {
    Roboto: {
-     bold: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono@main/fonts/ttf/RobotoMono-Bold.ttf',
-     normal: 'https://cdn.jsdelivr.net/gh/googlefonts/RobotoMono@main/fonts/ttf/RobotoMono-Regular.ttf',
+     bold: new URL('RobotoMono-Bold.ttf', fontBaseUrl).href,
+     normal: new URL('RobotoMono-Regular.ttf', fontBaseUrl).href,
    },
 };
 

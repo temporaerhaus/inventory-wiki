@@ -83,7 +83,7 @@ export default defineConfig({
         proxyTimeout: 10000,
         changeOrigin: true
       },
-      '^\/(?!src|node_modules|@id|@vite).*': {
+      '^\/(?!src|node_modules|@id|@vite|fonts\/).*': {
         target: 'https://wiki.temporaerhaus.de/',
         configure: handleAuthenticatedProxy,
         proxyTimeout: 10000,
