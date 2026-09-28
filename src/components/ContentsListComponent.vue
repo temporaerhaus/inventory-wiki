@@ -4,7 +4,7 @@
     Inhaltsliste Erstellen
   </button>
 
-  <x-dialog :title="`Inhaltsliste ${inventoryId}`" icon="format-list-checks" ref="dialog" :loading="loading">
+  <x-dialog :title="`Inhaltsliste ${inventoryId}`" icon="format-list-checks" ref="dialog" :loading="loading || printing">
     <label :for="`${uid}-levels`">
       <mdi-icon icon="package-variant" left title="Unter-Behälter" />
       Inhalt von Unter-Behältern auflisten
@@ -32,6 +32,11 @@
         <mdi-icon icon="printer" />
         Drucken
       </a>
+
+      <a @click.prevent="printRemote()" style="margin-left: 1em;" href="#" :disabled="printing">
+        <mdi-icon icon="cloud-print-outline" />
+        Remote Drucken
+      </a>
     </template>
   </x-dialog>
 </template>
@@ -41,7 +46,7 @@ import QRCode from 'qrcode';
 import { markRaw } from 'vue';
 
 import pdfMake, { mm2pt } from '@/utils/pdf.js';
-import { fetchInventoryItem, searchItems } from '@/utils/api.js';
+import { fetchInventoryItem, remotePrintContents, searchItems } from '@/utils/api.js';
 
 // "all levels" still stops here, to deal with potential circular links
 const MAX_DEPTH = 10;
@@ -58,6 +63,7 @@ export default {
     // how many levels of sub containers to list the contents of, none by default
     levels: 0,
     loading: false,
+    printing: false,
     error: '',
     rows: [],
     pdf: null,
@@ -259,6 +265,23 @@ export default {
     print() {
       const win = window.open('', '_blank');
       this.pdf?.print?.({}, win);
+    },
+
+    // the print station builds the list itself, with the same depth of sub containers
+    async printRemote() {
+      if (this.printing) {
+        return;
+      }
+
+      this.printing = true;
+      try {
+        await remotePrintContents(this.inventoryId, this.levels);
+        this.$refs.dialog.close();
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+      } finally {
+        this.printing = false;
+      }
     }
   }
 }

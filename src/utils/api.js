@@ -301,14 +301,25 @@ export async function renderPreview(path, content) {
   return preview.innerHTML;
 }
 
-export async function remotePrint(inventoryId) {
-  const ids = Array.isArray(inventoryId) ? inventoryId : [inventoryId];
+// The print station works through the list items on the print queue page:
+//   * V-GM000376              a label for that item
+//   * inhaltsliste:39C3       an A4 contents list of that container, direct contents only
+//   * inhaltsliste:39C3:2     the same, including the contents of sub containers 2 levels deep
+async function queuePrint(entries) {
   const token = await lock();
   try {
-    await rpc('core.appendPage', { page: PRINT_QUEUE_PAGE, text: `\n  * ${ids.join('\n  * ')}`, summary: 'add entry' });
+    await rpc('core.appendPage', { page: PRINT_QUEUE_PAGE, text: `\n  * ${entries.join('\n  * ')}`, summary: 'add entry' });
   } finally {
     await release(token);
   }
+}
+
+export async function remotePrint(inventoryId) {
+  await queuePrint(Array.isArray(inventoryId) ? inventoryId : [inventoryId]);
+}
+
+export async function remotePrintContents(inventoryId, levels = 0) {
+  await queuePrint([`inhaltsliste:${inventoryId}${levels > 0 ? `:${levels}` : ''}`]);
 }
 
 export async function writeItem(path, entry = { }, opts = { create: false, summary: '', replacer: null, content: undefined }) {
