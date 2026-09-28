@@ -19,9 +19,9 @@
 // to matching item names alone.
 
 import YAML from 'yaml';
-import { PREFIX, SEP } from '@/utils/api.js';
+import { PREFIX, rpc } from '@/utils/api.js';
 
-export const ENRICHMENT_PAGE = `${PREFIX}${SEP}enrichment`;
+export const ENRICHMENT_PAGE = `${PREFIX}:enrichment`;
 
 let data = { items: {}, codes: {} };
 let pending = null;
@@ -30,8 +30,8 @@ export function loadEnrichment() {
   if (!pending) {
     // YAML, one item per line so the page stays readable and diffable on the
     // wiki; JSON is valid YAML, so older pages written as JSON read the same
-    pending = fetch(`/${ENRICHMENT_PAGE}?do=export_raw`)
-      .then(res => (res.ok ? res.text() : ''))
+    // a missing page comes back as the namespace template, which has no items
+    pending = rpc('core.getPage', { page: ENRICHMENT_PAGE })
       .then(text => YAML.parse(text || '{}'))
       .then((loaded) => {
         data = loaded && loaded.items ? loaded : { items: {}, codes: {} };

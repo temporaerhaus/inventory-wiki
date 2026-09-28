@@ -11,6 +11,48 @@ export const PREFIX = 'inventar';
 export const SEP = '/';
 
 const LOCK_TIMEOUT = 10 * 1000;
+// shared with the label printer, which takes the same lock around emptying the print queue
+const LOCK_PAGE = `${PREFIX}:lock`;
+const PRINT_QUEUE_PAGE = `${PREFIX}:print-queue`;
+
+// call dokuwiki's JSON-RPC API, authenticated by the reader's own wiki session
+export async function rpc(method, params = {}) {
+  const res = await fetch(`/lib/exe/jsonrpc.php/${method}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    throw new Error(`${method}: HTTP ${res.status}`);
+  }
+
+  if (body.error?.code) {
+    const error = new Error(body.error.message);
+    error.code = body.error.code;
+    throw error;
+  }
+
+  return body.result;
+}
+
+// page id of a wiki path such as /inventar/V-GM000376
+export const pageId = (path) => decodeURIComponent(path).replace(/^\/+/, '').replaceAll('/', ':').toLowerCase();
+
+async function pageExists(page) {
+  try {
+    await rpc('core.getPageInfo', { page });
+    return true;
+  } catch (e) {
+    if (e.code === 121) {
+      return false;
+    }
+    throw e;
+  }
+}
 
 const inventorySyntaxOrder = Object.fromEntries([
   'inventory',
@@ -36,90 +78,78 @@ const sortMapEntries = (a, b) => {
   return (inventorySyntaxOrder[a.key.value] || 99) - (inventorySyntaxOrder[b.key.value] || 99);
 };
 
+// The lock is the content of a wiki page, "<token>/<date>", so that the label
+// printer can take part in it too. A lock older than LOCK_TIMEOUT counts as stale.
+//
+// Reading, writing and re-reading that page is not atomic, so two attempts at
+// the same moment can both believe they won. That cannot be ruled out between
+// different people, but writes from this tab (such as a bulk edit, which saves
+// many items at once) queue up here and take the lock one after another.
+let localQueue = Promise.resolve();
+const localHolders = new Map();
+
 export async function lock() {
+  let done;
+  const previous = localQueue;
+  localQueue = new Promise(resolve => { done = resolve; });
+  await previous;
+
   try {
-    const res = await fetch('/inventar/lock?do=edit');
-    const html = await res.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const data = new FormData(doc.querySelector('form[method="post"]'));
-    const lockDate = data.get('wikitext').split('/').pop();
-
-    if (data.get('wikitext') && lockDate && (new Date(res.headers.get('date')) - new Date(lockDate)) < LOCK_TIMEOUT) {
-      // retry later
-      throw new Error('retry');
-    }
-
-    const lock = uuidv4();
-    data.set('wikitext', `${lock}/${res.headers.get('date')}`);
-    data.set('summary', 'lock');
-    data.set('do[save]', '1');
-    await fetch('/inventar/lock?do=edit', {
-      method: 'post',
-      body: data
-    });
-
-    {
-      const res = await fetch('/inventar/lock?do=export_raw');
-      const data = await res.text();
-      if (data.split('/')[0] === lock) {
-        // lock acquired
-        return lock;
-      }
-
-      throw new Error('retry');
-    }
+    const token = await acquireLock();
+    localHolders.set(token, done);
+    return token;
   } catch (e) {
-    if (e.message === 'retry') {
-      console.log('already locked, retrying later');
-      await new Promise(resolve => setTimeout(resolve, Math.round(Math.random() * LOCK_TIMEOUT)));
-      return lock();
-    } else {
-      throw e;
-    }
+    done();
+    throw e;
   }
 }
 
-export async function release(lock) {
-  const res = await fetch('/inventar/lock?do=edit');
-  const html = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  const data = new FormData(doc.querySelector('form[method="post"]'));
-  const actualLock = data.get('wikitext').split('/')?.[0];
+async function acquireLock() {
+  const text = await rpc('core.getPage', { page: LOCK_PAGE });
+  const now = new Date((await rpc('core.getWikiTime')) * 1000);
+  const lockDate = text.split('/').pop();
 
-  if (lock !== actualLock) {
-    throw Error('not holding correct lock');
+  if (text && lockDate && (now - new Date(lockDate)) < LOCK_TIMEOUT) {
+    console.log('already locked, retrying later');
+    await new Promise(resolve => setTimeout(resolve, Math.round(Math.random() * LOCK_TIMEOUT)));
+    return acquireLock();
   }
 
-  data.set('wikitext', '');
-  data.set('summary', 'release');
-  data.set('do[save]', '1');
-  await fetch('/inventar/lock?do=edit', {
-    method: 'post',
-    body: data
-  });
+  const token = uuidv4();
+  await rpc('core.savePage', { page: LOCK_PAGE, text: `${token}/${now.toUTCString()}`, summary: 'lock' });
+
+  if ((await rpc('core.getPage', { page: LOCK_PAGE })).split('/')[0] !== token) {
+    // somebody else was faster
+    return acquireLock();
+  }
+
+  return token;
+}
+
+export async function release(token) {
+  try {
+    const text = await rpc('core.getPage', { page: LOCK_PAGE });
+    if (token !== text.split('/')[0]) {
+      throw Error('not holding correct lock');
+    }
+
+    await rpc('core.savePage', { page: LOCK_PAGE, text: '', summary: 'release' });
+  } finally {
+    localHolders.get(token)?.();
+    localHolders.delete(token);
+  }
 }
 
 export async function fetchItems() {
-  const res = await fetch('/lib/exe/ajax.php', {
-    method: 'POST',
-    body: `call=index&idx=${PREFIX}`,
-    headers: {
-      'content-type': 'application/x-www-form-urlencoded',
-    }
-  });
-  const data = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data, 'text/html');
-
-  return [...doc.querySelectorAll('a[data-wiki-id]')]
-    .map(e => String(e.getAttribute('href')).replaceAll(':', '/').toUpperCase().split('/').pop())
+  return (await rpc('core.listPages', { namespace: PREFIX, depth: 1 }))
+    .map(e => e.id.split(':').pop().toUpperCase());
 };
 
 // The overview page lists every item as "[date] - [ns:id] Title"; that is the
 // only place where inventory numbers and titles appear together, which is what
-// the Kennbuchstabe suggestions are built from.
+// the Kennbuchstabe suggestions are built from. The API is no help here: with
+// useheading off it reports page ids as titles, and reading every page would
+// take one request per item.
 const ENTRY_ID_REGEX = /^([SVL])-([A-Z]{2})([0-9]{6})(?:-([A-Z0-9]+))?$/;
 const ENTRY_PREFIX_REGEX = /^(?:\s*\[[^\]]*\]\s*-?\s*)+/;
 
@@ -166,38 +196,25 @@ export async function nextNumber() {
 };
 
 export async function fetchLocations() {
-  const res = await fetch(`/inventar/locations`);
-  const html = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  return [...doc.querySelectorAll('#dokuwiki__content li')].map(e => e.innerText.trim());
+  const html = await rpc('core.getPageHTML', { page: `${PREFIX}:locations` });
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  return [...doc.querySelectorAll('li')].map(e => e.textContent.trim());
 }
 
 export async function searchItems(query) {
-  const res = await fetch('/' + PREFIX + '?' + new URLSearchParams({
-      do: 'search',
-      // sf: 1,
-      q: `${query} @${PREFIX}`
-  }).toString());
-  const data = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data, 'text/html');
-
-  return [...doc.querySelectorAll('.search_results a[data-wiki-id]')]
-    .map(e => String(e.getAttribute('data-wiki-id')).replaceAll(':', '/').toUpperCase().split('/').pop())
+  return (await rpc('core.searchPages', { query: `${query} @${PREFIX}` }))
+    .map(e => e.id.split(':').pop().toUpperCase());
 };
 
 export async function fetchInventoryItem(inventoryId) {
-  const res = await fetch(`/${PREFIX}/${inventoryId}`);
-  const data = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(data, 'text/html');
+  // a missing page comes back as the namespace template, which has no yaml block
+  const wikitext = await rpc('core.getPage', { page: `${PREFIX}:${String(inventoryId).toLowerCase()}` });
 
-  for (const e of doc.querySelectorAll('#dokuwiki__content .code.yaml')) {
+  for (const [, block] of wikitext.replaceAll('\r\n', '\n').matchAll(new RegExp(YAML_REGEX.source, 'gs'))) {
     try {
-      const data = YAML.parse(e.innerText);
+      const data = YAML.parse(block);
       if (data.inventory) {
-        data.title = doc.querySelector('#dokuwiki__content h1')?.innerText || '';
+        data.title = /^# (.*)$/m.exec(wikitext)?.[1]?.trim() || '';
 
         const date = new Date(data.date);
         if (!(date instanceof Date && !isNaN(date))) {
@@ -222,54 +239,51 @@ const cleanContent = (content) => content.replace(/^\s*\n/, '').trimEnd();
 
 // free content of an item page, everything below the yaml block
 export async function fetchItemContent(path) {
-  const res = await fetch(`${path}?do=export_raw`);
-  const wikitext = (await res.text()).replaceAll('\r\n', '\n');
+  const wikitext = (await rpc('core.getPage', { page: pageId(path) })).replaceAll('\r\n', '\n');
   const match = YAML_REGEX.exec(wikitext);
   return match ? cleanContent(wikitext.slice(match.index + match[0].length)) : '';
 }
 
-// hidden fields of the media manager's upload form: security token and namespace
-async function uploadForm(ns) {
-  const res = await fetch(`/${PREFIX}?` + new URLSearchParams({ do: 'media', ns, tab_files: 'upload' }));
+// security token of the reader's session, the API does not need it, the preview does
+async function securityToken() {
+  const res = await fetch(`/${PREFIX}?` + new URLSearchParams({ do: 'media', ns: PREFIX, tab_files: 'upload' }));
   const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
-  const form = doc.querySelector('#dw__upload');
-  if (!form) {
-    throw new Error('Keine Berechtigung zum Hochladen');
+  const sectok = doc.querySelector('#dw__upload input[name="sectok"]')?.value;
+  if (!sectok) {
+    throw new Error('Keine Berechtigung');
   }
 
-  return new URLSearchParams([...new FormData(form)].filter(([, value]) => typeof value === 'string'));
+  return sectok;
 }
 
-// upload a file into a media namespace the way dokuwiki's media manager does,
-// returns the media id of the stored file
+// close enough to dokuwiki's cleanID for file names that the id computed here
+// is the one the file ends up stored under
+const cleanMediaName = (name) => name.toLowerCase()
+  .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+  .normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9._-]+/g, '_').replace(/_+/g, '_')
+  .replace(/^[._-]+|[._-]+$/g, '');
+
+const readBase64 = (file) => new Promise((resolve, reject) => {
+  const reader = new FileReader();
+  reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+  reader.onerror = () => reject(reader.error);
+  reader.readAsDataURL(file);
+});
+
+// upload a file into a media namespace, returns the media id of the stored file
 export async function uploadMedia(ns, file) {
-  const params = await uploadForm(ns);
-  params.delete('mediaid');
-  params.delete('ow');
-  params.set('ns', ns);
-  params.set('call', 'mediaupload');
-  params.set('qqfile', file.name);
+  const media = `${ns}:${cleanMediaName(file.name) || 'datei'}`;
+  await rpc('core.saveMedia', { media, base64: await readBase64(file), overwrite: false });
 
-  const res = await fetch(`/lib/exe/ajax.php?${params}`, {
-    method: 'post',
-    headers: {
-      'X-Requested-With': 'XMLHttpRequest',
-      'X-File-Name': encodeURIComponent(file.name),
-      'Content-Type': 'application/octet-stream'
-    },
-    body: file
-  });
-  const result = await res.json();
-  if (!result.success) {
-    throw new Error(new DOMParser().parseFromString(result.error || 'Hochladen fehlgeschlagen', 'text/html').body.textContent);
-  }
-
-  return result.id;
+  // make sure the file really is where the snippet will point to
+  await rpc('core.getMediaInfo', { media });
+  return media;
 }
 
 // render markdown content with dokuwiki's own preview, so it looks exactly like the page
 export async function renderPreview(path, content) {
-  const sectok = (await uploadForm(PREFIX)).get('sectok');
+  const sectok = await securityToken();
   const res = await fetch(`${path}?do=edit`, {
     method: 'post',
     body: new URLSearchParams({ sectok, wikitext: `${DOCTYPE}\n${content}`, 'do[preview]': '1' })
@@ -288,49 +302,36 @@ export async function renderPreview(path, content) {
 }
 
 export async function remotePrint(inventoryId) {
+  const ids = Array.isArray(inventoryId) ? inventoryId : [inventoryId];
   const token = await lock();
-  const res = await fetch('/inventar/print-queue?do=edit');
-  const html = await res.text();
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  const data = new FormData(doc.querySelector('form[method="post"]'));
-  if (Array.isArray(inventoryId)) {
-    data.set('wikitext', `${data.get('wikitext')}\n  * ${inventoryId.join('\n  * ')}`);
-  } else {
-    data.set('wikitext', `${data.get('wikitext')}\n  * ${inventoryId}`);
+  try {
+    await rpc('core.appendPage', { page: PRINT_QUEUE_PAGE, text: `\n  * ${ids.join('\n  * ')}`, summary: 'add entry' });
+  } finally {
+    await release(token);
   }
-  data.set('summary', 'add entry');
-  data.set('do[save]', '1');
-  await fetch('/inventar/print-queue?do=edit', {
-    method: 'post',
-    body: data
-  });
-  await release(token);
 }
 
 export async function writeItem(path, entry = { }, opts = { create: false, summary: '', replacer: null, content: undefined }) {
+  const page = pageId(path);
   const token = await lock();
   try {
-    const res = await fetch(`${path}?do=edit`);
     if (opts.create && !/-[a-z]$/.test(entry.number)) {
       entry.number = await nextNumber();
     }
 
-    const html = await res.text();
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const data = new FormData(doc.querySelector('form[method="post"]'));
-
     let yaml = {};
+    let text = '';
 
     if (opts.create) {
-      if (data.get('wikitext') && data.get('wikitext') !== "Please use the inventory system to create items") {
+      if (await pageExists(page)) {
         throw new Error('Ziel Seite ist nicht leer');
       }
-    } else if (!YAML_REGEX.test(data.get('wikitext'))) {
-      throw new Error('Kein gültiger YAML-Block gefunden');
     } else {
-      yaml = YAML.parse(YAML_REGEX.exec(data.get('wikitext'))[1]);
+      text = (await rpc('core.getPage', { page })).replaceAll('\r\n', '\n');
+      if (!YAML_REGEX.test(text)) {
+        throw new Error('Kein gültiger YAML-Block gefunden');
+      }
+      yaml = YAML.parse(YAML_REGEX.exec(text)[1]);
     }
 
     if (typeof(opts.replacer) === 'function') {
@@ -358,10 +359,9 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
       }
     }
 
-    data.set('summary', opts.summary || `edit metadata`);
-
+    let wikitext;
     if (opts.create) {
-      data.set('wikitext', [
+      wikitext = [
         DOCTYPE,
         `# ${entry.title}`,
         '',
@@ -370,9 +370,9 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
         '```',
         '',
         ...(cleanContent(opts.content ?? '') ? [cleanContent(opts.content), ''] : []),
-      ].join('\n'));
+      ].join('\n');
     } else {
-      let wikitext = data.get('wikitext')
+      wikitext = text
         .replace(YAML_REGEX, '```yaml\n' + YAML.stringify(yaml, { sortMapEntries }) + '\n```');
 
       if (typeof opts.content === 'string') {
@@ -388,16 +388,10 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
       if (entry.title) {
         wikitext = wikitext.replace(/\n# .*/, `\n# ${entry.title}`);
       }
-
-      data.set('wikitext', wikitext);
     }
 
-    data.set('do[save]', '1');
-
-    await fetch(`${path}?do=edit`, {
-      method: 'post',
-      body: data
-    });
+    // fails loudly, e.g. when somebody else has the page open in the wiki's editor
+    await rpc('core.savePage', { page, text: wikitext, summary: opts.summary || 'edit metadata' });
   } finally {
     await release(token);
   }
