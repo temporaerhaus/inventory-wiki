@@ -45,8 +45,12 @@
 import QRCode from 'qrcode';
 import { markRaw } from 'vue';
 
+import logo from '@/assets/logo-full.svg?raw';
 import pdfMake, { mm2pt } from '@/utils/pdf.js';
-import { fetchInventoryItem, remotePrintContents, searchItems } from '@/utils/api.js';
+import { PREFIX, fetchInventoryItem, remotePrintContents, searchItems } from '@/utils/api.js';
+
+// the dev server runs on localhost but proxies this wiki
+const WIKI_ORIGIN = import.meta.env.DEV ? 'https://wiki.temporaerhaus.de' : location.origin;
 
 // "all levels" still stops here, to deal with potential circular links
 const MAX_DEPTH = 10;
@@ -112,6 +116,7 @@ export default {
     async createPDF() {
       const created = new Date().toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
       const qrCode = await this.qrCode(this.inventoryId);
+      const pageUrl = `${WIKI_ORIGIN}/${PREFIX}/${this.inventoryId.toLowerCase()}`;
 
       // a table cannot flow from one column into the next, so the rows are split
       // into columns and pages up front. For that every row has the same height:
@@ -210,13 +215,17 @@ export default {
               { text: this.title || '', fontSize: 10 },
               { text: `${this.rows.length} ${this.rows.length === 1 ? 'Gegenstand' : 'Gegenstände'} · Stand ${created}`, fontSize: 7, color: '#666666' }
             ]
+          }, {
+            // 910 × 380, at the height of the QR code
+            svg: logo,
+            width: mm2pt(18) * 910 / 380
           }],
           margin: [margin.side, mm2pt(8), margin.side, 0]
         }),
 
         footer: (current, count) => ({
           columns: [
-            { text: `${this.inventoryId} · Stand ${created}`, color: '#666666' },
+            { text: pageUrl, link: pageUrl, color: '#0066aa' },
             { text: `Seite ${current} von ${count}`, alignment: 'right', color: '#666666' }
           ],
           fontSize: 7,
