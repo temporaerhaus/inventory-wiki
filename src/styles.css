@@ -270,6 +270,30 @@
   padding-bottom: 1em;
 }
 
+.invwiki label.invwiki-bulk-apply {
+  display: block;
+  padding-top: .5em;
+}
+
+.invwiki label.invwiki-bulk-value {
+  display: block;
+  padding-bottom: 1em;
+  font-weight: normal;
+}
+
+.invwiki label.invwiki-select-all {
+  display: inline-block;
+  margin-left: 1em;
+  font-weight: normal;
+}
+
+.invwiki-selection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5em;
+  margin: .5em 0 1em;
+}
+
 .invwiki ::-webkit-input-placeholder {
   color: #949494;
 }

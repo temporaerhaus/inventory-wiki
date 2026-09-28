@@ -45,6 +45,8 @@ import {
   mdiLightbulbOnOutline,
   mdiLanguageMarkdownOutline,
   mdiUpload,
+  mdiCheckboxBlankOutline,
+  mdiCheckboxMultipleMarkedOutline,
 } from '@mdi/js';
 
 export default {
@@ -94,6 +96,8 @@ export default {
       mdiLightbulbOnOutline,
       mdiLanguageMarkdownOutline,
       mdiUpload,
+      mdiCheckboxBlankOutline,
+      mdiCheckboxMultipleMarkedOutline,
       mdiSortAlphabeticalDescending,
       mdiPackageVariant,
     }

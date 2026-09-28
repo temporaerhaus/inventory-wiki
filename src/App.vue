@@ -8,6 +8,11 @@
       {{ selected.length > 1 ? selected.length : '' }} ausgewählte{{  selected.length > 1 ? '' : 'n' }} Aufkleber Remote Drucken
     </button>
     <location-component :selected="selected" />
+    <bulk-edit-component :selected="selected" />
+    <button @click="toggleAll()" v-if="indexCount > 0">
+      <mdi-icon :icon="allSelected ? 'checkbox-blank-outline' : 'checkbox-multiple-marked-outline'" left />
+      {{ allSelected ? 'Auswahl aufheben' : `Alle ${indexCount} auswählen` }}
+    </button>
     <x-dialog ref="dialog" :loading="loading" />
   </div>
 </template>
@@ -23,10 +28,12 @@ import ItemComponent from '@/components/ItemComponent.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
+import BulkEditComponent from '@/components/BulkEditComponent.vue';
 
 export default {
   components: {
     LocationComponent,
+    BulkEditComponent,
     CreateComponent,
     ScanComponent
   },
@@ -34,6 +41,8 @@ export default {
   data: () => ({
     previousInteraction: null,
     selection: {},
+    // number of items with a checkbox on the index page
+    indexCount: 0,
     loading: false
   }),
 
@@ -138,10 +147,21 @@ export default {
           }
         }
       }
+
+      this.indexCount = document.querySelectorAll('input.invwiki-index[type="checkbox"]').length;
     }
   },
 
   methods: {
+    toggleAll() {
+      const value = !this.allSelected;
+      for (const o of document.querySelectorAll('input.invwiki-index[type="checkbox"]')) {
+        o.checked = value;
+        this.selection[o.id] = value;
+      }
+      this.previousInteraction = null;
+    },
+
     async printRemote() {
       try {
         await this.$refs.dialog.show();
@@ -183,6 +203,10 @@ export default {
       return this.active && [...document.querySelectorAll('#dokuwiki__content .code.yaml')]
           .map(e => YAML.parse(e.innerText))
           .find(e => e.inventory);
+    },
+
+    allSelected() {
+      return this.indexCount > 0 && this.selected.length === this.indexCount;
     },
 
     selected() {

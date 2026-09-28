@@ -7,8 +7,16 @@
       <b v-if="container">📦 Beinhaltete Gegenstände:</b>
       <button v-if="container && Object.values(containedItems || {}).some(e => e.container)" :class="`invwiki-expand-all ${loading ? 'loading' : ''}`" title="Alle ausklappen" @click="expand(null, null, true)" :disabled="loading"></button>
       <button v-else-if="container && loading && Object.values(containedItems || {}).length == 0" :class="`invwiki-expand-all loading`" disabled></button>
-      <small v-if="Object.values(selected)?.filter?.(e => e)?.length > 0">&emsp;(Auswahl: {{ Object.values(selected).filter(e => e).length }} von {{ Object.keys(containedItems).length }})</small>
+      <small v-if="selectedPaths.length > 0">&emsp;(Auswahl: {{ selectedPaths.length }} von {{ visibleIds.length }})</small>
+      <label v-if="container && visibleIds.length > 0" class="invwiki-select-all">
+        <input type="checkbox" :checked="allSelected" :indeterminate.prop="!allSelected && selectedPaths.length > 0" @change="toggleAll($event.target.checked)" />
+        Alle angezeigten auswählen
+      </label>
       <ContainedItemsList v-if="container" :containedItems="containedItems" v-model="selected" @expand="expand($event.id, $event.item, false)" :loading="loading" />
+      <div v-if="container && selectedPaths.length > 0" class="invwiki-selection-actions">
+        <location-component :selected="selectedPaths" />
+        <bulk-edit-component :selected="selectedPaths" />
+      </div>
     </div>
     <div class="invwiki item-card location-card">
       <ul>
@@ -75,10 +83,11 @@
 </template>
 
 <script>
-import { fetchInventoryItem, searchItems } from '@/utils/api.js';
+import { PREFIX, fetchInventoryItem, searchItems } from '@/utils/api.js';
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
+import BulkEditComponent from '@/components/BulkEditComponent.vue';
 import ContainedItemsList from '@/components/ContainedItemsList.vue';
 
 // taken from https://stackoverflow.com/a/78704662
@@ -101,6 +110,7 @@ export default {
     LabelComponent,
     CreateComponent,
     LocationComponent,
+    BulkEditComponent,
     ContainedItemsList
   },
 
@@ -154,6 +164,12 @@ export default {
   },
 
   methods: {
+    toggleAll(value) {
+      for (const id of this.visibleIds) {
+        this.selected[id] = value;
+      }
+    },
+
     async expand(parentId = null, parent = null, recursive = true) {
       console.log('expand', parentId, parent);
       if (!this.container) {
@@ -203,6 +219,23 @@ export default {
   },
 
   computed: {
+    // ids of contained items as shown in the list, including expanded sub items
+    visibleIds() {
+      const collect = (items) => Object.entries(items || {}).flatMap(([id, item]) => [
+        id,
+        ...(item.container && item.expanded ? collect(item.children) : [])
+      ]);
+      return collect(this.containedItems);
+    },
+
+    allSelected() {
+      return this.visibleIds.length > 0 && this.visibleIds.every(id => this.selected[id]);
+    },
+
+    selectedPaths() {
+      return Object.entries(this.selected).filter(([, value]) => value).map(([id]) => `/${PREFIX}/${id}`);
+    },
+
     lastSeenAtRelative() {
       const diff = new Date(this.lastSeenAt) - new Date();
 
