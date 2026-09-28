@@ -6,9 +6,11 @@ import { defineConfig } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
 
 function handleAuthenticatedProxy(proxy) {
-  proxy.on('proxyReq', (proxyReq) => {
+  proxy.on('proxyReq', (proxyReq, req) => {
     if (process.env['COOKIE']) {
-      proxyReq.setHeader('Cookie', process.env['COOKIE']);
+      // browser cookies first, php uses the first cookie of a name: a session handed out
+      // by dokuwiki wins over a stale one from the env, so that security tokens stay valid
+      proxyReq.setHeader('Cookie', [req.headers.cookie, process.env['COOKIE']].filter(Boolean).join('; '));
     }
   });
   proxy.on('proxyRes', (proxyRes) => {
