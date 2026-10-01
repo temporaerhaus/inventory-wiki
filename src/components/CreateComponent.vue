@@ -149,7 +149,7 @@
 
         <label for="invwiki-form-id">
           <mdi-icon icon="barcode" left title="Rechnung" />
-          Zu Vergebene Inventarnummer
+          Zu vergebende Inventarnummer
         </label>
         <input id="invwiki-form-id" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
       </template>
