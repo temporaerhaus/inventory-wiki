@@ -1,7 +1,7 @@
 <template>
   <button @click="editItem" v-if="sub">
     <mdi-icon icon="subdirectory-arrow-right" left />
-    Unter-Gegenstand Hinzufügen
+    Zugehörigen Gegenstand Hinzufügen
   </button>
   <button @click="editItem" v-else-if="clone">
     <mdi-icon icon="content-duplicate" left />
@@ -135,7 +135,7 @@
         </label>
         <input id="invwiki-form-number" type="text" :value="number" disabled />
 
-        <label for="invwiki-form-suffix">
+        <label for="invwiki-form-suffix" v-if="sub">
           <mdi-icon icon="sort-alphabetical-descending" left title="Optionales Suffix" />
           Optionales Suffix
         </label>
