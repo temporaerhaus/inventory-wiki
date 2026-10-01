@@ -240,7 +240,7 @@ export default {
           columnGap: gap,
           ...(i > 0 ? { pageBreak: 'before' } : {})
         })) : [{
-          text: 'Keine Gegenstände an diesem Ort.', italics: true
+          text: 'Keine Gegenstände an diesem Aufenthaltsort.', italics: true
         }]
       });
     },

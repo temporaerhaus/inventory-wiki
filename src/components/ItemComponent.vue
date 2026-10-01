@@ -303,7 +303,7 @@ export default {
       const elsewhere = Boolean(this.temporary?.location && this.nominal?.location && !samePlace(this.temporary.location, this.nominal.location));
       return [{
         key: 'nominal',
-        label: 'Soll-Ort',
+        label: 'Regulärer Aufenthaltsort',
         icon: 'map-marker-alert-outline',
         data: this.nominal,
         item: this.nominalLocation,
@@ -311,7 +311,7 @@ export default {
         elsewhere: false
       }, {
         key: 'temporary',
-        label: elsewhere ? 'Aktueller Ort, nicht am Soll-Ort' : 'Aktueller Ort',
+        label: elsewhere ? 'Aktueller Aufenthaltsort, nicht am regulären Aufenthaltsort' : 'Aktueller Aufenthaltsort',
         icon: 'map-clock-outline',
         data: this.temporary,
         item: this.temporaryLocation,

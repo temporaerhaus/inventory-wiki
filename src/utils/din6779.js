@@ -563,11 +563,11 @@ export default [{
     example: "",
     children: [{
         value: "PF",
-        text: "Darstellen von Informationen (bleiben)",
+        text: "Darstellen von Informationen (bleibend)",
         example: "* Drucker\n* Schreiber\n* Plotter"
     }, {
         value: "PG",
-        text: "Darstellen von Informationen (nicht bleiben)",
+        text: "Darstellen von Informationen (nicht bleibend)",
         example: "* Melder\n* Monitor\n* Meldelampe"
     }, {
         value: "PZ",

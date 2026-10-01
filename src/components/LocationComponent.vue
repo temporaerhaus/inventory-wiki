@@ -1,17 +1,17 @@
 <template>
   <button @click="open" v-if="singleItem">
     <mdi-icon icon="home-map-marker" left />
-    Ort Aktualisieren
+    Aufenthaltsort Aktualisieren
   </button>
 
   <button @click="open" v-if="selected?.length > 0">
     <mdi-icon icon="home-map-marker" left />
-    {{ selected.length > 1 ? selected.length : '' }} ausgewählte{{  selected.length > 1 ? '' : 'n' }} einen neuen Ort zuweisen
+    {{ selected.length > 1 ? selected.length : '' }} Ausgewählte{{  selected.length > 1 ? '' : 'm' }} einen anderen Aufenthaltsort zuweisen
   </button>
 
-  <x-dialog :title="`Ort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
+  <x-dialog :title="`Aufenthaltsort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
-      <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Ort" autofocus restrict>
+      <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Aufenthaltsort" autofocus restrict>
         <template #group="item">
           <b>{{ item.group.group }}:</b>
           <div>{{ item.group.text }}</div>
@@ -27,7 +27,7 @@
       </search-autocomplete>
 
       <blockquote v-if="!loading && !validLocation">
-        Bitte einen bestehenden Ort aus der Liste auswählen.
+        Bitte einen bestehenden Aufenthaltsort aus der Liste auswählen.
       </blockquote>
 
       <label for="invwiki-location-description">Weitere Infos</label>
@@ -41,15 +41,15 @@
       <div class="flex-row">
         <button @click="saveLocation(0)" :disabled="loading || !validLocation">
           <mdi-icon left icon="map-clock-outline" />
-          Als aktuellen Ort speichern
+          Als aktuellen Aufenthaltsort speichern
         </button>
         <button @click="saveLocation(1)" :disabled="loading || !validLocation">
           <mdi-icon left icon="content-save-alert-outline" />
-          Als Soll-Ort speichern
+          Als regulären Aufenthaltsort speichern
         </button>
         <button @click="saveLocation(2)" :disabled="loading">
           <mdi-icon left icon="undo-variant" />
-          Auf Soll-Ort zurücksetzen
+          Auf regulären Aufenthaltsort zurücksetzen
         </button>
       </div>
     </div>
