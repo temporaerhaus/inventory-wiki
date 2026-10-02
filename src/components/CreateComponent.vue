@@ -18,80 +18,80 @@
 
   <x-dialog :title="edit ? 'Gegenstand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
     <div>
-      <label for="invwiki-form-title">
+      <label :for="`invwiki-form-title-${nonce}`">
         <mdi-icon icon="toy-brick-outline" left title="Gegenstand" />
         Gegenstand
       </label>
-      <input id="invwiki-form-title" type="text" v-model="title" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-title-${nonce}`" type="text" v-model="title" @focus="$refs.c?.close?.()" />
 
       <template v-if="edit">
-        <label for="invwiki-form-id">Inventarnummer</label>
-        <input id="invwiki-form-id" type="text" :value="inventoryId" disabled />
+        <label :for="`invwiki-form-id-${nonce}`">Inventarnummer</label>
+        <input :id="`invwiki-form-id-${nonce}`" type="text" :value="inventoryId" disabled />
       </template>
 
-      <label for="invwiki-form-description">
+      <label :for="`invwiki-form-description-${nonce}`">
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
         Kurzbeschreibung
       </label>
-      <textarea id="invwiki-form-description" v-model="description" @focus="$refs.c?.close?.()"></textarea>
+      <textarea :id="`invwiki-form-description-${nonce}`" v-model="description" @focus="$refs.c?.close?.()"></textarea>
       <blockquote>
         Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt und ist daher nur eine Zeile.
         Weitere Informationen zum Gegenstand und Anhänge können unten bei <em>Weitere Inhalte</em> hinterlegt werden.
       </blockquote>
 
-      <label for="invwiki-form-category">
+      <label :for="`invwiki-form-category-${nonce}`">
         <mdi-icon icon="tag-outline" left title="Kategorie" />
         Kategorie
       </label>
-      <input id="invwiki-form-category" type="text" v-model="category" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" />
 
-      <label for="invwiki-form-origin">
+      <label :for="`invwiki-form-origin-${nonce}`">
         <mdi-icon icon="basket-unfill" left title="Ursprung" />
         Ursprung
       </label>
-      <input id="invwiki-form-origin" type="text" v-model="origin" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-origin-${nonce}`" type="text" v-model="origin" @focus="$refs.c?.close?.()" />
 
-      <label for="invwiki-form-owner">
+      <label :for="`invwiki-form-owner-${nonce}`">
         <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
         Eigentümer*in
       </label>
-      <input id="invwiki-form-owner" type="text" v-model="owner" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-owner-${nonce}`" type="text" v-model="owner" @focus="$refs.c?.close?.()" />
 
-      <label for="invwiki-form-lended" v-if="!edit">
-        <input id="invwiki-form-lended" type="checkbox" v-model="lended" />
+      <label :for="`invwiki-form-lended-${nonce}`" v-if="!edit">
+        <input :id="`invwiki-form-lended-${nonce}`" type="checkbox" v-model="lended" />
         <mdi-icon icon="account-question-outline" left />
         Leihgabe
       </label>
 
-      <label for="invwiki-form-small">
-        <input id="invwiki-form-small" type="checkbox" v-model="small" />
+      <label :for="`invwiki-form-small-${nonce}`">
+        <input :id="`invwiki-form-small-${nonce}`" type="checkbox" v-model="small" />
         <mdi-icon icon="image-size-select-small" left />
         Kleines Label
       </label>
 
-      <label for="invwiki-form-container">
-        <input id="invwiki-form-container" type="checkbox" v-model="container" />
+      <label :for="`invwiki-form-container-${nonce}`">
+        <input :id="`invwiki-form-container-${nonce}`" type="checkbox" v-model="container" />
         <mdi-icon icon="package-variant" left />
         Kann andere Gegenstände beherbergen
       </label>
 
-      <label for="invwiki-form-date">
+      <label :for="`invwiki-form-date-${nonce}`">
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
         Anschaffungsdatum
       </label>
-      <input id="invwiki-form-date" type="date" v-model="date" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" />
 
-      <label for="invwiki-form-serial">
+      <label :for="`invwiki-form-serial-${nonce}`">
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
         Seriennummer
       </label>
-      <input id="invwiki-form-serial" type="text" v-model="serial" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" />
 
-      <label for="invwiki-form-invoice">
+      <label :for="`invwiki-form-invoice-${nonce}`">
         <mdi-icon icon="file-document-outline" left title="Rechnung" />
         Rechnung
       </label>
-      <input id="invwiki-form-invoice" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
 
       <template v-if="!edit">
         <label v-if="suggestionsVisible">
@@ -129,17 +129,17 @@
           {{ classification.text }}
         </blockquote>
 
-        <label for="invwiki-form-number">
+        <label :for="`invwiki-form-number-${nonce}`">
           <mdi-icon icon="numeric-positive1" left title="Fortlaufende Nummer" />
           Fortlaufende Nummer
         </label>
-        <input id="invwiki-form-number" type="text" :value="number" disabled />
+        <input :id="`invwiki-form-number-${nonce}`" type="text" :value="number" disabled />
 
-        <label for="invwiki-form-suffix" v-if="sub">
+        <label :for="`invwiki-form-suffix-${nonce}`" v-if="sub">
           <mdi-icon icon="sort-alphabetical-descending" left title="Optionales Suffix" />
           Optionales Suffix
         </label>
-        <select id="invwiki-form-suffix" v-model="suffix" @focus="$refs.c?.close?.()">
+        <select :id="`invwiki-form-suffix-${nonce}`" v-model="suffix" @focus="$refs.c?.close?.()">
           <option value=""></option>
           <option v-for="s in suffixOptions" :key="s" :value="s">{{s}}</option>
         </select>
@@ -147,18 +147,18 @@
           Wenn Netzteile ein eigenes Label erhalten, aber nicht extra inventarisiert werden, so endet der QR-Code und die Nummer auf -N. Bei sonstigen Zubehör, auf -Z (und dann das Alphabet rückwärts).
         </blockquote>
 
-        <label for="invwiki-form-id">
+        <label :for="`invwiki-form-id-${nonce}`">
           <mdi-icon icon="barcode" left title="Inventarnummer" />
           Zu vergebende Inventarnummer
         </label>
-        <input id="invwiki-form-id" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
+        <input :id="`invwiki-form-id-${nonce}`" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
       </template>
 
-      <label for="invwiki-form-content">
+      <label :for="`invwiki-form-content-${nonce}`">
         <mdi-icon icon="language-markdown-outline" left title="Weitere Inhalte" />
         Weitere Inhalte
       </label>
-      <markdown-editor id="invwiki-form-content" v-model="content" :preview-path="pagePath" :media-namespace="mediaNamespace" />
+      <markdown-editor :id="`invwiki-form-content-${nonce}`" v-model="content" :preview-path="pagePath" :media-namespace="mediaNamespace" />
       <blockquote>
         Beliebiger Markdown-Inhalt, der auf der Wiki-Seite unterhalb der Gegenstandsdaten angezeigt wird, z.B. Notizen, Links oder Anhänge.
         Bilder und Dateien können per Drag &amp; Drop in das Feld gezogen werden.
@@ -232,7 +232,12 @@ export default {
     initialContent: '',
 
     classification: null,
-    suffixOptions: ['N', ...Array(26).fill(null).map((_, i) => String.fromCharCode(90-i)).filter(e => e !== 'N')]
+    suffixOptions: ['N', ...Array(26).fill(null).map((_, i) => String.fromCharCode(90-i)).filter(e => e !== 'N')],
+
+    // This nonce is appended to every id-attribute of input elements in this component, because id-attributes of
+    // input elements need to be unique, for screen readers and for label elements associated via a for-attribute.
+    // Since it is not known how many instances of this component will be created, the nonce is generated randomly.
+    nonce: Math.floor(Math.random()*10000).toString(),
   }),
 
   watch: {

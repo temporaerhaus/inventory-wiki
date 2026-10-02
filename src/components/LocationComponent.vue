@@ -30,11 +30,11 @@
         Bitte einen bestehenden Aufenthaltsort aus der Liste auswählen.
       </blockquote>
 
-      <label for="invwiki-location-description">Weitere Infos</label>
-      <textarea id="invwiki-location-description" v-model="description" />
+      <label :for="`invwiki-location-description-${nonce}`">Weitere Infos</label>
+      <textarea :id="`invwiki-location-description-${nonce}`" v-model="description" />
       
-      <label for="invwiki-location-update-last-seen">
-        <input type="checkbox" id="invwiki-location-update-last-seen" v-model="updateLastSeen" />
+      <label :for="`invwiki-location-update-last-seen-${nonce}`">
+        <input type="checkbox" :id="`invwiki-location-update-last-seen-${nonce}`" v-model="updateLastSeen" />
         <mdi-icon left icon="eye-outline" />
         Zeitstempel "<em>Zuletzt gesehen am</em>" auf die aktuelle Zeit setzen
       </label>
@@ -75,7 +75,9 @@ export default {
     locations: [],
     location: '',
     description: '',
-    updateLastSeen: true
+    updateLastSeen: true,
+    // See CreateComponent.vue for explanation of nonce usage
+    nonce: Math.floor(Math.random()*10000).toString(),
   }),
 
   computed: {
