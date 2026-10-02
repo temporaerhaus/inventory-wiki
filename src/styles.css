@@ -249,6 +249,7 @@
 .invwiki input[type='submit']:hover,
 .invwiki input[type='button']:hover {
   background: #dddddd;
+  color: #000;
 }
 
 .invwiki input:focus,
@@ -799,6 +800,7 @@ button.invwiki-container.expanded {
 
 .invwiki-suggestion.is-active {
   background-color: #4AAE9B;
+  background-image: none;
   color: white;
 }
 
