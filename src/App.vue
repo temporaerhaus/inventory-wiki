@@ -1,5 +1,5 @@
 <template>
-  <div class="invwiki invwiki-toolbar" v-if="active">
+  <div class="invwiki invwiki-toolbar sticky-header" v-if="active">
     <scan-component />
     <scan-component reprint />
     <create-component />
@@ -176,6 +176,15 @@ export default {
         }
         this.tableTarget = target;
       }
+      const stickyHeader = document.querySelector('.sticky-header');
+      const stickyObserver = new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting) {
+          stickyHeader.classList.remove('sticky-shadow');
+        } else {
+          stickyHeader.classList.add('sticky-shadow');
+        }
+      });
+      stickyObserver.observe(document.querySelector('.wrapper.group'));
     }
   },
 
