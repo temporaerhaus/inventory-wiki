@@ -12,6 +12,12 @@
   <x-dialog :title="`Aufenthaltsort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
       <search-autocomplete v-model="location" :items="locations" :keys="keys" :serializer="(e) => e.value" label="Aufenthaltsort" autofocus restrict>
+        <template #action>
+          <button type="button" title="Aufenthaltsort scannen" @click="$refs.scanner.startScan()" :disabled="loading">
+            <mdi-icon icon="qrcode-scan" title="Aufenthaltsort scannen" />
+          </button>
+        </template>
+
         <!-- the tree while browsing, the path of each hit while searching -->
         <template #item="{ item, searching }">
           <div class="invwiki-location-option" :style="searching ? '' : `padding-left: ${item.depth * 1.5}em`">
@@ -54,17 +60,21 @@
       </button>
     </template>
   </x-dialog>
+
+  <scan-component pick title="Aufenthaltsort Scannen" ref="scanner" @scan="onScan" />
 </template>
 
 <script>
 import { fetchLocationTree, writeItem } from '@/utils/api.js';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
+import ScanComponent from '@/components/ScanComponent.vue';
 
 const samePlace = (a, b) => String(a || '').trim().toUpperCase() === String(b || '').trim().toUpperCase();
 
 export default {
   components: {
-    SearchAutocomplete
+    SearchAutocomplete,
+    ScanComponent
   },
 
   props: {
@@ -91,6 +101,16 @@ export default {
 
   methods: {
     samePlace,
+
+    // a scanned label picks its container from the list
+    onScan(id) {
+      const option = this.locations.find(e => samePlace(e.value, id));
+      if (option) {
+        this.location = option;
+      } else {
+        alert(`${id} ist kein Behälter, der hier ausgewählt werden kann.`);
+      }
+    },
 
     async open() {
       this.$refs.dialog.show();

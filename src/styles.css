@@ -1168,3 +1168,38 @@ button.invwiki-container.expanded {
 .invwiki-autocomplete-result.is-active .invwiki-location-option svg {
   fill: white;
 }
+
+/* a field with a button inside it, at its right end */
+.invwiki-autocomplete-field.has-action {
+  position: relative;
+  width: calc(100% - 1.5em);
+}
+
+.invwiki .invwiki-autocomplete-field.has-action input {
+  width: 100%;
+  box-sizing: border-box;
+  padding-right: 3em;
+}
+
+.invwiki-autocomplete-action {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 6px;
+  display: flex;
+  align-items: center;
+}
+
+.invwiki .invwiki-autocomplete-action button {
+  margin: 0;
+  padding: 0 .75em;
+  height: 100%;
+  border: none;
+  background: transparent;
+}
+
+.invwiki .invwiki-autocomplete-action svg {
+  margin: 0;
+  width: 1.4em;
+  height: 1.4em;
+}

@@ -1,14 +1,16 @@
 <template>
-  <button @click="startScan()" v-if="reprint">
-    <mdi-icon icon="qrcode-plus" left />
-    Scannen und Drucken
-  </button>
-  <button @click="startScan()" v-else>
-    <mdi-icon icon="qrcode-scan" left />
-    Inventaraufkleber Scannen
-  </button>
+  <template v-if="!pick">
+    <button @click="startScan()" v-if="reprint">
+      <mdi-icon icon="qrcode-plus" left />
+      Scannen und Drucken
+    </button>
+    <button @click="startScan()" v-else>
+      <mdi-icon icon="qrcode-scan" left />
+      Inventaraufkleber Scannen
+    </button>
+  </template>
 
-  <x-dialog title="Inventaraufkleber Scannen" icon="qrcode-scan" ref="dialog" @close="stopScan()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
+  <x-dialog :title="title || 'Inventaraufkleber Scannen'" icon="qrcode-scan" ref="dialog" @close="stopScan()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
     <input type="text" autofocus placeholder="V-XX012345..." ref="scan" />
     <video ref="scanner"></video>
     <div style="margin-top: -5.5em; padding: 2em; text-align: right; margin-bottom: .5em;">
@@ -26,7 +28,13 @@ import { remotePrint } from '@/utils/api.js';
 export default {
   props: {
     reprint: Boolean,
+    // hand the scanned inventory number to the parent ("scan" event) instead
+    // of opening its page; the parent opens the scanner with startScan()
+    pick: Boolean,
+    title: String,
   },
+
+  emits: ['scan'],
 
   data: () => ({
     scanner: null,
@@ -37,7 +45,7 @@ export default {
   }),
 
   mounted() {
-    if (location.hash === '#scan') {
+    if (!this.pick && location.hash === '#scan') {
       history.replaceState('', '', '#');
       this.startScan();
     }
@@ -73,7 +81,16 @@ export default {
         return;
       }
 
-      if (this.reprint) {
+      if (this.pick) {
+        // the scanner reports every frame it reads, only the first one counts
+        if (!this.scanner && !this.$refs.scan.value) {
+          return;
+        }
+        this.$refs.scan.value = '';
+        this.$refs.dialog.close();
+        // a label holds the inventory number, possibly as the address of its page
+        this.$emit('scan', decodeURIComponent(String(decodedText).trim().replace(/\/+$/, '').split('/').pop()));
+      } else if (this.reprint) {
         try {
           this.$refs.scan.value = '';
           const res = await fetch(`/inventar/${decodedText}`);

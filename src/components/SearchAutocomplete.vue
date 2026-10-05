@@ -4,7 +4,13 @@
       <mdi-icon :icon="icon" left :title="label" v-if="icon" />
       {{ label }}
     </label>
-    <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" :disabled="disabled" @focus="onFocus" ref="input" />
+    <div class="invwiki-autocomplete-field" :class="{ 'has-action': $slots.action }">
+      <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" :disabled="disabled" @focus="onFocus" ref="input" />
+      <!-- e.g. a button that fills the field in another way -->
+      <span class="invwiki-autocomplete-action" v-if="$slots.action">
+        <slot name="action"></slot>
+      </span>
+    </div>
     <ul v-show="isOpen" class="invwiki-autocomplete-results">
       <li class="loading" v-if="loading">
         Loading results...
