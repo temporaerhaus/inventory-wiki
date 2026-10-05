@@ -3,7 +3,7 @@
     <mdi-icon icon="subdirectory-arrow-right" left />
     Zugehörigen Gegenstand Hinzufügen
   </button>
-  <button @click="editItem" v-else-if="clone">
+  <button @click="startClone" v-else-if="clone">
     <mdi-icon icon="content-duplicate" left />
     Gegenstand Duplizieren
   </button>
@@ -15,6 +15,27 @@
     <mdi-icon icon="toy-brick-plus-outline" left />
     <span class="invwiki-toolbar-label">Neuen Gegenstand Anlegen</span>
   </button>
+
+  <!-- a sub-item can be duplicated as an item of its own or as another sub-item -->
+  <x-dialog v-if="clone" title="Gegenstand Duplizieren" icon="content-duplicate" ref="cloneChoice">
+    <p>{{ $parent.inventoryId }} gehört zu {{ mainItemId }}. Wie soll das Duplikat angelegt werden?</p>
+    <div class="invwiki-clone-choice">
+      <button @click="cloneAs(false)">
+        <mdi-icon icon="toy-brick-plus-outline" left />
+        <span>
+          Als eigenständigen Gegenstand
+          <small>mit einer neuen Inventarnummer</small>
+        </span>
+      </button>
+      <button @click="cloneAs(true)">
+        <mdi-icon icon="subdirectory-arrow-right" left />
+        <span>
+          Als weiteren zugehörigen Gegenstand von {{ mainItemId }}
+          <small>mit dem nächsten freien Buchstaben</small>
+        </span>
+      </button>
+    </div>
+  </x-dialog>
 
   <x-dialog :title="edit ? 'Gegenstand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
     <div>
@@ -132,7 +153,7 @@
           </button>
         </div>
 
-        <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="sub" />
+        <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="subItem" />
         <blockquote v-if="classification?.text">
           {{ classification.text }}
         </blockquote>
@@ -143,7 +164,7 @@
         </label>
         <input :id="`invwiki-form-number-${nonce}`" type="text" :value="number" disabled autocomplete="off" />
 
-        <template v-if="sub">
+        <template v-if="subItem">
           <label :for="`invwiki-form-suffix-${nonce}`">
             <mdi-icon icon="sort-alphabetical-descending" left title="Suffix" />
             Suffix
@@ -240,6 +261,8 @@ export default {
     takenSuffixes: [],
     // whether the suffix was chosen by hand, which stops the suggestions
     suffixChosen: false,
+    // a duplicate of a sub-item that is another sub-item of the same item
+    cloneAsSub: false,
     inventoryId: '',
     description: '',
     serial: '',
@@ -277,7 +300,7 @@ export default {
 
   methods: {
     scheduleSuggestions() {
-      if (this.edit || this.sub) {
+      if (this.edit || this.subItem) {
         return;
       }
 
@@ -340,7 +363,7 @@ export default {
     // N for power supplies, Z for everything else, or, if that is taken, the
     // next free one in the order of the list
     suggestSuffix() {
-      if (!this.sub || this.suffixChosen) {
+      if (!this.subItem || this.suffixChosen) {
         return;
       }
 
@@ -350,7 +373,7 @@ export default {
     },
 
     async refreshNumber() {
-      if (this.edit || this.sub) {
+      if (this.edit || this.subItem) {
         return;
       }
       this.number = await nextNumber();
@@ -365,8 +388,23 @@ export default {
       this.$refs.dialog.show();
     },
 
+    // a sub-item asks first whether its duplicate is one too
+    startClone() {
+      if (this.mainItemId) {
+        this.$refs.cloneChoice.show();
+      } else {
+        this.cloneAs(false);
+      }
+    },
+
+    cloneAs(sub) {
+      this.cloneAsSub = sub;
+      this.$refs.cloneChoice?.close();
+      this.editItem();
+    },
+
     async editItem() {
-      if (!this.edit && !this.sub) {
+      if (!this.edit && !this.subItem) {
         this.loadSuggestIndex();
       }
 
@@ -398,7 +436,7 @@ export default {
         example: ''
       };
       // a sub-item gets a suffix of its own, a duplicate a new number and none
-      this.suffix = this.sub || this.clone ? '' : res?.[4] || '';
+      this.suffix = this.subItem || this.clone ? '' : res?.[4] || '';
       if (res?.[1] == 'L') {
         this.lended = true;
       }
@@ -413,7 +451,7 @@ export default {
       try {
         const [content, taken] = await Promise.all([
           fetchItemContent(location.pathname),
-          this.sub ? takenSuffixes(`${res?.[1]}-${res?.[2]}${res?.[3]}`) : [],
+          this.subItem ? takenSuffixes(`${res?.[1]}-${res?.[2]}${res?.[3]}`) : [],
         ]);
         this.content = this.initialContent = content;
         this.takenSuffixes = taken;
@@ -476,6 +514,18 @@ export default {
   },
 
   computed: {
+    // a sub-item is being created: by "Zugehörigen Gegenstand hinzufügen", or
+    // as a duplicate of a sub-item that belongs to the same item
+    subItem() {
+      return this.sub || (this.clone && this.cloneAsSub);
+    },
+
+    // the item the page's item belongs to, if it is a sub-item
+    mainItemId() {
+      const res = ID_REGEX.exec(this.$parent?.inventoryId || '');
+      return res?.[4] ? `${res[1]}-${res[2]}${res[3]}` : '';
+    },
+
     classificationsByCode() {
       return Object.fromEntries(this.categories.flatMap(
         group => (group.children || []).map(entry => [entry.value, { ...entry, group: { ...group, children: undefined } }])
@@ -498,7 +548,7 @@ export default {
     },
 
     suggestionsVisible() {
-      return !this.edit && !this.sub && Boolean(this.title.trim());
+      return !this.edit && !this.subItem && Boolean(this.title.trim());
     },
 
     id() {
@@ -506,7 +556,7 @@ export default {
     },
 
     disabled() {
-      return this.id.includes('?') && !this.edit || this.sub && !this.suffix || this.loading;
+      return this.id.includes('?') && !this.edit || this.subItem && !this.suffix || this.loading;
     },
 
     weights() {

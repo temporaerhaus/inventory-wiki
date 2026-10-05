@@ -1596,3 +1596,21 @@ button.invwiki-container.expanded {
   border-left-color: #b00020;
 }
 
+/* how a sub-item is duplicated, see CreateComponent.vue */
+.invwiki .invwiki-clone-choice {
+  display: flex;
+  flex-direction: column;
+  gap: .5em;
+}
+
+.invwiki .invwiki-clone-choice button {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  text-align: left;
+}
+
+.invwiki .invwiki-clone-choice small {
+  display: block;
+  color: var(--text-muted);
+}
