@@ -90,7 +90,8 @@ export default {
       }
     }
 
-    if (location.pathname === '/inventar' || location.pathname === '/inventar/') {
+    // only when the page is shown, not while it is edited, previewed or the like
+    if ((location.pathname === '/inventar' || location.pathname === '/inventar/') && this.showing) {
       document.querySelector('.plugin_nspages > ul')?.classList?.add?.('invwiki');
       for (const e of document.querySelectorAll('a.wikilink1')) {
         if (e.dataset.wikiId.startsWith('inventar:')) {
@@ -226,6 +227,13 @@ export default {
   computed: {
     active() {
       return location.pathname.startsWith('/inventar') || import.meta.env.MODE === 'development';
+    },
+
+    // the wiki's current action is "show": the page itself, rather than its
+    // editor, preview, history or an admin screen. The URL cannot tell, a
+    // preview is posted to the plain page address.
+    showing() {
+      return (window.JSINFO?.ACT ?? new URLSearchParams(location.search).get('do') ?? 'show') === 'show';
     },
 
     id() {
