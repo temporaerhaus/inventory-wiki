@@ -61,6 +61,20 @@
       <span v-if="small" title="Kleiner Aufkleber" style="float: right; margin-right: 1em;">🤏</span>
       <span v-if="container" title="Kann andere Gegenstände beherbergen" style="float: right; margin-right: 1em;">📦</span>
       <ul>
+        <!-- a sub-item (V-GM000123-N) and the item it belongs to (V-GM000123) -->
+        <li v-if="mainItem" title="Gehört zu">
+          <mdi-icon icon="subdirectory-arrow-left" left title="Gehört zu" />
+          Gehört zu <a :href="`/${PREFIX}/${mainItem.id}`"><b>{{ mainItem.id }}</b></a><template v-if="mainItem.title">: {{ mainItem.title }}</template>
+        </li>
+        <li v-if="subItems.length > 0" title="Zugehörige Gegenstände" class="invwiki-sub-items">
+          <mdi-icon icon="subdirectory-arrow-right" left title="Zugehörige Gegenstände" />
+          Zugehörige Gegenstände:
+          <ul>
+            <li v-for="item in subItems" :key="item.id">
+              <a :href="`/${PREFIX}/${item.id}`"><b>{{ item.id }}</b></a><template v-if="item.title">: {{ item.title }}</template>
+            </li>
+          </ul>
+        </li>
         <li title="Kategorie" v-if="category">
           <mdi-icon icon="tag-outline" left title="Kategorie" />
           {{ category }}
@@ -97,7 +111,7 @@
 </template>
 
 <script>
-import { PREFIX, fetchInventoryItem, remotePrint, searchItems } from '@/utils/api.js';
+import { PREFIX, fetchInventoryItem, fetchSubItems, mainItemOf, remotePrint, searchItems } from '@/utils/api.js';
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
@@ -154,6 +168,7 @@ export default {
   },
 
   data: () => ({
+    PREFIX,
     selected: {},
     loading: false,
     containedItems: [],
@@ -161,11 +176,16 @@ export default {
     temporaryLocation: null,
     nominalChain: [],
     temporaryChain: [],
+    // {id, title} of the item this sub-item belongs to
+    mainItem: null,
+    // [{id, title}] of the sub-items of this item
+    subItems: [],
   }),
 
   async mounted() {
     this.loading = true;
     this.containedItems = [];
+    this.loadRelatedItems();
 
     // both locations and the contained items load at the same time
     for (const key of ['nominal', 'temporary']) {
@@ -220,6 +240,21 @@ export default {
     },
 
     samePlace,
+
+    // the item this one belongs to, or the ones that belong to it; only for
+    // display, the page does without them
+    async loadRelatedItems() {
+      const main = mainItemOf(this.inventoryId);
+      try {
+        if (main) {
+          this.mainItem = { id: main, title: (await fetchInventoryItem(main))?.title || '' };
+        } else {
+          this.subItems = await fetchSubItems(this.inventoryId);
+        }
+      } catch (e) {
+        console.log(e);
+      }
+    },
 
     // the selected contents, to the print queue
     async printSelected() {

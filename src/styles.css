@@ -1529,3 +1529,15 @@ button.invwiki-container.expanded {
   margin-bottom: .5em;
   color: var(--text-muted);
 }
+
+/* the sub-items of an item, see ItemComponent.vue */
+.invwiki .invwiki-sub-items ul {
+  margin: .25em 0 0;
+  padding: 0 0 0 2.6em;
+}
+
+.invwiki .invwiki-sub-items ul li {
+  list-style: disc outside;
+  margin: 0;
+  padding: 0;
+}

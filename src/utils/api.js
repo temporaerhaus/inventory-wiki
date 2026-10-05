@@ -411,6 +411,36 @@ export async function fetchInventoryItem(inventoryId) {
   return null;
 };
 
+// An item and its sub-items: V-GM000123 and V-GM000123-N, -Z, …
+const SUB_ITEM_REGEX = /^([SVL]-[A-Z]{2}[0-9]{6})-([A-Z])$/;
+
+// the inventory number of the item a sub-item belongs to, null for any other
+export const mainItemOf = (inventoryId) => SUB_ITEM_REGEX.exec(String(inventoryId).toUpperCase())?.[1] ?? null;
+
+// [{id, title}] of the sub-items of an item, in the order of their suffixes;
+// from the wiki plugin in one request, or from the list of pages and one
+// request per sub-item where it is not installed
+export async function fetchSubItems(inventoryId) {
+  const main = String(inventoryId).toUpperCase();
+  const isSub = (id) => mainItemOf(id) === main;
+  const bySuffix = (a, b) => a.id.localeCompare(b.id);
+
+  try {
+    const { items } = await queryItems({ filters: { id: `${main}-` }, limit: 0, columns: ['title'] });
+    return items.filter(e => isSub(e.id)).map(e => ({ id: e.id, title: e.title })).sort(bySuffix);
+  } catch (e) {
+    if (!isPluginMissing(e)) {
+      throw e;
+    }
+  }
+
+  const ids = (await fetchItems()).filter(isSub);
+  return (await Promise.all(ids.map(async (id) => ({
+    id,
+    title: (await fetchInventoryItem(id).catch(() => null))?.title || '',
+  })))).sort(bySuffix);
+}
+
 // whether an error of the calls below means that the wiki plugin is not installed
 export const isPluginMissing = (e) => e?.message === 'Method does not exist';
 

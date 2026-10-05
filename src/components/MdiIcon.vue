@@ -65,6 +65,7 @@ import {
   mdiMapMarkerQuestionOutline,
   mdiEyeOffOutline,
   mdiOpenInNew,
+  mdiSubdirectoryArrowLeft,
 } from '@mdi/js';
 
 export default {
@@ -136,6 +137,7 @@ export default {
       mdiMapMarkerQuestionOutline,
       mdiEyeOffOutline,
       mdiOpenInNew,
+      mdiSubdirectoryArrowLeft,
     }
   }),
 
