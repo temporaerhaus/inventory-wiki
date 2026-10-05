@@ -1476,3 +1476,56 @@ button.invwiki-container.expanded {
 .invwiki .invwiki-selection-menu-items button:hover {
   background: var(--button-base);
 }
+
+/* the short description in the label's font, with what is not printed greyed
+   out by the text behind the transparent textarea, see LabelDescriptionInput.vue */
+.invwiki .invwiki-label-input {
+  position: relative;
+  width: calc(100% - 1.5em);
+  margin-bottom: 6px;
+}
+
+.invwiki .invwiki-label-input textarea,
+.invwiki .invwiki-label-input-backdrop {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-family: 'Roboto Mono', monospace;
+  font-size: inherit;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+}
+
+.invwiki .invwiki-label-input textarea {
+  position: relative;
+  display: block;
+  color: transparent;
+  caret-color: #000;
+  background: transparent;
+}
+
+.invwiki .invwiki-label-input-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: #000;
+  background-color: #efefef;
+  border-color: transparent;
+  pointer-events: none;
+}
+
+.invwiki .invwiki-label-input-cut {
+  color: #a0a0a0;
+}
+
+.invwiki .invwiki-label-input-hint {
+  display: block;
+  margin-bottom: .5em;
+  color: var(--text-muted);
+}

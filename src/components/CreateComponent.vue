@@ -33,9 +33,17 @@
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
         Kurzbeschreibung
       </label>
-      <textarea :id="`invwiki-form-description-${nonce}`" v-model="description" @focus="$refs.c?.close?.()"></textarea>
+      <label-description-input
+        :id="`invwiki-form-description-${nonce}`"
+        v-model="description"
+        :inventory-id="edit ? inventoryId : id"
+        :serial="serial"
+        :owner="owner"
+        :small="Boolean(small)"
+        @focus="$refs.c?.close?.()"
+      />
       <blockquote>
-        Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt und ist daher nur eine Zeile.
+        Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt, soweit sie darauf passt; was nicht mehr passt, ist grau.
         Weitere Informationen zum Gegenstand und Anhänge können unten bei <em>Weitere Inhalte</em> hinterlegt werden.
       </blockquote>
 
@@ -189,6 +197,7 @@
 <script>
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
+import LabelDescriptionInput from '@/components/LabelDescriptionInput.vue';
 import categories from '@/utils/categories.js';
 import { buildIndex, suggest } from '@/utils/suggest.js';
 import { itemText, loadEnrichment } from '@/utils/enrichment.js';
@@ -209,7 +218,8 @@ export default {
 
   components: {
     SearchAutocomplete,
-    MarkdownEditor
+    MarkdownEditor,
+    LabelDescriptionInput
   },
 
   data: () => ({

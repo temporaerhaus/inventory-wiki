@@ -43,90 +43,9 @@ import QRCode from 'qrcode';
 
 import logo from '@/assets/logo.svg?raw';
 import pdfMake from '@/utils/pdf.js';
+import { LAYOUTS, labelDescription, shortenDescription, truncateText } from '@/utils/label.js';
 
 import { remotePrint } from '@/utils/api.js';
-
-function textMaxWidth(content) {
-  return new Promise((resolve) => pdfMake.createPdf({
-    defaultStyle: { font: 'Roboto' },
-    content: [{text: content, noWrap: true }],
-    pageMargins: [0, 0, 0, 0],
-  }).getStream({}, d => resolve(d.x)));
-}
-
-async function truncateText(text, options) {
-  const { maxWidth, fontSize } = options;
-  const { length } = text;
-  let b = length;
-  const trunc = (len) => {
-    len = Math.max(Math.round(len, 0), 1);
-    return len < length ? `${text.slice(0, len - 1)}…` : text;
-  };
-  const f = async (len) => (await textMaxWidth({ text: trunc(len), fontSize, })) - maxWidth;
-  let bx = await f(b);
-  if (bx > 0) {
-    let a = 0, ax = await f(0);
-    if (ax >= 0) {
-      return '…';
-    }
-    if (Math.abs(ax) < Math.abs(bx)) {
-      [a, ax, b, bx] = [b, bx, a, ax];
-    }
-    const xTol = 1;
-    let c = a, cx = ax, mflag = true, d, maxIter = 20;
-    while (maxIter-- && Math.abs(b - a) > xTol) {
-      const acx = ax - cx;
-      const bcx = bx - cx;
-      const abx = ax - bx;
-      let s = Math.abs(acx) > Number.EPSILON && Math.abs(bcx) > Number.EPSILON ?
-        a * bx * cx / (abx * acx) + b * ax * cx / (-abx * bcx) + c * ax * bx / (acx * bcx) :
-        b - bx * (b - a) / (bx - ax);
-      if (s < (3 * a + b) / 4 || s > b || (
-        mflag ?
-          (Math.abs(s - b) >= Math.abs(b - c) / 2 || Math.abs(b - c) < Math.abs(2 * Number.EPSILON * Math.abs(b))) :
-          (Math.abs(s - b) >= Math.abs(c - d) / 2 || Math.abs(c - d) < Math.abs(2 * Number.EPSILON * Math.abs(b)))
-      )) {
-        s = (a + b) / 2;
-        mflag = true;
-      } else {
-        mflag = false;
-      }
-
-      const sx = await f(s);
-      [d, c, cx] = [c, b, bx];
-      if (ax * sx < 0) {
-        [b, bx] = [s, sx];
-      } else {
-        [a, ax] = [s, sx];
-      }
-
-      if (Math.abs(ax) < Math.abs(bx)) {
-        [a, ax, b, bx] = [b, bx, a, ax];
-      }
-    }
-    return trunc(ax < bx ? a : b);
-  }
-  return text;
-};
-
-async function shortenDescription(text, options) {
-  const output = [];
-  const stack = text.split('\n');
-
-  while (stack.length > 0 && output.length < options.maxLines) {
-    let line = stack.shift();
-    const tmp = await truncateText(line, options);
-    const pos = tmp.indexOf('…');
-    if (pos >= 0) {
-      output.push(tmp.slice(0, pos));
-      stack.unshift(line.slice(pos));
-    } else if (tmp.length > 0) {
-      output.push(tmp);
-    }
-  }
-
-  return output.filter(e => e).slice(0, options.maxLines + 1).join('\n');
-}
 
 export default {
     data: () => ({
@@ -206,11 +125,11 @@ export default {
                                 text: id.toUpperCase(),
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.1) ]
                             }, {
-                                text: await truncateText(title, { fontSize: 6, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3) }),
+                                text: truncateText(title, { fontSize: LAYOUTS.small.titleFontSize, maxWidth: LAYOUTS.small.maxWidth }),
                                 fontSize: 6,
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.1) ],
                             }, {
-                                text: await shortenDescription(description, { fontSize: 6, maxWidth: this.mm2pt(50 - 10 - 7.5 - 3), maxLines: 2 }),
+                                text: shortenDescription(description, LAYOUTS.small),
                                 lineHeight: .8,
                                 fontSize: 6
                             }]
@@ -232,10 +151,10 @@ export default {
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ]
                             }, {
                                 fontSize: 9,
-                                text: await truncateText(title, { fontSize: 9, maxWidth: this.mm2pt(90 - 18 - 13.45 - 2) }),
+                                text: truncateText(title, { fontSize: LAYOUTS.large.titleFontSize, maxWidth: LAYOUTS.large.maxWidth }),
                                 margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ],
                             }, {
-                                text: await shortenDescription(description, { fontSize: 8, maxWidth: this.mm2pt(90 - 18 - 13.45 - 2), maxLines: 3 }),
+                                text: shortenDescription(description, LAYOUTS.large),
                                 lineHeight: .8,
                                 fontSize: 8
                             }]
@@ -275,17 +194,7 @@ export default {
 
     computed: {
         fullDescription() {
-            let description = this.description;
-
-            if (String(this.inventoryId).startsWith('L-') && this.owner) {
-                description = `Eigentümer*in: ${this.owner}\n${description}`;
-            }
-
-            if (this.serial) {
-                description = `S/N: ${this.serial}\n${description}`;
-            }
-
-            return description;
+            return labelDescription(this);
         }
 
     }
