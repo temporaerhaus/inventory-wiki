@@ -173,11 +173,11 @@
         Bilder und Dateien können per Drag &amp; Drop in das Feld gezogen werden.
       </blockquote>
       <div class="accordion-panel">
-        <label class="accordion-toggle" @click="togglePanel()" aria-controls="accordion0">
+        <label class="accordion-toggle" @click="togglePanel()" :aria-controls="`invwiki-form-details-${nonce}`" :aria-expanded="String(detailsOpen)">
           <span class="accordion-arrow">&#8963;</span>
           <span>Mehr Details</span>
         </label>
-        <div class="accordion-content" id="accordion0">
+        <div class="accordion-content" :id="`invwiki-form-details-${nonce}`" ref="details">
           <label :for="`invwiki-form-date-${nonce}`">
             <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
             Anschaffungsdatum
@@ -270,6 +270,9 @@ export default {
     suffixChosen: false,
     // a duplicate of a sub-item that is another sub-item of the same item
     cloneAsSub: false,
+    // whether "Mehr Details" is open, and the timer that hides it after closing
+    detailsOpen: false,
+    detailsTimeout: null,
     inventoryId: '',
     description: '',
     serial: '',
@@ -519,37 +522,24 @@ export default {
       }
     },
 
-    togglePanel() {
-      function expandPanel(target) {
-        target.setAttribute("aria-expanded", "true");
-        
-        const panel = document.getElementById(
-          target.getAttribute("aria-controls")
-        );
-        clearTimeout(panel.timeoutID);
-        panel.removeAttribute("hidden");
+    // the details of this form; an item page has several of them, one per
+    // dialog, so the panel is its own, not the first one on the page
+    async togglePanel() {
+      const panel = this.$refs.details;
+      clearTimeout(this.detailsTimeout);
+
+      this.detailsOpen = !this.detailsOpen;
+      // aria-expanded, which the styles' transitions go by, is set by then
+      await this.$nextTick();
+
+      if (this.detailsOpen) {
+        panel.removeAttribute('hidden');
         panel.style.height = `${panel.scrollHeight}px`;
-        panel.scrollIntoView()
+        panel.scrollIntoView();
+      } else {
+        panel.style.height = '0px';
+        this.detailsTimeout = setTimeout(() => panel.setAttribute('hidden', ''), 1000);
       }
-      
-      function closePanel(target) {
-        target.setAttribute("aria-expanded", "false");
-        
-        const panel = document.getElementById(
-          target.getAttribute("aria-controls")
-        );
-        panel.style.height = "0px";
-        
-        const timeoutID = setTimeout(() => {
-          panel.setAttribute("hidden", "");
-        }, 1000);
-        panel.timeoutID = timeoutID;
-      }
-      
-      const target = document.querySelector(".accordion-toggle")
-      const isExpanded = target.getAttribute("aria-expanded") === "true";
-      if (isExpanded) closePanel(target);
-      if (!isExpanded) expandPanel(target);
     },
   },
 
