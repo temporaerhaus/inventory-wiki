@@ -27,7 +27,7 @@
           <button type="button" title="Ein Aufkleber weniger" @click="setCount(entry, entry.count - 1)" :disabled="loading || entry.count <= 1">
             <mdi-icon icon="minus" title="Ein Aufkleber weniger" />
           </button>
-          <input type="number" min="1" :max="MAX_COPIES" :value="entry.count" @change="setCount(entry, $event.target.value, $event.target)" :disabled="loading" aria-label="Anzahl Aufkleber" />
+          <input type="number" min="1" :max="MAX_COPIES" :value="entry.count" @change="setCount(entry, $event.target.value, $event.target)" :disabled="loading" aria-label="Anzahl Aufkleber" autocomplete="off" />
           <button type="button" title="Ein Aufkleber mehr" @click="setCount(entry, entry.count + 1)" :disabled="loading || entry.count >= MAX_COPIES">
             <mdi-icon icon="plus" title="Ein Aufkleber mehr" />
           </button>

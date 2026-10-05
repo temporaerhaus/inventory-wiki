@@ -39,6 +39,7 @@
       @dragover.prevent="dragging = true"
       @dragleave="dragging = false"
       @drop.prevent="onDrop"
+      autocomplete="off"
     ></textarea>
 
     <blockquote v-if="uploading > 0">

@@ -32,7 +32,7 @@
       </blockquote>
 
       <label :for="`invwiki-location-description-${nonce}`">Weitere Infos</label>
-      <textarea :id="`invwiki-location-description-${nonce}`" v-model="description" />
+      <textarea :id="`invwiki-location-description-${nonce}`" v-model="description" autocomplete="off" />
       
       <label :for="`invwiki-location-update-last-seen-${nonce}`">
         <input type="checkbox" :id="`invwiki-location-update-last-seen-${nonce}`" v-model="updateLastSeen" />

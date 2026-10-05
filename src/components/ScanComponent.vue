@@ -46,7 +46,7 @@
         {{ status.text }}
         <a href="#" v-if="status.undo" @click.prevent="undo()">Rückgängig</a>
       </blockquote>
-      <input type="text" autofocus placeholder="V-XX012345..." ref="scan" />
+      <input type="text" autofocus placeholder="V-XX012345..." ref="scan" autocomplete="off" />
       <video ref="scanner"></video>
       <div style="margin-top: -5.5em; padding: 2em; text-align: right; margin-bottom: .5em;">
         <mdi-icon :icon="!flash ? 'flashlight' : 'flashlight-off'" style="filter: invert(1); scale: 200%; margin-right: 2em;" @click="toggleFlash()" v-if="hasFlash || true" />

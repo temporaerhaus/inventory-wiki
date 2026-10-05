@@ -13,12 +13,12 @@
           <mdi-icon :icon="field.icon" left :title="field.label" />
           {{ field.label }}
         </label>
-        <textarea v-if="field.type === 'textarea'" v-model="values[field.key]" @input="apply[field.key] = true"></textarea>
+        <textarea v-if="field.type === 'textarea'" v-model="values[field.key]" @input="apply[field.key] = true" autocomplete="off"></textarea>
         <label v-else-if="field.type === 'checkbox'" :for="`${uid}-${field.key}`" class="invwiki-bulk-value">
           <input type="checkbox" :id="`${uid}-${field.key}`" v-model="values[field.key]" @change="apply[field.key] = true" />
           {{ field.hint }}
         </label>
-        <input v-else :type="field.type" v-model="values[field.key]" @input="apply[field.key] = true" />
+        <input v-else :type="field.type" v-model="values[field.key]" @input="apply[field.key] = true" autocomplete="off" />
       </template>
     </div>
 

@@ -22,11 +22,11 @@
         <mdi-icon icon="toy-brick-outline" left title="Gegenstand" />
         Gegenstand
       </label>
-      <input :id="`invwiki-form-title-${nonce}`" type="text" v-model="title" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-title-${nonce}`" type="text" v-model="title" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <template v-if="edit">
         <label :for="`invwiki-form-id-${nonce}`">Inventarnummer</label>
-        <input :id="`invwiki-form-id-${nonce}`" type="text" :value="inventoryId" disabled />
+        <input :id="`invwiki-form-id-${nonce}`" type="text" :value="inventoryId" disabled autocomplete="off" />
       </template>
 
       <label :for="`invwiki-form-description-${nonce}`">
@@ -51,19 +51,19 @@
         <mdi-icon icon="tag-outline" left title="Kategorie" />
         Kategorie
       </label>
-      <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <label :for="`invwiki-form-origin-${nonce}`">
         <mdi-icon icon="basket-unfill" left title="Ursprung" />
         Ursprung
       </label>
-      <input :id="`invwiki-form-origin-${nonce}`" type="text" v-model="origin" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-origin-${nonce}`" type="text" v-model="origin" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <label :for="`invwiki-form-owner-${nonce}`">
         <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
         Eigentümer*in
       </label>
-      <input :id="`invwiki-form-owner-${nonce}`" type="text" v-model="owner" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-owner-${nonce}`" type="text" v-model="owner" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <label :for="`invwiki-form-lended-${nonce}`" v-if="!edit">
         <input :id="`invwiki-form-lended-${nonce}`" type="checkbox" v-model="lended" />
@@ -87,19 +87,19 @@
         <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
         Anschaffungsdatum
       </label>
-      <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <label :for="`invwiki-form-serial-${nonce}`">
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
         Seriennummer
       </label>
-      <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <label :for="`invwiki-form-invoice-${nonce}`">
         <mdi-icon icon="file-document-outline" left title="Rechnung" />
         Rechnung
       </label>
-      <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" />
+      <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <template v-if="!edit">
         <label v-if="suggestionsVisible">
@@ -141,7 +141,7 @@
           <mdi-icon icon="numeric-positive1" left title="Fortlaufende Nummer" />
           Fortlaufende Nummer
         </label>
-        <input :id="`invwiki-form-number-${nonce}`" type="text" :value="number" disabled />
+        <input :id="`invwiki-form-number-${nonce}`" type="text" :value="number" disabled autocomplete="off" />
 
         <template v-if="sub">
           <label :for="`invwiki-form-suffix-${nonce}`">
@@ -163,7 +163,7 @@
           <mdi-icon icon="barcode" left title="Inventarnummer" />
           Zu vergebende Inventarnummer
         </label>
-        <input :id="`invwiki-form-id-${nonce}`" type="text" :value="id" disabled @focus="$refs.c?.close?.()" />
+        <input :id="`invwiki-form-id-${nonce}`" type="text" :value="id" disabled @focus="$refs.c?.close?.()" autocomplete="off" />
       </template>
 
       <label :for="`invwiki-form-content-${nonce}`">

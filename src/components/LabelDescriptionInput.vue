@@ -3,7 +3,7 @@
        of it is printed on the label and what not (greyed out) -->
   <div class="invwiki-label-input">
     <div class="invwiki-label-input-backdrop" ref="backdrop" aria-hidden="true">{{ printedPart }}<span class="invwiki-label-input-cut">{{ cutPart }}</span>{{ '\u200b' }}</div>
-    <textarea :id="id" :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" @scroll="syncScroll" @focus="$emit('focus', $event)" ref="input"></textarea>
+    <textarea :id="id" :value="modelValue" @input="$emit('update:modelValue', $event.target.value)" @scroll="syncScroll" @focus="$emit('focus', $event)" ref="input" autocomplete="off"></textarea>
   </div>
   <small class="invwiki-label-input-hint" v-if="cutPart.trim()">
     Der grau dargestellte Teil passt nicht mehr auf den {{ small ? 'kleinen ' : '' }}Aufkleber:

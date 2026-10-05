@@ -5,7 +5,7 @@
     <div class="invwiki-table-controls">
       <label class="invwiki-table-search">
         <mdi-icon icon="magnify" title="Suchen" />
-        <input type="search" v-model="search" placeholder="Suchen in allen sichtbaren Spalten" />
+        <input type="search" v-model="search" placeholder="Suchen in allen sichtbaren Spalten" autocomplete="off" />
       </label>
 
       <label class="invwiki-table-sort">
@@ -22,7 +22,7 @@
         <summary>Filter{{ activeFilters ? ` (${activeFilters})` : '' }}</summary>
         <label v-for="column in shownColumns" :key="column.key">
           {{ column.label }}
-          <input type="search" v-model="filters[column.key]" />
+          <input type="search" v-model="filters[column.key]" autocomplete="off" />
         </label>
       </details>
 
@@ -62,7 +62,7 @@
           <tr>
             <th></th>
             <th v-for="column in shownColumns" :key="column.key">
-              <input type="search" v-model="filters[column.key]" />
+              <input type="search" v-model="filters[column.key]" autocomplete="off" />
             </th>
           </tr>
         </thead>
