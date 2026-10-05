@@ -88,7 +88,23 @@ const sortMapEntries = (a, b) => {
 // locked"), so these two pages are saved through the editor as well. Whether
 // the save happened is checked in the page history afterwards: the content is
 // no proof, the print station may already have emptied the queue again.
+// the login of the reader, '' for a reader who is not logged in (allowed in
+// by the wiki's IP allowlist), whose changes the history shows without one
 let currentUser = null;
+
+async function whoAmI() {
+  if (currentUser === null) {
+    try {
+      currentUser = (await rpc('core.whoAmI')).login;
+    } catch (e) {
+      if (e.message !== 'No user available') {
+        throw e;
+      }
+      currentUser = '';
+    }
+  }
+  return currentUser;
+}
 
 async function saveViaEditor(page, update, summary) {
   const path = `/${page.replaceAll(':', '/')}`;
@@ -113,9 +129,9 @@ async function saveViaEditor(page, update, summary) {
   data.set('do[save]', '1');
   await fetch(`${path}?do=edit`, { method: 'post', body: data });
 
-  currentUser = currentUser || (await rpc('core.whoAmI')).login;
+  const user = await whoAmI();
   const history = await rpc('core.getPageHistory', { page });
-  if (!history.some(e => e.revision >= before && e.summary === summary && e.author === currentUser)) {
+  if (!history.some(e => e.revision >= before && e.summary === summary && (e.author || '') === user)) {
     throw new Error(`${page} konnte nicht gespeichert werden`);
   }
 }
