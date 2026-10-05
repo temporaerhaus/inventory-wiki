@@ -2,6 +2,7 @@
 
 use dokuwiki\Extension\RemotePlugin;
 use dokuwiki\plugin\inventory\Index;
+use dokuwiki\plugin\inventory\Search;
 use dokuwiki\Remote\RemoteException;
 
 /**
@@ -64,6 +65,44 @@ class remote_plugin_inventory extends RemotePlugin
                 $row['id'] = strtoupper(noNS($row['id']));
                 return $row;
             }, $index->rows($page, $columns)),
+        ];
+    }
+
+    /**
+     * Search the inventory items the caller may read, best matches first
+     *
+     * Every word of the query has to be found in the item: in its inventory
+     * number, its name or another text field, or, for a typo, as a word that
+     * is one letter off; see Search.php for how the matches are ranked.
+     *
+     * @param string $query what is typed into the search
+     * @param int $limit number of items to return, at most 50
+     * @return array {total: number of matching items, items: [{id, title, description, location, container, small, match: {field, value} or null}]}, match is where the query was found, if not in the number or the name
+     */
+    public function searchItems($query = '', $limit = 8)
+    {
+        $index = new Index();
+        $index->sync();
+
+        $items = array_map(static fn($row) => ['id' => strtoupper(noNS($row['_id']))] + $row, $index->allItems(
+            [...array_keys(Search::FIELDS), 'container', 'small']
+        ));
+        $matches = array_values(array_filter(
+            Search::rank((string) $query, $items),
+            static fn($item) => !isHiddenPage($item['_id']) && auth_quickaclcheck($item['_id']) >= AUTH_READ
+        ));
+
+        return [
+            'total' => count($matches),
+            'items' => array_map(static fn($item) => [
+                'id' => $item['id'],
+                'title' => (string) $item['title'],
+                'description' => (string) $item['description'],
+                'location' => (string) $item['location'],
+                'container' => $item['container'] === '1',
+                'small' => $item['small'] === '1',
+                'match' => $item['match'] ? ['field' => $item['match'][0], 'value' => $item['match'][1]] : null,
+            ], array_slice($matches, 0, max(1, min(50, (int) $limit)))),
         ];
     }
 

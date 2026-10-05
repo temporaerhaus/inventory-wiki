@@ -294,6 +294,20 @@ class Index
     }
 
     /**
+     * All items, in the order of their ids, each with its page id as "_id"
+     *
+     * @param string[] $columns API column names
+     * @return array[]
+     */
+    public function allItems($columns)
+    {
+        $select = implode(', ', array_map(static fn($key) => self::COLUMNS[$key] . ' AS "' . $key . '"', $columns));
+        return $this->db
+            ->query("SELECT id AS _id, $select FROM items WHERE is_item = 1 ORDER BY id_sort")
+            ->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    /**
      * Sorts like a human would: case does not matter, and the numbers in a value
      * compare by their value, so that SN-999 comes before SN-3100
      */
