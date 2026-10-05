@@ -163,22 +163,22 @@
         Beliebiger Markdown-Inhalt, der auf der Wiki-Seite unterhalb der Gegenstandsdaten angezeigt wird, z.B. Notizen, Links oder Anhänge.
         Bilder und Dateien können per Drag &amp; Drop in das Feld gezogen werden.
       </blockquote>
-
-      <div style="text-align: right; padding-top: 1em; padding-bottom: 5em; padding-right: 1em;">
-        <button @click="deleteItem()" :disabled="loading" v-if="edit" class="invwiki-delete">
-          <mdi-icon icon="delete-outline" left title="Löschen" />
-          Löschen
-        </button>
-        <button @click="saveItem()" :disabled="disabled" v-if="!edit">
-          <mdi-icon icon="toy-brick-plus-outline" left title="Gegenstand Anlegen" />
-          Gegenstand Anlegen
-        </button>
-        <button @click="saveItem()" :disabled="disabled" v-else>
-          <mdi-icon icon="content-save-outline" left title="Speichern" />
-          Speichern
-        </button>
-      </div>
     </div>
+
+    <template #footer>
+      <button @click="deleteItem()" :disabled="loading" v-if="edit" class="invwiki-delete">
+        <mdi-icon icon="delete-outline" left title="Löschen" />
+        Löschen
+      </button>
+      <button @click="saveItem()" :disabled="disabled" v-if="!edit">
+        <mdi-icon icon="toy-brick-plus-outline" left title="Gegenstand Anlegen" />
+        Gegenstand Anlegen
+      </button>
+      <button @click="saveItem()" :disabled="disabled" v-else>
+        <mdi-icon icon="content-save-outline" left title="Speichern" />
+        Speichern
+      </button>
+    </template>
   </x-dialog>
 </template>
 

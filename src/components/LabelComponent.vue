@@ -19,20 +19,22 @@
         <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: `${mm2pt(13.45)}pt`, height: 'auto', marginLeft: `${mm2pt(3)}pt` }" />
     </div>
 
-    <a :href="dataURL" :download="`Inventaraufkleber_${inventoryId}.pdf`">
+    <template #footer>
+      <a :href="dataURL" :download="`Inventaraufkleber_${inventoryId}.pdf`">
         <mdi-icon icon="file-download-outline" />
         PDF Herunterladen
-    </a>
+      </a>
 
-    <a @click.prevent="printLabel()" v-if="dataURL" style="margin-left: 1em;" href="#" class="hide-mobile">
+      <a @click.prevent="printLabel()" v-if="dataURL" href="#" class="hide-mobile">
         <mdi-icon icon="printer" />
         Lokal Drucken
-    </a>
+      </a>
 
-    <a @click.prevent="printRemote()" v-if="dataURL" style="margin-left: 1em;" href="#" :disabled="printing">
+      <a @click.prevent="printRemote()" v-if="dataURL" href="#" :disabled="printing">
         <mdi-icon icon="cloud-print-outline" />
         Remote Drucken
-    </a>
+      </a>
+    </template>
   </x-dialog>
 </template>
 

@@ -24,14 +24,14 @@
         </label>
         <input v-else :type="field.type" v-model="values[field.key]" @input="apply[field.key] = true" />
       </template>
-
-      <div style="text-align: right; padding-top: 1em; padding-bottom: 5em; padding-right: 1em;">
-        <button @click="save()" :disabled="loading || !changedKeys.length">
-          <mdi-icon icon="content-save-outline" left title="Speichern" />
-          {{ changedKeys.length ? `${changedKeys.length} ${changedKeys.length > 1 ? 'Felder' : 'Feld'} bei ${selected.length} ${selected.length > 1 ? 'Gegenständen' : 'Gegenstand'} speichern` : 'Speichern' }}
-        </button>
-      </div>
     </div>
+
+    <template #footer>
+      <button @click="save()" :disabled="loading || !changedKeys.length">
+        <mdi-icon icon="content-save-outline" left title="Speichern" />
+        {{ changedKeys.length ? `${changedKeys.length} ${changedKeys.length > 1 ? 'Felder' : 'Feld'} bei ${selected.length} ${selected.length > 1 ? 'Gegenständen' : 'Gegenstand'} speichern` : 'Speichern' }}
+      </button>
+    </template>
   </x-dialog>
 </template>
 

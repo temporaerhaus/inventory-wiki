@@ -13,6 +13,11 @@
       <div class="invwiki-dialog-body">
         <slot></slot>
       </div>
+
+      <!-- the dialog's actions, which stay in view while the body scrolls -->
+      <footer class="invwiki-dialog-footer" v-if="$slots.footer">
+        <slot name="footer"></slot>
+      </footer>
     </div>
     <div class="loader" v-if="loading">
       <div class="loader-line-wrap"><div class="loader-line"></div></div>

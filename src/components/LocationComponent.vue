@@ -37,21 +37,22 @@
         <mdi-icon left icon="eye-outline" />
         Zeitstempel "<em>Zuletzt gesehen am</em>" auf die aktuelle Zeit setzen
       </label>
-      <div class="flex-row">
-        <button @click="saveLocation(0)" :disabled="loading || !validLocation">
-          <mdi-icon left icon="map-clock-outline" />
-          Als aktuellen Aufenthaltsort speichern
-        </button>
-        <button @click="saveLocation(1)" :disabled="loading || !validLocation">
-          <mdi-icon left icon="content-save-alert-outline" />
-          Als regulären Aufenthaltsort speichern
-        </button>
-        <button @click="saveLocation(2)" :disabled="loading">
-          <mdi-icon left icon="undo-variant" />
-          Auf regulären Aufenthaltsort zurücksetzen
-        </button>
-      </div>
     </div>
+
+    <template #footer>
+      <button @click="saveLocation(0)" :disabled="loading || !validLocation">
+        <mdi-icon left icon="map-clock-outline" />
+        Als aktuellen Aufenthaltsort speichern
+      </button>
+      <button @click="saveLocation(1)" :disabled="loading || !validLocation">
+        <mdi-icon left icon="content-save-alert-outline" />
+        Als regulären Aufenthaltsort speichern
+      </button>
+      <button @click="saveLocation(2)" :disabled="loading">
+        <mdi-icon left icon="undo-variant" />
+        Auf regulären Aufenthaltsort zurücksetzen
+      </button>
+    </template>
   </x-dialog>
 </template>
 

@@ -22,18 +22,20 @@
     <template v-else-if="blobURL">
       <p>{{ rows.length }} {{ rows.length === 1 ? 'Gegenstand' : 'Gegenstände' }}{{ nested ? ', inklusive Inhalt von Unter-Behältern' : '' }}.</p>
       <iframe :src="blobURL" class="invwiki-contents-preview hide-mobile" title="Vorschau der Inhaltsliste"></iframe>
+    </template>
 
+    <template #footer v-if="!loading && !error && blobURL">
       <a :href="blobURL" :download="`Inhaltsliste_${inventoryId}.pdf`">
         <mdi-icon icon="file-download-outline" />
         PDF Herunterladen
       </a>
 
-      <a @click.prevent="print()" style="margin-left: 1em;" href="#">
+      <a @click.prevent="print()" href="#">
         <mdi-icon icon="printer" />
         Drucken
       </a>
 
-      <a @click.prevent="printRemote()" style="margin-left: 1em;" href="#" :disabled="printing">
+      <a @click.prevent="printRemote()" href="#" :disabled="printing">
         <mdi-icon icon="cloud-print-outline" />
         Remote Drucken
       </a>

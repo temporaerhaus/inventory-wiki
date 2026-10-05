@@ -371,6 +371,10 @@
   border-radius: 6px;
   border-color: var(--border);
   padding: 0;
+  /* the body scrolls between the header and the footer */
+  display: flex;
+  flex-direction: column;
+  max-height: 95vh;
 }
 
 .invwiki .dialog > header:first-child {
@@ -390,16 +394,6 @@
 }
 
 
-.invwiki .flex-row {
-  margin: 10px auto;
-  display: flex;
-  flex-direction: row;
-  justify-content: space-between;
-  flex-wrap: nowrap;
-}
-.invwiki .flex-row button {
-  flex-grow: 1;
-}
 
 .invwiki .loader {
     position: absolute;
@@ -546,9 +540,21 @@
 .invwiki-dialog-body {
   overflow-y: auto;
   overflow-x: hidden;
-  max-height: calc(95vh - 55px);
+  flex: 1 1 auto;
+  min-height: 0;
   max-width: 90vw;
   padding: 1em 1.5em;
+}
+
+.invwiki-dialog-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5em 1em;
+  padding: .75em 1.5em;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 6px 6px;
 }
 
 @media only screen and (max-width: 768px) {
@@ -578,9 +584,13 @@
     background-color: white;
   }
 
-  .invwiki-dialog-body {
-    max-height: auto;
-    height: 100%;
+  .invwiki .dialog {
+    max-height: none;
+    bottom: 0;
+  }
+
+  .invwiki-dialog-footer {
+    border-radius: 0;
   }
 }
 
@@ -1100,7 +1110,7 @@ button.invwiki-container.expanded {
 
 /* the delete button sits apart from saving, on the other side of the dialog */
 .invwiki .invwiki-delete {
-  float: left;
+  margin-right: auto;
 }
 
 .invwiki .invwiki-delete svg {
