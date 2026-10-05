@@ -1614,3 +1614,16 @@ button.invwiki-container.expanded {
   display: block;
   color: var(--text-muted);
 }
+
+/* what kind of item it is, in front of its title, see App.vue */
+.invwiki-title-type svg {
+  width: .8em;
+  height: .8em;
+  margin-right: .3em;
+  vertical-align: -.05em;
+}
+
+/* a field of the yaml the forms do not know, see ItemComponent.vue */
+.invwiki .invwiki-extra-field {
+  white-space: pre-wrap;
+}

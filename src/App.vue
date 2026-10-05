@@ -29,7 +29,7 @@
 
 <script>
 import YAML from 'yaml';
-import { createApp } from 'vue';
+import { createApp, h } from 'vue';
 import { PREFIX, remotePrint } from '@/utils/api.js';
 
 import MdiIcon from '@/components/MdiIcon.vue';
@@ -104,6 +104,19 @@ export default {
         item.component('MdiIcon', MdiIcon);
         item.component('XDialog', XDialog);
         item.mount(stub);
+
+        // what kind of item it is, in front of its title (which is read above)
+        const heading = document.querySelector('#dokuwiki__content h1');
+        if (heading && !heading.querySelector('.invwiki-title-type')) {
+          const icon = document.createElement('span');
+          icon.className = 'invwiki-title-type';
+          heading.prepend(icon);
+          createApp({
+            render: () => h(MdiIcon, data.container
+              ? { icon: 'package-variant', title: 'Behälter' }
+              : { icon: 'toy-brick-outline', title: 'Gegenstand' })
+          }).mount(icon);
+        }
       } catch (e) {
         console.log(e);
         // ignore

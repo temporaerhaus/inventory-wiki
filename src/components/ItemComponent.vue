@@ -103,6 +103,15 @@
           <mdi-icon icon="file-document-outline" left title="Rechnung" />
           {{ invoice }}
         </li>
+        <li title="Leihgabe" v-if="loan">
+          <mdi-icon icon="handshake-outline" left title="Leihgabe" />
+          Leihgabe
+        </li>
+        <!-- whatever else the yaml holds, which the forms keep but do not know -->
+        <li v-for="field in extraFields" :key="field.key" :title="field.key">
+          <mdi-icon icon="text-box-outline" left :title="field.key" />
+          <b>{{ field.key }}:</b> <span class="invwiki-extra-field">{{ field.value }}</span>
+        </li>
       </ul>
       <create-component edit />
       <create-component clone />
@@ -115,6 +124,7 @@
 </template>
 
 <script>
+import YAML from 'yaml';
 import { PREFIX, fetchInventoryItem, fetchSubItems, mainItemOf, remotePrint, searchItems } from '@/utils/api.js';
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
@@ -154,6 +164,9 @@ export default {
     ContentsListComponent,
     ContainedItemsList
   },
+
+  // the yaml's other fields are only shown, see extraFields
+  inheritAttrs: false,
 
   props: {
     inventory: Boolean,
@@ -345,6 +358,24 @@ export default {
   },
 
   computed: {
+    // the L in L-GM000123
+    loan() {
+      return String(this.inventoryId).startsWith('L-');
+    },
+
+    // the fields of the yaml that are not one of the props above
+    extraFields() {
+      return Object.entries(this.$attrs)
+        .filter(([key, value]) => !['class', 'style'].includes(key) && value !== null && value !== undefined && value !== '')
+        .map(([key, value]) => ({
+          key,
+          // a list of words reads as one, anything nested as the yaml it is
+          value: Array.isArray(value) && value.every(e => typeof e !== 'object')
+            ? value.join(', ')
+            : typeof value === 'object' && !(value instanceof Date) ? YAML.stringify(value).trim() : String(value),
+        }));
+    },
+
     // ids of contained items as shown in the list, including expanded sub items
     visibleIds() {
       const collect = (items) => Object.entries(items || {}).flatMap(([id, item]) => [
