@@ -14,8 +14,7 @@
       </label>
       <ContainedItemsList v-if="container" :containedItems="containedItems" v-model="selected" @expand="expand($event.id, $event.item, false)" :loading="loading" />
       <div v-if="container && selectedPaths.length > 0" class="invwiki-selection-actions">
-        <location-component :selected="selectedPaths" />
-        <bulk-edit-component :selected="selectedPaths" />
+        <selection-menu-component :selected="selectedPaths" @print="printSelected()" />
       </div>
     </div>
     <div class="invwiki item-card location-card">
@@ -98,11 +97,11 @@
 </template>
 
 <script>
-import { PREFIX, fetchInventoryItem, searchItems } from '@/utils/api.js';
+import { PREFIX, fetchInventoryItem, remotePrint, searchItems } from '@/utils/api.js';
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
-import BulkEditComponent from '@/components/BulkEditComponent.vue';
+import SelectionMenuComponent from '@/components/SelectionMenuComponent.vue';
 import ContentsListComponent from '@/components/ContentsListComponent.vue';
 import ContainedItemsList from '@/components/ContainedItemsList.vue';
 
@@ -131,7 +130,7 @@ export default {
     LabelComponent,
     CreateComponent,
     LocationComponent,
-    BulkEditComponent,
+    SelectionMenuComponent,
     ContentsListComponent,
     ContainedItemsList
   },
@@ -221,6 +220,19 @@ export default {
     },
 
     samePlace,
+
+    // the selected contents, to the print queue
+    async printSelected() {
+      const ids = this.selectedPaths.map(e => e.split('/').pop().toUpperCase());
+      try {
+        const added = await remotePrint(ids);
+        alert(added.length === ids.length
+          ? `${added.length} Aufkleber zur Druckwarteschlange hinzugefügt.`
+          : `${added.length} von ${ids.length} Aufklebern zur Druckwarteschlange hinzugefügt, die übrigen waren schon darin.`);
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+      }
+    },
 
     relative(date) {
       const diff = new Date(date) - new Date();

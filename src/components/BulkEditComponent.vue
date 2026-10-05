@@ -1,9 +1,5 @@
 <template>
-  <button @click="open" v-if="selected?.length > 0">
-    <mdi-icon icon="square-edit-outline" left />
-    {{ selected.length > 1 ? selected.length : '' }} ausgewählte{{ selected.length > 1 ? '' : 'n' }} bearbeiten
-  </button>
-
+  <!-- opened from SelectionMenuComponent -->
   <x-dialog :title="`${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'} bearbeiten`" icon="square-edit-outline" ref="dialog" :loading="loading">
     <div>
       <blockquote>

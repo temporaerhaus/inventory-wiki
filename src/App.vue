@@ -11,12 +11,7 @@
   <div class="invwiki invwiki-toolbar sticky-header" v-if="active">
     <scan-component :container="yaml?.container ? id : ''" :container-title="title" />
     <create-component />
-    <button @click="printRemote()" v-if="selected.length > 0">
-      <mdi-icon icon="cloud-print-outline" left />
-      {{ selected.length > 1 ? selected.length : '' }} ausgewählte{{  selected.length > 1 ? '' : 'n' }} Aufkleber Remote Drucken
-    </button>
-    <location-component :selected="selected" />
-    <bulk-edit-component :selected="selected" />
+    <selection-menu-component :selected="selected" @print="printRemote()" />
     <print-queue-component />
     <button @click="toggleAll()" v-if="indexCount > 0">
       <mdi-icon :icon="allSelected ? 'checkbox-blank-outline' : 'checkbox-multiple-marked-outline'" left />
@@ -44,8 +39,7 @@ import ScanComponent from '@/components/ScanComponent.vue';
 import PrintQueueComponent from '@/components/PrintQueueComponent.vue';
 import SearchComponent from '@/components/SearchComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
-import LocationComponent from '@/components/LocationComponent.vue';
-import BulkEditComponent from '@/components/BulkEditComponent.vue';
+import SelectionMenuComponent from '@/components/SelectionMenuComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 
 // The yaml of a code block on the page, null if it is none. The wiki puts a
@@ -62,8 +56,7 @@ const codeYaml = (element) => {
 
 export default {
   components: {
-    LocationComponent,
-    BulkEditComponent,
+    SelectionMenuComponent,
     TableComponent,
     CreateComponent,
     ScanComponent,
@@ -244,7 +237,7 @@ export default {
       try {
         await this.$refs.dialog.show();
         this.loading = true;
-        await remotePrint(Object.keys(this.selection).filter(e => this.selection[e]).map(e => e.split(':').pop()));
+        await remotePrint(Object.keys(this.selection).filter(e => this.selection[e]).map(e => e.split(':').pop().toUpperCase()));
 
         this.selection = {};
         for (const o of document.querySelectorAll('input.invwiki-index[type="checkbox"]')) {

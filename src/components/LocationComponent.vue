@@ -4,11 +4,7 @@
     Aufenthaltsort Aktualisieren
   </button>
 
-  <button @click="open" v-if="selected?.length > 0">
-    <mdi-icon icon="home-map-marker" left />
-    {{ selected.length > 1 ? selected.length : '' }} Ausgewählte{{  selected.length > 1 ? '' : 'm' }} einen anderen Aufenthaltsort zuweisen
-  </button>
-
+  <!-- for selected items, it is opened from SelectionMenuComponent -->
   <x-dialog :title="`Aufenthaltsort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
       <search-autocomplete v-model="location" :items="locations" :keys="keys" :serializer="(e) => e.value" label="Aufenthaltsort" autofocus restrict>
