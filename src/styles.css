@@ -827,3 +827,173 @@ button.invwiki-container.expanded {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.invwiki .invwiki-table-dialog .dialog {
+  width: 95vw;
+}
+
+.invwiki .invwiki-table-dialog .invwiki-dialog-body {
+  max-width: none;
+  overflow-x: auto;
+}
+
+.invwiki-table-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5em 1em;
+  margin-bottom: 1em;
+}
+
+.invwiki .invwiki-table-controls > input[type='search'] {
+  flex: 1 1 20em;
+  width: auto;
+}
+
+.invwiki-table-controls details summary {
+  cursor: pointer;
+}
+
+.invwiki .invwiki-table-controls details label {
+  display: block;
+  font-weight: normal;
+  white-space: nowrap;
+}
+
+.invwiki .dialog .invwiki-table-sort {
+  display: flex;
+  align-items: center;
+  gap: .5em;
+  font-weight: normal;
+}
+
+.invwiki .invwiki-table-sort select,
+.invwiki .invwiki-table-sort button {
+  display: inline-block;
+  width: auto;
+  margin: 0;
+}
+
+.invwiki .invwiki-table-controls > input[type='search'] {
+  margin: 0;
+}
+
+/* on wide screens the filters sit in the table head instead */
+.invwiki-table-controls .invwiki-table-filters {
+  display: none;
+}
+
+.invwiki .invwiki-table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 90%;
+  transition: opacity .2s;
+}
+
+.invwiki .invwiki-table-busy {
+  opacity: .5;
+}
+
+.invwiki .invwiki-table th,
+.invwiki .invwiki-table td {
+  padding: .25em .5em;
+  border-bottom: 1px solid var(--background);
+  text-align: left;
+  vertical-align: top;
+}
+
+.invwiki .invwiki-table thead th {
+  position: sticky;
+  background-color: var(--background);
+  white-space: nowrap;
+}
+
+.invwiki .invwiki-table thead tr:first-child th {
+  top: 0;
+  cursor: pointer;
+  user-select: none;
+}
+
+.invwiki .invwiki-table thead tr:nth-child(2) th {
+  top: 2em;
+}
+
+.invwiki .invwiki-table thead input {
+  width: 100%;
+  min-width: 5em;
+  padding: .1em .3em;
+  margin: 0;
+}
+
+.invwiki .invwiki-table tbody tr:hover {
+  background-color: var(--background-alt);
+}
+
+.invwiki .invwiki-table .invwiki-table-id {
+  font-family: 'Roboto Mono', monospace;
+  white-space: nowrap;
+}
+
+.invwiki-table-pages {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .5em 1em;
+  margin-top: 1em;
+}
+
+.invwiki .invwiki-table-pages select {
+  width: auto;
+  margin: 0;
+}
+
+/* one card per item on narrow screens */
+@media only screen and (max-width: 768px) {
+  .invwiki-table-controls .invwiki-table-filters {
+    display: block;
+    width: 100%;
+  }
+
+  .invwiki .invwiki-table-controls .invwiki-table-filters input {
+    width: 100%;
+    margin: 0 0 .5em;
+  }
+
+  .invwiki .invwiki-table thead {
+    display: none;
+  }
+
+  .invwiki .invwiki-table,
+  .invwiki .invwiki-table tbody,
+  .invwiki .invwiki-table tr,
+  .invwiki .invwiki-table td {
+    display: block;
+  }
+
+  .invwiki .invwiki-table tr {
+    position: relative;
+    padding: .5em 2.5em .5em .5em;
+    border-bottom: 1px solid var(--selection);
+  }
+
+  .invwiki .invwiki-table td {
+    border: none;
+    padding: .1em 0;
+  }
+
+  .invwiki .invwiki-table td:first-child {
+    position: absolute;
+    top: .5em;
+    right: 0;
+  }
+
+  .invwiki .invwiki-table td[data-label]:not(.invwiki-table-id)::before {
+    content: attr(data-label) ": ";
+    font-weight: bold;
+  }
+
+  .invwiki .invwiki-table td:empty {
+    display: none;
+  }
+}

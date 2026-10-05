@@ -9,6 +9,7 @@
     </button>
     <location-component :selected="selected" />
     <bulk-edit-component :selected="selected" />
+    <table-component v-if="indexCount > 0" @select="select" />
     <button @click="toggleAll()" v-if="indexCount > 0">
       <mdi-icon :icon="allSelected ? 'checkbox-blank-outline' : 'checkbox-multiple-marked-outline'" left />
       {{ allSelected ? 'Auswahl aufheben' : `Alle ${indexCount} auswählen` }}
@@ -20,7 +21,7 @@
 <script>
 import YAML from 'yaml';
 import { createApp } from 'vue';
-import { remotePrint } from '@/utils/api.js';
+import { PREFIX, remotePrint } from '@/utils/api.js';
 
 import MdiIcon from '@/components/MdiIcon.vue';
 import XDialog from '@/components/XDialog.vue';
@@ -29,11 +30,13 @@ import ScanComponent from '@/components/ScanComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
 import BulkEditComponent from '@/components/BulkEditComponent.vue';
+import TableComponent from '@/components/TableComponent.vue';
 
 export default {
   components: {
     LocationComponent,
     BulkEditComponent,
+    TableComponent,
     CreateComponent,
     ScanComponent
   },
@@ -153,6 +156,21 @@ export default {
   },
 
   methods: {
+    // select the given inventory ids as if their boxes were clicked,
+    // also those that have no box on this page
+    select(ids) {
+      for (const id of ids) {
+        const key = `check:${PREFIX}:${id.toLowerCase()}`;
+        this.selection[key] = true;
+
+        const box = document.getElementById(key);
+        if (box) {
+          box.checked = true;
+        }
+      }
+      this.previousInteraction = null;
+    },
+
     toggleAll() {
       const value = !this.allSelected;
       for (const o of document.querySelectorAll('input.invwiki-index[type="checkbox"]')) {

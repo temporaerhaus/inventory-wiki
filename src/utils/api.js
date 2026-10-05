@@ -268,6 +268,16 @@ export async function fetchInventoryItem(inventoryId) {
   return null;
 };
 
+// One page of the inventory as a table, filtered and sorted by the wiki plugin
+// in dokuwiki-plugin/inventory. Throws if the plugin is not installed.
+//   search   whitespace separated terms, each has to appear in one of the columns
+//   filters  column => text that has to appear in it
+//   limit    0 for all matching items
+// Returns { total, items: [{ id, ...columns }] }.
+export async function queryItems({ search = '', filters = {}, sort = 'id', desc = false, offset = 0, limit = 50, columns = [] } = {}) {
+  return rpc('plugin.inventory.listItems', { search, filters, sort, desc, offset, limit, columns });
+}
+
 // only strip surrounding blank lines, leading spaces are syntax (e.g. dokuwiki lists)
 const cleanContent = (content) => content.replace(/^\s*\n/, '').trimEnd();
 

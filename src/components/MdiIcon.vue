@@ -49,6 +49,12 @@ import {
   mdiCheckboxMultipleMarkedOutline,
   mdiFormatListChecks,
   mdiCamera,
+  mdiTable,
+  mdiFileDelimitedOutline,
+  mdiMenuDown,
+  mdiMenuUp,
+  mdiChevronLeft,
+  mdiChevronRight,
 } from '@mdi/js';
 
 export default {
@@ -104,6 +110,12 @@ export default {
       mdiCamera,
       mdiSortAlphabeticalDescending,
       mdiPackageVariant,
+      mdiTable,
+      mdiFileDelimitedOutline,
+      mdiMenuDown,
+      mdiMenuUp,
+      mdiChevronLeft,
+      mdiChevronRight,
     }
   }),
 
