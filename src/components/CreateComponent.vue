@@ -68,18 +68,6 @@
         Weitere Informationen zum Gegenstand und Anhänge können unten bei <em>Weitere Inhalte</em> hinterlegt werden.
       </blockquote>
 
-      <label :for="`invwiki-form-category-${nonce}`">
-        <mdi-icon icon="tag-outline" left title="Kategorie" />
-        Kategorie
-      </label>
-      <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" autocomplete="off" />
-
-      <label :for="`invwiki-form-origin-${nonce}`">
-        <mdi-icon icon="basket-unfill" left title="Ursprung" />
-        Ursprung
-      </label>
-      <input :id="`invwiki-form-origin-${nonce}`" type="text" v-model="origin" @focus="$refs.c?.close?.()" autocomplete="off" />
-
       <label :for="`invwiki-form-owner-${nonce}`">
         <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
         Eigentümer*in
@@ -104,23 +92,11 @@
         Kann andere Gegenstände beherbergen
       </label>
 
-      <label :for="`invwiki-form-date-${nonce}`">
-        <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
-        Anschaffungsdatum
-      </label>
-      <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" autocomplete="off" />
-
       <label :for="`invwiki-form-serial-${nonce}`">
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
         Seriennummer
       </label>
       <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" autocomplete="off" />
-
-      <label :for="`invwiki-form-invoice-${nonce}`">
-        <mdi-icon icon="file-document-outline" left title="Rechnung" />
-        Rechnung
-      </label>
-      <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <template v-if="!edit">
         <label v-if="suggestionsVisible">
@@ -196,6 +172,37 @@
         Beliebiger Markdown-Inhalt, der auf der Wiki-Seite unterhalb der Gegenstandsdaten angezeigt wird, z.B. Notizen, Links oder Anhänge.
         Bilder und Dateien können per Drag &amp; Drop in das Feld gezogen werden.
       </blockquote>
+      <div class="accordion-panel">
+        <label class="accordion-toggle" @click="togglePanel()" aria-controls="accordion0">
+          <span class="accordion-arrow">&#8963;</span>
+          <span>Mehr Details</span>
+        </label>
+        <div class="accordion-content" id="accordion0">
+          <label :for="`invwiki-form-date-${nonce}`">
+            <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
+            Anschaffungsdatum
+          </label>
+          <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" autocomplete="off" />
+
+          <label :for="`invwiki-form-origin-${nonce}`">
+            <mdi-icon icon="basket-unfill" left title="Ursprung" />
+            Ursprung
+          </label>
+          <input :id="`invwiki-form-origin-${nonce}`" type="text" v-model="origin" @focus="$refs.c?.close?.()" autocomplete="off" />
+       
+          <label :for="`invwiki-form-invoice-${nonce}`">
+            <mdi-icon icon="file-document-outline" left title="Rechnung" />
+            Rechnung
+          </label>
+          <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" autocomplete="off" />
+          
+          <label :for="`invwiki-form-category-${nonce}`">
+            <mdi-icon icon="tag-outline" left title="Kategorie" />
+            Kategorie
+          </label>
+          <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" autocomplete="off" />          
+        </div>
+      </div>
     </div>
 
     <template #footer>
@@ -510,7 +517,40 @@ export default {
         alert(`Fehler: ${e.message}`);
         this.loading = false;
       }
-    }
+    },
+
+    togglePanel() {
+      function expandPanel(target) {
+        target.setAttribute("aria-expanded", "true");
+        
+        const panel = document.getElementById(
+          target.getAttribute("aria-controls")
+        );
+        clearTimeout(panel.timeoutID);
+        panel.removeAttribute("hidden");
+        panel.style.height = `${panel.scrollHeight}px`;
+        panel.scrollIntoView()
+      }
+      
+      function closePanel(target) {
+        target.setAttribute("aria-expanded", "false");
+        
+        const panel = document.getElementById(
+          target.getAttribute("aria-controls")
+        );
+        panel.style.height = "0px";
+        
+        const timeoutID = setTimeout(() => {
+          panel.setAttribute("hidden", "");
+        }, 1000);
+        panel.timeoutID = timeoutID;
+      }
+      
+      const target = document.querySelector(".accordion-toggle")
+      const isExpanded = target.getAttribute("aria-expanded") === "true";
+      if (isExpanded) closePanel(target);
+      if (!isExpanded) expandPanel(target);
+    },
   },
 
   computed: {
