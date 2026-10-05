@@ -11,17 +11,16 @@
 
   <x-dialog :title="`Aufenthaltsort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
     <div>
-      <search-autocomplete v-model="location" :items="locations" :keys="[]" label="Aufenthaltsort" autofocus restrict>
-        <template #group="item">
-          <b>{{ item.group.group }}:</b>
-          <div>{{ item.group.text }}</div>
-        </template>
-
-        <template #item="item">
-          <b>{{ item.value }}:</b>
-          <div>
-            {{ item.text }}
-            <pre v-if="item.example">{{item.example}}</pre>
+      <search-autocomplete v-model="location" :items="locations" :keys="keys" :serializer="(e) => e.value" label="Aufenthaltsort" autofocus restrict>
+        <!-- the tree while browsing, the path of each hit while searching -->
+        <template #item="{ item, searching }">
+          <div class="invwiki-location-option" :style="searching ? '' : `padding-left: ${item.depth * 1.5}em`">
+            <mdi-icon :icon="item.kind === 'place' ? 'map-marker-outline' : 'package-variant'" :title="item.kind === 'place' ? 'Ort' : 'Behälter'" left />
+            <div>
+              <b>{{ item.value }}</b><template v-if="item.title && !samePlace(item.title, item.value)">: {{ item.title }}</template>
+              <small v-if="item.description">{{ item.description }}</small>
+              <small v-if="searching && item.path.length">in {{ item.path.join(' › ') }}</small>
+            </div>
           </div>
         </template>
       </search-autocomplete>
@@ -57,8 +56,10 @@
 </template>
 
 <script>
-import { fetchLocations, searchItems, writeItem } from '@/utils/api.js';
+import { fetchLocationTree, writeItem } from '@/utils/api.js';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
+
+const samePlace = (a, b) => String(a || '').trim().toUpperCase() === String(b || '').trim().toUpperCase();
 
 export default {
   components: {
@@ -73,7 +74,8 @@ export default {
   data: () => ({
     loading: false,
     locations: [],
-    location: '',
+    location: null,
+    keys: ['value', 'title', 'description', 'path'],
     description: '',
     updateLastSeen: true,
     // See CreateComponent.vue for explanation of nonce usage
@@ -82,29 +84,32 @@ export default {
 
   computed: {
     validLocation() {
-      return this.locations.includes(this.location);
+      return Boolean(this.location);
     }
   },
 
   methods: {
+    samePlace,
+
     async open() {
       this.$refs.dialog.show();
       this.loading = true;
 
-      if (this.singleItem) {
-        this.location = this.$parent?.temporary?.location || this.$parent?.nominal?.location || '';
-        this.description = this.$parent?.temporary?.description || this.$parent?.nominal?.description || '';
-      } else {
-        this.location = '';
-        this.description = '';
+      const current = this.singleItem ? this.$parent?.temporary?.location || this.$parent?.nominal?.location || '' : '';
+      this.description = this.singleItem ? this.$parent?.temporary?.description || this.$parent?.nominal?.description || '' : '';
+      this.location = null;
+
+      try {
+        // an item cannot go into itself, nor into anything that is inside it
+        const moved = this.singleItem ? [this.$parent.inventoryId] : this.selected.map(e => e.split('/').pop());
+        const inside = (option) => [option.value, ...option.path].some(e => moved.some(m => samePlace(e, m)));
+        this.locations = (await fetchLocationTree()).filter(e => !inside(e));
+        this.location = this.locations.find(e => samePlace(e.value, current)) ?? null;
+      } catch (e) {
+        alert(`Fehler beim Laden der Aufenthaltsorte: ${e.message}`);
+      } finally {
+        this.loading = false;
       }
-
-      this.locations = (await Promise.all([
-        fetchLocations(),
-        searchItems('"container: true"'),
-      ])).flat();
-
-      this.loading = false;
     },
 
     async saveLocation(mode) {
@@ -123,7 +128,7 @@ export default {
                 switch (mode) {
                   case 0:
                     yaml.temporary = {
-                      location: this.location,
+                      location: this.location.value,
                       description: this.description,
                       timestamp: currentDate
                     };
@@ -133,7 +138,7 @@ export default {
 
                   case 1:
                     yaml.nominal = {
-                      location: this.location,
+                      location: this.location.value,
                       description: this.description,
                       timestamp: currentDate
                     };

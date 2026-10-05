@@ -253,10 +253,109 @@ export async function nextNumber() {
   return String(Math.max(...items.map(e => Number(REGEX.exec(e)?.[1])).filter(e => !isNaN(e))) + 1).padStart(6, '0');
 };
 
-export async function fetchLocations() {
+// text of a list entry without the entries of a list nested in it
+const ownText = (li) => {
+  if (!li) {
+    return '';
+  }
+
+  const copy = li.cloneNode(true);
+  copy.querySelectorAll('ul, ol').forEach(e => e.remove());
+  return copy.textContent.trim();
+};
+
+// The places ("Orte") of the locations page, in its order, each with the place
+// it belongs to: a list nested in an entry there lists the places within it.
+async function fetchPlaces() {
   const html = await rpc('core.getPageHTML', { page: `${PREFIX}:locations` });
   const doc = new DOMParser().parseFromString(html, 'text/html');
-  return [...doc.querySelectorAll('li')].map(e => e.textContent.trim());
+  return [...doc.querySelectorAll('li')]
+    .map(e => ({ value: ownText(e), kind: 'place', title: '', description: '', parent: ownText(e.parentElement.closest('li')) }))
+    .filter(e => e.value);
+}
+
+// The items that can contain other items ("Behälter"), each with where it is
+// now. From the wiki plugin's table, or, where it is not installed, from the
+// fulltext search and one request per hit.
+async function fetchContainers() {
+  const container = (id, title, description, location) => ({ value: id, kind: 'container', title, description, parent: location });
+
+  try {
+    const { items } = await queryItems({ filters: { container: '1' }, limit: 0, columns: ['title', 'description', 'location'] });
+    return items.map(e => container(e.id, e.title, e.description, e.location));
+  } catch (e) {
+    if (!isPluginMissing(e)) {
+      throw e;
+    }
+  }
+
+  const ids = (await searchItems('"container: true"')).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+  const items = await Promise.all(ids.map(async (id) => {
+    const item = await fetchInventoryItem(id).catch(() => null);
+    return item?.container && container(
+      id,
+      item.title,
+      String(item.description || ''),
+      String(item.temporary?.location || item.nominal?.location || '')
+    );
+  }));
+  return items.filter(Boolean);
+}
+
+// Orders the nodes as a tree, each one below the node its parent names, as a
+// list of options with their depth and the path of values above them. A node
+// with an unknown parent, or in a loop, is at the top level. Kept in step with
+// tree() in dokuwiki-plugin/inventory/remote.php, which does the same on the
+// server.
+export function locationTree(nodes) {
+  const key = (value) => String(value ?? '').trim().toUpperCase();
+
+  const byKey = new Map();
+  nodes.forEach((node, i) => byKey.has(key(node.value)) || byKey.set(key(node.value), i));
+
+  const roots = [];
+  const children = nodes.map(() => []);
+  nodes.forEach((node, i) => {
+    const parent = byKey.get(key(node.parent));
+    if (parent !== undefined && parent !== i) {
+      children[parent].push(i);
+    } else {
+      roots.push(i);
+    }
+  });
+
+  const seen = new Set();
+  const options = [];
+  const walk = (i, path) => {
+    if (seen.has(i)) {
+      return;
+    }
+    seen.add(i);
+
+    const { parent, ...node } = nodes[i];
+    options.push({ ...node, depth: path.length, path });
+    children[i].forEach(child => walk(child, [...path, node.value]));
+  };
+
+  roots.forEach(i => walk(i, []));
+  // whatever is only reachable through a loop
+  nodes.forEach((_, i) => walk(i, []));
+
+  return options;
+}
+
+// Where an item can be put: the places, and the containers below the place they
+// are in, see locationTree. Built by the wiki plugin where it is installed.
+export async function fetchLocationTree() {
+  try {
+    return await rpc('plugin.inventory.listLocations');
+  } catch (e) {
+    if (!isPluginMissing(e)) {
+      throw e;
+    }
+  }
+
+  return locationTree((await Promise.all([fetchPlaces(), fetchContainers()])).flat());
 }
 
 export async function searchItems(query) {

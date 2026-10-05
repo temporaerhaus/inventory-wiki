@@ -1123,3 +1123,38 @@ button.invwiki-container.expanded {
 .sticky-header.sticky-shadow {
   box-shadow: 0px 8px 5px -5px rgba(0, 0, 0, 0.2);
 }
+
+/* an entry of the location dialog's list, indented by how deep it is in the tree */
+.invwiki-location-option {
+  grid-column: 1 / 3;
+  display: flex;
+  align-items: flex-start;
+  /* the wiki's template mutes the text of list entries */
+  color: var(--text-main);
+}
+
+.invwiki-location-option svg {
+  flex-shrink: 0;
+  margin-top: .15em;
+}
+
+.invwiki-location-option b {
+  font-family: monospace;
+}
+
+.invwiki-location-option small {
+  display: block;
+  color: var(--text-muted);
+}
+
+.invwiki-autocomplete-result:hover .invwiki-location-option,
+.invwiki-autocomplete-result.is-active .invwiki-location-option,
+.invwiki-autocomplete-result:hover .invwiki-location-option small,
+.invwiki-autocomplete-result.is-active .invwiki-location-option small {
+  color: white;
+}
+
+.invwiki-autocomplete-result:hover .invwiki-location-option svg,
+.invwiki-autocomplete-result.is-active .invwiki-location-option svg {
+  fill: white;
+}

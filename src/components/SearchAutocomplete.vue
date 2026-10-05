@@ -15,14 +15,16 @@
           <div>{{ result.group.text }}</div>
         </li>
         <li @click="setResult(result)" :class="`invwiki-autocomplete-result invwiki-autocomplete-indent ${i === arrowCounter ? 'is-active' : ''}`">
-          <template v-if="typeof(result) === 'object'">
-            <b>{{ result.value }}:</b>
-            <div>
-              {{ result.text }}
-              <pre v-if="result.example">{{result.example}}</pre>
-            </div>
-          </template>
-          <div style="grid-column: 1 / 3" v-else>{{ result }}</div>
+          <slot name="item" :item="result" :searching="Boolean(search)">
+            <template v-if="typeof(result) === 'object'">
+              <b>{{ result.value }}:</b>
+              <div>
+                {{ result.text }}
+                <pre v-if="result.example">{{result.example}}</pre>
+              </div>
+            </template>
+            <div style="grid-column: 1 / 3" v-else>{{ result }}</div>
+          </slot>
         </li>
       </template>
     </ul>
@@ -127,7 +129,7 @@ export default {
       });
 
       if (this.modelValue) {
-        this.search = this.modelValue;
+        this.search = this.serializer ? this.serializer(this.modelValue) : this.modelValue;
       }
     },
 
