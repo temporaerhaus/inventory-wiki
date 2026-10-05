@@ -70,6 +70,8 @@ import {
   mdiHandshakeOutline,
   mdiTextBoxOutline,
   mdiImageSizeSelectLarge,
+  mdiCheckCircleOutline,
+  mdiAlertCircleOutline,
 } from '@mdi/js';
 
 export default {
@@ -146,6 +148,8 @@ export default {
       mdiHandshakeOutline,
       mdiTextBoxOutline,
       mdiImageSizeSelectLarge,
+      mdiCheckCircleOutline,
+      mdiAlertCircleOutline,
     }
   }),
 

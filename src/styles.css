@@ -1574,26 +1574,45 @@ button.invwiki-container.expanded {
   margin-top: .5em;
 }
 
+/* two buttons joined into one toggle, the active one filled */
 .invwiki .invwiki-scan-mode {
   display: flex;
-  flex-wrap: wrap;
-  gap: .25em 1.5em;
-  margin-bottom: 1em;
+  margin-bottom: .75em;
 }
 
-.invwiki .dialog .invwiki-scan-mode label {
-  margin-top: 0;
-  font-weight: normal;
+/* the field for typed or barcode-scanned numbers, as wide as the toggle and
+   the camera rather than the other text fields */
+.invwiki input.invwiki-scan-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-right: 0;
 }
 
-.invwiki .invwiki-scan-mode input[type='radio'] {
-  width: auto;
-  display: inline;
-  margin: 0 .4em 0 0;
+.invwiki .invwiki-scan-mode button {
+  flex: 1;
+  margin: 0;
+  padding: .35em .6em;
+  border-radius: 0;
+  white-space: nowrap;
 }
 
-.invwiki .dialog blockquote.invwiki-scan-status.is-error {
-  border-left-color: #b00020;
+.invwiki .invwiki-scan-mode button:first-child {
+  border-radius: 6px 0 0 6px;
+}
+
+.invwiki .invwiki-scan-mode button:last-child {
+  border-left: none;
+  border-radius: 0 6px 6px 0;
+}
+
+.invwiki .invwiki-scan-mode button.is-active {
+  color: white;
+  background: #4AAE9B;
+  border-color: #4AAE9B;
+}
+
+.invwiki .invwiki-scan-mode button.is-active svg {
+  fill: white;
 }
 
 /* how a sub-item is duplicated, see CreateComponent.vue */
@@ -1677,4 +1696,148 @@ button.invwiki-container.expanded {
 .accordion-panel > .accordion-toggle[aria-expanded="true"] + .accordion-content {
   transition: height 0s step-start;
   margin-top: 2em;
+}
+
+/* what was done with the scanned items, newest first, see ScanComponent.vue */
+.invwiki ul.invwiki-scan-log {
+  max-height: 11em;
+  overflow-y: auto;
+  margin: 0 0 .25em;
+  padding: 0;
+}
+
+/* how many are in, and the way to the older entries, in one line */
+.invwiki .invwiki-scan-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: .25em 1em;
+  margin-bottom: .75em;
+  font-size: .9em;
+}
+
+.invwiki .invwiki-scan-summary > span {
+  font-weight: bold;
+}
+
+.invwiki .invwiki-scan-summary .invwiki-scan-history {
+  margin: 0 0 0 auto;
+  padding: .2em .6em;
+  border: none;
+  background: none;
+  text-decoration: underline;
+}
+
+.invwiki ul.invwiki-scan-log li {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: .5em;
+  margin: 0 0 .25em;
+  padding: .3em .6em;
+  color: var(--text-muted);
+  border-left: 4px solid #4AAE9B;
+  border-radius: 4px;
+  font-size: .9em;
+}
+
+.invwiki ul.invwiki-scan-log li > span {
+  flex: 1;
+}
+
+.invwiki ul.invwiki-scan-log li svg {
+  flex-shrink: 0;
+  fill: #4AAE9B;
+}
+
+/* the newest one stands out, and lights up when it comes */
+.invwiki ul.invwiki-scan-log li.is-latest {
+  color: var(--text-main);
+  font-size: 1em;
+  background-color: #e3f4f0;
+  animation: invwiki-scan-new 1s ease-out;
+}
+
+.invwiki ul.invwiki-scan-log li.is-error {
+  border-left-color: #b00020;
+}
+
+.invwiki ul.invwiki-scan-log li.is-error svg {
+  fill: #b00020;
+}
+
+.invwiki ul.invwiki-scan-log li.is-latest.is-error {
+  background-color: #fbe7ea;
+  animation-name: invwiki-scan-new-error;
+}
+
+.invwiki ul.invwiki-scan-log li.is-pending {
+  color: var(--text-muted);
+  border-left-color: var(--border);
+  background-color: transparent;
+  animation: none;
+}
+
+.invwiki ul.invwiki-scan-log li.is-pending svg {
+  fill: var(--text-muted);
+}
+
+.invwiki ul.invwiki-scan-log li.is-undone {
+  border-left-color: var(--border);
+  background-color: transparent;
+}
+
+.invwiki ul.invwiki-scan-log li.is-undone > span {
+  text-decoration: line-through;
+}
+
+.invwiki ul.invwiki-scan-log li.is-undone svg {
+  fill: var(--text-muted);
+}
+
+.invwiki ul.invwiki-scan-log button {
+  flex-shrink: 0;
+  margin: 0;
+  padding: .3em .6em;
+}
+
+@keyframes invwiki-scan-new {
+  from { background-color: #9ad8c9; }
+}
+
+@keyframes invwiki-scan-new-error {
+  from { background-color: #f2a9b4; }
+}
+
+/* the camera, framed green or red for a moment after a scan */
+.invwiki .invwiki-scan-video {
+  border: 4px solid transparent;
+  border-radius: 6px;
+  transition: border-color .3s;
+}
+
+.invwiki .invwiki-scan-video.is-ok {
+  border-color: #4AAE9B;
+}
+
+.invwiki .invwiki-scan-video.is-error {
+  border-color: #b00020;
+}
+
+.invwiki .invwiki-scan-video video {
+  display: block;
+  max-width: 100%;
+}
+
+/* on a phone the undo button is its icon, to leave the line to the text */
+@media only screen and (max-width: 768px) {
+  .invwiki ul.invwiki-scan-log .invwiki-scan-undo-label {
+    display: none;
+  }
+
+  /* MdiIcon sets the gap to the text inline */
+  .invwiki ul.invwiki-scan-log button svg {
+    margin-right: 0 !important;
+  }
 }
