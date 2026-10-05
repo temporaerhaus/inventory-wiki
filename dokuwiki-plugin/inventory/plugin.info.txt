@@ -1,0 +1,7 @@
+base   inventory
+author Echo Meißner
+email  mail@ech0.de
+date   2026-10-05
+name   inventory
+desc   Filtered, sorted and paged JSON-RPC access to the metadata of the inventory items, for the table view of the inventory-wiki frontend
+url    https://github.com/temporaerhaus/inventory-wiki
