@@ -1541,3 +1541,22 @@ button.invwiki-container.expanded {
   margin: 0;
   padding: 0;
 }
+
+/* on a phone the toolbar buttons are only their icons (and counts), the
+   names are in their titles */
+@media only screen and (max-width: 768px) {
+  .invwiki.invwiki-toolbar .invwiki-toolbar-label {
+    display: none;
+  }
+
+  .invwiki.invwiki-toolbar > button,
+  .invwiki.invwiki-toolbar > div > button {
+    padding-inline: .8em;
+  }
+
+  /* MdiIcon sets the gap to the text inline */
+  .invwiki.invwiki-toolbar > button > svg:first-child,
+  .invwiki.invwiki-toolbar > div > button > svg:first-child {
+    margin-right: 0 !important;
+  }
+}

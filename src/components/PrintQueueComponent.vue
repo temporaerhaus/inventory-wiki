@@ -1,7 +1,7 @@
 <template>
-  <button @click="open()">
+  <button @click="open()" title="Druckwarteschlange" aria-label="Druckwarteschlange">
     <mdi-icon icon="tray-full" left />
-    Druckwarteschlange
+    <span class="invwiki-toolbar-label">Druckwarteschlange</span>
     <span class="invwiki-print-queue-summary" v-if="summary.length > 0">
       <span v-for="part in summary" :key="part.key" :title="part.title">
         <mdi-icon :icon="part.icon" v-if="part.icon" />{{ part.emoji }}{{ part.count }}

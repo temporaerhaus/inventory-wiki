@@ -1,8 +1,8 @@
 <template>
   <div class="invwiki-selection-menu" ref="root" v-if="selected?.length > 0">
-    <button @click="open = !open" :aria-expanded="open">
+    <button @click="open = !open" :aria-expanded="open" :title="label" :aria-label="label">
       <mdi-icon icon="checkbox-multiple-marked-outline" left />
-      {{ selected.length }} {{ selected.length === 1 ? 'ausgewählter Gegenstand' : 'ausgewählte Gegenstände' }}
+      {{ selected.length }} <span class="invwiki-toolbar-label">{{ selected.length === 1 ? 'ausgewählter Gegenstand' : 'ausgewählte Gegenstände' }}</span>
       <mdi-icon :icon="open ? 'menu-up' : 'menu-down'" right />
     </button>
 
@@ -49,6 +49,12 @@ export default {
   data: () => ({
     open: false,
   }),
+
+  computed: {
+    label() {
+      return `${this.selected.length} ${this.selected.length === 1 ? 'ausgewählter Gegenstand' : 'ausgewählte Gegenstände'}`;
+    }
+  },
 
   watch: {
     // a new selection starts with the menu closed

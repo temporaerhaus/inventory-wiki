@@ -11,9 +11,9 @@
     <mdi-icon icon="square-edit-outline" left />
     Gegenstand Bearbeiten
   </button>
-  <button @click="createItem" v-else>
+  <button @click="createItem" v-else title="Neuen Gegenstand Anlegen" aria-label="Neuen Gegenstand Anlegen">
     <mdi-icon icon="toy-brick-plus-outline" left />
-    Neuen Gegenstand Anlegen
+    <span class="invwiki-toolbar-label">Neuen Gegenstand Anlegen</span>
   </button>
 
   <x-dialog :title="edit ? 'Gegenstand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">

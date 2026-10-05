@@ -13,9 +13,9 @@
     <create-component />
     <selection-menu-component :selected="selected" @print="printRemote()" />
     <print-queue-component />
-    <button @click="toggleAll()" v-if="indexCount > 0">
+    <button @click="toggleAll()" v-if="indexCount > 0" :title="toggleAllLabel" :aria-label="toggleAllLabel">
       <mdi-icon :icon="allSelected ? 'checkbox-blank-outline' : 'checkbox-multiple-marked-outline'" left />
-      {{ allSelected ? 'Auswahl aufheben' : `Alle ${indexCount} auswählen` }}
+      <span class="invwiki-toolbar-label">{{ toggleAllLabel }}</span>
     </button>
     <!-- last, it fills what is left of the line -->
     <search-component />
@@ -254,6 +254,10 @@ export default {
   },
 
   computed: {
+    toggleAllLabel() {
+      return this.allSelected ? 'Auswahl aufheben' : `Alle ${this.indexCount} auswählen`;
+    },
+
     // nobody is logged in, and the page can still be read, through the wiki's
     // IP allowlist. The core marks the page of a logged in user with the class
     // loggedIn (in templates that use tpl_classes, which add mode_* as well);
