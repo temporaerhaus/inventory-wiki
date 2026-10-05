@@ -1289,3 +1289,19 @@ button.invwiki-container.expanded {
 .location-card li.invwiki-location-unknown svg {
   fill: var(--text-muted);
 }
+
+/* the queued labels by kind, on the print queue button */
+.invwiki .invwiki-print-queue-summary {
+  display: inline-flex;
+  gap: .6em;
+  margin-left: .6em;
+  padding: 0 .5em;
+  border-radius: 1em;
+  background-color: var(--background-body, #fff);
+  font-size: .9em;
+}
+
+.invwiki .invwiki-print-queue-summary svg {
+  margin-right: .15em;
+  vertical-align: -.15em;
+}
