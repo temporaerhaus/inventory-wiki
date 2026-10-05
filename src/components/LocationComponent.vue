@@ -65,7 +65,7 @@
 </template>
 
 <script>
-import { fetchLocationTree, writeItem } from '@/utils/api.js';
+import { fetchLocationTree, setLocation, writeItem } from '@/utils/api.js';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
 
@@ -144,38 +144,11 @@ export default {
           (this.singleItem ? [location.pathname] : this.selected).map((e) => {
             return writeItem(e, {}, {
               summary: `location update (mode=${mode})`,
-              replacer: (yaml) => {
-                const currentDate = new Date().toJSON();
-                switch (mode) {
-                  case 0:
-                    yaml.temporary = {
-                      location: this.location.value,
-                      description: this.description,
-                      timestamp: currentDate
-                    };
-                    yaml.nominal = yaml.nominal ?? {};
-                    if (this.updateLastSeen) yaml.lastSeenAt = currentDate;
-                    break;
-
-                  case 1:
-                    yaml.nominal = {
-                      location: this.location.value,
-                      description: this.description,
-                      timestamp: currentDate
-                    };
-                    yaml.temporary = yaml.temporary ?? {};
-                    if (this.updateLastSeen) yaml.lastSeenAt = currentDate;
-                    break;
-
-                  case 2:
-                    yaml.temporary = {};
-                    yaml.nominal = yaml.nominal ?? {};
-                    if (this.updateLastSeen) yaml.lastSeenAt = currentDate;
-                    break;
-                }
-
-                return yaml;
-              }
+              replacer: (yaml) => setLocation(yaml, mode, {
+                location: this.location?.value,
+                description: this.description,
+                updateLastSeen: this.updateLastSeen
+              })
             });
           })
         );

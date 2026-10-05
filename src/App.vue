@@ -9,8 +9,7 @@
   </div>
 
   <div class="invwiki invwiki-toolbar sticky-header" v-if="active">
-    <scan-component />
-    <scan-component reprint />
+    <scan-component :container="yaml?.container ? id : ''" :container-title="title" />
     <create-component />
     <button @click="printRemote()" v-if="selected.length > 0">
       <mdi-icon icon="cloud-print-outline" left />

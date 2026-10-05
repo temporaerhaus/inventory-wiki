@@ -495,23 +495,26 @@ export async function renderPreview(path, content) {
 //   * V-GM000376              a label for that item
 //   * inhaltsliste:39C3       an A4 contents list of that container, direct contents only
 //   * inhaltsliste:39C3:2     the same, including the contents of sub containers 2 levels deep
-// adds what is not queued yet; how many labels of an entry are printed is set
-// in the queue itself, see changePrintQueue
+// adds what is not queued yet, and returns that; how many labels of an entry
+// are printed is set in the queue itself, see changePrintQueue
 async function queuePrint(entries) {
   const token = await lock();
+  let added = [];
   try {
     await saveViaEditor(PRINT_QUEUE_PAGE, (text) => {
       const queued = parseQueue(text).map(e => e.entry);
-      const added = entries.filter((e, i) => ![...queued, ...entries.slice(0, i)].some(q => sameEntry(q, e)));
+      added = entries.filter((e, i) => ![...queued, ...entries.slice(0, i)].some(q => sameEntry(q, e)));
       return added.length > 0 ? `${text.trimEnd()}\n${added.map(e => queueLine(e, 1)).join('\n')}` : text;
     }, 'add entry');
   } finally {
     await release(token);
   }
+  return added;
 }
 
+// the inventory numbers that were not queued yet
 export async function remotePrint(inventoryId) {
-  await queuePrint(Array.isArray(inventoryId) ? inventoryId : [inventoryId]);
+  return await queuePrint(Array.isArray(inventoryId) ? inventoryId : [inventoryId]);
 }
 
 export async function remotePrintContents(inventoryId, levels = 0) {
@@ -586,6 +589,32 @@ export async function removeFromPrintQueue(entries) {
 // fired on window after every saved item, so that views showing items (such as
 // the table) can load them again when they are saved without a page reload
 export const ITEM_SAVED_EVENT = 'invwiki-item-saved';
+
+// Sets where an item is, in its yaml, for the replacer of writeItem. Modes:
+// 0 its current (temporary) location, 1 its regular (nominal) one, 2 back to
+// the regular one, which clears the current one.
+export const LOCATION_CURRENT = 0;
+export const LOCATION_REGULAR = 1;
+export const LOCATION_RESET = 2;
+export function setLocation(yaml, mode, { location = '', description = '', updateLastSeen = true } = {}) {
+  const now = new Date().toJSON();
+  const place = { location, description, timestamp: now };
+
+  if (mode === LOCATION_CURRENT) {
+    yaml.temporary = place;
+  } else if (mode === LOCATION_REGULAR) {
+    yaml.nominal = place;
+  } else {
+    yaml.temporary = {};
+  }
+  yaml.nominal = yaml.nominal ?? {};
+  yaml.temporary = yaml.temporary ?? {};
+  if (updateLastSeen) {
+    yaml.lastSeenAt = now;
+  }
+
+  return yaml;
+}
 
 export async function writeItem(path, entry = { }, opts = { create: false, summary: '', replacer: null, content: undefined }) {
   const page = pageId(path);

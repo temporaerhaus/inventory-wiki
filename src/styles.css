@@ -1305,3 +1305,21 @@ button.invwiki-container.expanded {
   margin-right: .15em;
   vertical-align: -.15em;
 }
+
+/* the scanned item and what can be done with it, see ScanComponent.vue */
+.invwiki .invwiki-scan-result small {
+  display: block;
+  color: var(--text-muted);
+}
+
+.invwiki .invwiki-scan-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .5em;
+}
+
+.invwiki .invwiki-scan-actions button {
+  margin: 0;
+  text-align: left;
+}
