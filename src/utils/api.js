@@ -553,6 +553,11 @@ export async function renderPreview(path, content) {
 //   * V-GM000376              a label for that item
 //   * inhaltsliste:39C3       an A4 contents list of that container, direct contents only
 //   * inhaltsliste:39C3:2     the same, including the contents of sub containers 2 levels deep
+// fired on window whenever the print queue was changed from here, so that
+// what shows it (the print queue button) can load it again
+export const PRINT_QUEUE_CHANGED_EVENT = 'invwiki-print-queue-changed';
+const printQueueChanged = () => window.dispatchEvent(new CustomEvent(PRINT_QUEUE_CHANGED_EVENT));
+
 // adds what is not queued yet, and returns that; how many labels of an entry
 // are printed is set in the queue itself, see changePrintQueue
 async function queuePrint(entries) {
@@ -566,6 +571,9 @@ async function queuePrint(entries) {
     }, 'add entry');
   } finally {
     await release(token);
+  }
+  if (added.length > 0) {
+    printQueueChanged();
   }
   return added;
 }
@@ -638,6 +646,7 @@ export async function changePrintQueue(changes) {
   } finally {
     await release(token);
   }
+  printQueueChanged();
 }
 
 export async function removeFromPrintQueue(entries) {

@@ -56,7 +56,7 @@
 </template>
 
 <script>
-import { PREFIX, MAX_COPIES, clampCount, changePrintQueue, fetchInventoryItem, fetchPrintQueue, removeFromPrintQueue } from '@/utils/api.js';
+import { PREFIX, MAX_COPIES, PRINT_QUEUE_CHANGED_EVENT, clampCount, changePrintQueue, fetchInventoryItem, fetchPrintQueue, removeFromPrintQueue } from '@/utils/api.js';
 
 // the label printer looks at the queue every 10 seconds, the open dialog
 // follows it as closely; the counts on the button can lag a bit more
@@ -76,6 +76,7 @@ export default {
     items: {},
     timer: null,
     buttonTimer: null,
+    request: 0,
   }),
 
   computed: {
@@ -139,6 +140,10 @@ export default {
       }
     },
 
+    onChanged() {
+      this.load({ quiet: true });
+    },
+
     stopRefresh() {
       clearInterval(this.timer);
       this.timer = null;
@@ -149,14 +154,21 @@ export default {
         return;
       }
 
+      // the answer to an older look must not replace the one to a newer
+      const request = ++this.request;
       this.loading = !quiet;
       try {
-        this.entries = await fetchPrintQueue();
-        this.error = '';
-        this.loaded = true;
-        this.loadItems();
+        const entries = await fetchPrintQueue();
+        if (request === this.request) {
+          this.entries = entries;
+          this.error = '';
+          this.loaded = true;
+          this.loadItems();
+        }
       } catch (e) {
-        this.error = e.message;
+        if (request === this.request) {
+          this.error = e.message;
+        }
       } finally {
         this.loading = false;
       }
@@ -204,6 +216,8 @@ export default {
 
   mounted() {
     this.load({ quiet: true });
+    // added to from anywhere on the page: a label, the scanner, the selection
+    window.addEventListener(PRINT_QUEUE_CHANGED_EVENT, this.onChanged);
     // not while nobody looks at the page
     this.buttonTimer = setInterval(() => document.hidden || this.load({ quiet: true }), REFRESH_BUTTON);
   },
@@ -211,6 +225,7 @@ export default {
   beforeUnmount() {
     this.stopRefresh();
     clearInterval(this.buttonTimer);
+    window.removeEventListener(PRINT_QUEUE_CHANGED_EVENT, this.onChanged);
   }
 }
 </script>
