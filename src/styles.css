@@ -1266,3 +1266,54 @@ button.invwiki-container.expanded {
 .invwiki ul.invwiki-print-queue button svg {
   margin: 0;
 }
+
+.accordion-arrow {
+  font-size: 1.5em;
+  transform-origin: center 35%;
+  transition: transform 0.4s;
+  transform: translate(0, 20%) rotateX(180deg);
+}
+
+.accordion-panel {
+  overflow: hidden;
+}
+
+.accordion-panel:has(.accordion-toggle[aria-expanded="true"]) {
+  overflow: visible;
+}
+
+.accordion-panel > label.accordion-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  cursor: pointer;
+  transition: background-color 0.4s;
+}
+
+.accordion-panel > .accordion-toggle > span {
+  pointer-events: none;
+  user-select: none;
+}
+
+.accordion-panel > .accordion-toggle span:last-child {
+  text-decoration: underline;
+}
+
+.accordion-panel > .accordion-toggle[aria-expanded="true"] .accordion-arrow {
+  transform: translate(0, 20%);
+}
+
+.accordion-panel > .accordion-content {
+  height: 0;
+}
+
+.accordion-panel > .accordion-toggle[aria-expanded="false"] + .accordion-content {
+  height: 0;
+  transition: height 0.4s ease;
+}
+
+.accordion-panel > .accordion-toggle[aria-expanded="true"] + .accordion-content {
+  transition: height 0s step-start;
+  margin-top: 2em;
+}
