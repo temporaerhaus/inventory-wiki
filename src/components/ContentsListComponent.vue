@@ -4,28 +4,40 @@
     Inhaltsliste Erstellen
   </button>
 
-  <x-dialog :title="`Inhaltsliste ${inventoryId}`" icon="format-list-checks" ref="dialog" :loading="loading || printing">
-    <label :for="`${uid}-levels`">
-      <mdi-icon icon="package-variant" left title="Unter-Behälter" />
-      Inhalt von Unter-Behältern auflisten
+  <x-dialog :title="`${sign ? 'Große Aufkleber' : 'Inhaltsliste'} ${inventoryId}`" icon="format-list-checks" ref="dialog" :loading="loading || printing">
+    <label :for="`${uid}-kind`">
+      <mdi-icon icon="file-document-outline" left title="Art" />
+      Art
     </label>
-    <select :id="`${uid}-levels`" v-model.number="levels" @change="generate()" :disabled="loading">
-      <option :value="0">Nein, nur direkt enthaltene Gegenstände</option>
-      <option :value="1">1 Ebene tief</option>
-      <option :value="2">2 Ebenen tief</option>
-      <option :value="3">3 Ebenen tief</option>
-      <option :value="maxDepth">Alle Ebenen</option>
+    <select :id="`${uid}-kind`" v-model="kind" @change="generate()" :disabled="loading">
+      <option value="list">Liste der beinhalteten Gegenstände</option>
+      <option value="sign">Große Aufkleber für den Behälter, 4 auf einer A4-Seite</option>
     </select>
 
-    <p v-if="loading">Lade beinhaltete Gegenstände …</p>
+    <template v-if="!sign">
+      <label :for="`${uid}-levels`">
+        <mdi-icon icon="package-variant" left title="Unter-Behälter" />
+        Inhalt von Unter-Behältern auflisten
+      </label>
+      <select :id="`${uid}-levels`" v-model.number="levels" @change="generate()" :disabled="loading">
+        <option :value="0">Nein, nur direkt enthaltene Gegenstände</option>
+        <option :value="1">1 Ebene tief</option>
+        <option :value="2">2 Ebenen tief</option>
+        <option :value="3">3 Ebenen tief</option>
+        <option :value="maxDepth">Alle Ebenen</option>
+      </select>
+    </template>
+
+    <p v-if="loading">{{ sign ? 'Erstelle die Aufkleber …' : 'Lade beinhaltete Gegenstände …' }}</p>
     <p v-else-if="error">Fehler: {{ error }}</p>
     <template v-else-if="blobURL">
-      <p>{{ rows.length }} {{ rows.length === 1 ? 'Gegenstand' : 'Gegenstände' }}{{ nested ? ', inklusive Inhalt von Unter-Behältern' : '' }}.</p>
-      <iframe :src="blobURL" class="invwiki-contents-preview hide-mobile" title="Vorschau der Inhaltsliste"></iframe>
+      <p v-if="sign">Der Aufkleber von {{ inventoryId }} vergrößert, viermal auf einer A4-Seite im Querformat zum Ausschneiden, z.B. für jede Seite einer Palette.</p>
+      <p v-else>{{ rows.length }} {{ rows.length === 1 ? 'Gegenstand' : 'Gegenstände' }}{{ nested ? ', inklusive Inhalt von Unter-Behältern' : '' }}.</p>
+      <iframe :src="blobURL" class="invwiki-contents-preview hide-mobile" :title="sign ? 'Vorschau der Aufkleber' : 'Vorschau der Inhaltsliste'"></iframe>
     </template>
 
     <template #footer v-if="!loading && !error && blobURL">
-      <a :href="blobURL" :download="`Inhaltsliste_${inventoryId}.pdf`">
+      <a :href="blobURL" :download="`${sign ? 'Aufkleber_A4' : 'Inhaltsliste'}_${inventoryId}.pdf`">
         <mdi-icon icon="file-download-outline" />
         PDF Herunterladen
       </a>
@@ -49,7 +61,9 @@ import { markRaw } from 'vue';
 
 import logo from '@/assets/logo-full.svg?raw';
 import pdfMake, { mm2pt } from '@/utils/pdf.js';
-import { PREFIX, fetchInventoryItem, remotePrintContents, searchItems } from '@/utils/api.js';
+import { PREFIX, fetchInventoryItem, remotePrintContents, remotePrintSign, searchItems } from '@/utils/api.js';
+import { labelDescription } from '@/utils/label.js';
+import { signDocument } from '@/utils/sign.js';
 
 // the dev server runs on localhost but proxies this wiki
 const WIKI_ORIGIN = import.meta.env.DEV ? 'https://wiki.temporaerhaus.de' : location.origin;
@@ -66,6 +80,8 @@ export default {
   data: () => ({
     uid: `invwiki-contents-${Math.round(Math.random() * 10000)}`,
     maxDepth: MAX_DEPTH,
+    // list: the contained items; sign: large labels of the container itself
+    kind: 'list',
     // how many levels of sub containers to list the contents of, none by default
     levels: 0,
     loading: false,
@@ -77,6 +93,10 @@ export default {
   }),
 
   computed: {
+    sign() {
+      return this.kind === 'sign';
+    },
+
     nested() {
       return this.rows.some(e => e.depth > 0);
     }
@@ -248,6 +268,7 @@ export default {
     },
 
     open() {
+      this.kind = 'list';
       this.levels = 0;
       this.$refs.dialog.show();
       this.generate();
@@ -258,9 +279,13 @@ export default {
       this.error = '';
 
       try {
-        this.rows = await this.collect(this.inventoryId);
         // pdfmake's document must not be wrapped in a reactive proxy, some of its properties are read-only
-        this.pdf = markRaw(await this.createPDF());
+        if (this.sign) {
+          this.pdf = markRaw(pdfMake.createPdf(await this.signDocument()));
+        } else {
+          this.rows = await this.collect(this.inventoryId);
+          this.pdf = markRaw(await this.createPDF());
+        }
 
         if (this.blobURL) {
           URL.revokeObjectURL(this.blobURL);
@@ -271,6 +296,21 @@ export default {
       } finally {
         this.loading = false;
       }
+    },
+
+    // the label as printed, with serial number and owner, from the page as saved
+    async signDocument() {
+      const item = await fetchInventoryItem(this.inventoryId) || {};
+      return signDocument({
+        id: this.inventoryId,
+        title: item.title || this.title || '',
+        description: labelDescription({
+          inventoryId: this.inventoryId,
+          description: item.description || '',
+          serial: item.serial || '',
+          owner: item.owner || '',
+        }),
+      });
     },
 
     print() {
@@ -286,7 +326,11 @@ export default {
 
       this.printing = true;
       try {
-        await remotePrintContents(this.inventoryId, this.levels);
+        if (this.sign) {
+          await remotePrintSign(this.inventoryId);
+        } else {
+          await remotePrintContents(this.inventoryId, this.levels);
+        }
         this.$refs.dialog.close();
       } catch (e) {
         alert(`Fehler: ${e.message}`);

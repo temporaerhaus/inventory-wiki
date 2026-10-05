@@ -69,6 +69,7 @@ import {
   mdiPackageVariantPlus,
   mdiHandshakeOutline,
   mdiTextBoxOutline,
+  mdiImageSizeSelectLarge,
 } from '@mdi/js';
 
 export default {
@@ -144,6 +145,7 @@ export default {
       mdiPackageVariantPlus,
       mdiHandshakeOutline,
       mdiTextBoxOutline,
+      mdiImageSizeSelectLarge,
     }
   }),
 

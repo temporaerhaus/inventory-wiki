@@ -603,6 +603,11 @@ export async function remotePrintContents(inventoryId, levels = 0) {
   await queuePrint([`inhaltsliste:${inventoryId}${levels > 0 ? `:${levels}` : ''}`]);
 }
 
+// an A4 page of large labels of an item, see utils/sign.js
+export async function remotePrintSign(inventoryId) {
+  await queuePrint([`schild:${inventoryId}`]);
+}
+
 // The entries of the print queue, "  * <entry>" lines on its page: inventory
 // numbers, and "inhaltsliste:<number>[:<levels>]" for contents lists, followed
 // by " x <count>" for more than one label. The label printer takes them off

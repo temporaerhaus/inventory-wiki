@@ -14,16 +14,17 @@
     <p v-else-if="loaded && entries.length === 0">Die Druckwarteschlange ist leer.</p>
     <ul class="invwiki-print-queue" v-else>
       <li v-for="entry in rows" :key="entry.entry">
-        <mdi-icon :icon="entry.levels === null ? 'qrcode' : 'format-list-checks'" :title="entry.levels === null ? 'Inventaraufkleber' : 'Inhaltsliste'" left />
+        <mdi-icon :icon="KINDS[entry.kind].icon" :title="KINDS[entry.kind].title" left />
         <div>
           <a :href="`/${PREFIX}/${entry.id}`"><b>{{ entry.id }}</b></a><template v-if="entry.title">: {{ entry.title }}</template>
-          <small v-if="entry.levels !== null">
+          <small v-if="entry.kind === 'sign'">Große Aufkleber, 4 auf einer A4-Seite</small>
+          <small v-else-if="entry.kind === 'contents'">
             Inhaltsliste{{ entry.levels > 0 ? `, Unter-Behälter ${entry.levels} ${entry.levels === 1 ? 'Ebene' : 'Ebenen'} tief` : '' }}
           </small>
           <small v-else-if="entry.small">🤏 Kleiner Aufkleber</small>
           <small v-else-if="entry.small === false">Normaler Aufkleber</small>
         </div>
-        <span class="invwiki-print-queue-count" v-if="entry.levels === null" title="Anzahl Aufkleber">
+        <span class="invwiki-print-queue-count" v-if="entry.kind === 'label'" title="Anzahl Aufkleber">
           <button type="button" title="Ein Aufkleber weniger" @click="setCount(entry, entry.count - 1)" :disabled="loading || entry.count <= 1">
             <mdi-icon icon="minus" title="Ein Aufkleber weniger" />
           </button>
@@ -63,11 +64,19 @@ import { PREFIX, MAX_COPIES, PRINT_QUEUE_CHANGED_EVENT, clampCount, changePrintQ
 const REFRESH = 10 * 1000;
 const REFRESH_BUTTON = 30 * 1000;
 const CONTENTS_REGEX = /^inhaltsliste:([^:]+)(?::([0-9]+))?$/i;
+// an A4 page of large labels of an item, see utils/sign.js
+const SIGN_REGEX = /^schild:([^:\s]+)$/i;
+const KINDS = {
+  label: { icon: 'qrcode', title: 'Inventaraufkleber' },
+  contents: { icon: 'format-list-checks', title: 'Inhaltsliste' },
+  sign: { icon: 'image-size-select-large', title: 'Große Aufkleber' },
+};
 
 export default {
   data: () => ({
     PREFIX,
     MAX_COPIES,
+    KINDS,
     loading: false,
     loaded: false,
     error: '',
@@ -84,7 +93,7 @@ export default {
     // many contents lists; an item counts once its label size is known
     summary() {
       const sum = (rows) => rows.reduce((total, e) => total + e.count, 0);
-      const labels = this.rows.filter(e => e.levels === null);
+      const labels = this.rows.filter(e => e.kind === 'label');
       const parts = [{
         key: 'large',
         icon: 'qrcode',
@@ -98,8 +107,13 @@ export default {
       }, {
         key: 'contents',
         icon: 'format-list-checks',
-        count: this.rows.length - labels.length,
+        count: this.rows.filter(e => e.kind === 'contents').length,
         title: (n) => `${n} ${n === 1 ? 'Inhaltsliste' : 'Inhaltslisten'}`,
+      }, {
+        key: 'sign',
+        icon: 'image-size-select-large',
+        count: this.rows.filter(e => e.kind === 'sign').length,
+        title: (n) => `${n} ${n === 1 ? 'Seite' : 'Seiten'} große Aufkleber`,
       }];
       return parts.filter(e => e.count > 0).map(e => ({ ...e, title: e.title(e.count) }));
     },
@@ -108,10 +122,19 @@ export default {
     rows() {
       return this.entries.map(({ entry, count }) => {
         const contents = CONTENTS_REGEX.exec(entry);
-        const id = (contents ? contents[1] : entry).toUpperCase();
+        const sign = SIGN_REGEX.exec(entry);
+        const id = (contents?.[1] ?? sign?.[1] ?? entry).toUpperCase();
         // small is unknown (null) until the item is loaded
         const { title = '', small = null } = this.items[id] || {};
-        return { entry, count, id, title, small, levels: contents ? Number(contents[2] || 0) : null };
+        return {
+          entry,
+          count,
+          id,
+          title,
+          small,
+          kind: contents ? 'contents' : sign ? 'sign' : 'label',
+          levels: contents ? Number(contents[2] || 0) : null,
+        };
       });
     }
   },
