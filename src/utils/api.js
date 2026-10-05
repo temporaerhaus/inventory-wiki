@@ -654,6 +654,42 @@ export const ITEM_SAVED_EVENT = 'invwiki-item-saved';
 export const LOCATION_CURRENT = 0;
 export const LOCATION_REGULAR = 1;
 export const LOCATION_RESET = 2;
+// Why putting items into a place would make the place contain itself, '' if
+// it would not: when the place, or what it is in, and so on, is one of the
+// items. For the current location that follows where each place is now
+// (its temporary location, otherwise its nominal one), for the regular
+// location only the regular ones. One request per container on the way up.
+const LOCATION_ITEM_REGEX = /^[SVL]-[A-Z]{2}[0-9]+(-[A-Z0-9]+)?$/i;
+const MAX_LOCATION_DEPTH = 20;
+export async function locationLoop(inventoryIds, place, mode) {
+  const items = inventoryIds.map(e => String(e).trim().toUpperCase());
+  const target = String(place || '').trim();
+  const chain = [];
+  let current = target;
+  while (current && chain.length < MAX_LOCATION_DEPTH) {
+    const key = current.toUpperCase();
+    const item = items.find(e => e === key);
+    if (item) {
+      const between = chain.slice(1);
+      return chain.length === 0
+        ? `${item} kann nicht in sich selbst liegen.`
+        : `${item} kann nicht in ${target} liegen, weil ${target} ${between.length > 0 ? `über ${between.join(', ')} ` : ''}selbst in ${item} liegt.`;
+    }
+    // a loop further up, which does not go through the items, or a place
+    // that is no item, like a room
+    if (chain.some(e => e.toUpperCase() === key) || !LOCATION_ITEM_REGEX.test(current)) {
+      return '';
+    }
+    chain.push(current);
+
+    const data = await fetchInventoryItem(current).catch(() => null);
+    current = String((mode === LOCATION_REGULAR
+      ? data?.nominal?.location
+      : data?.temporary?.location || data?.nominal?.location) || '').trim();
+  }
+  return '';
+}
+
 export function setLocation(yaml, mode, { location = '', description = '', updateLastSeen = true } = {}) {
   const now = new Date().toJSON();
   const place = { location, description, timestamp: now };

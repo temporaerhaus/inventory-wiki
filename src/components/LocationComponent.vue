@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import { fetchLocationTree, setLocation, writeItem } from '@/utils/api.js';
+import { LOCATION_RESET, fetchLocationTree, locationLoop, setLocation, writeItem } from '@/utils/api.js';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
 
@@ -136,6 +136,16 @@ export default {
 
       this.loading = true;
       try {
+        // resetting to the regular location puts nothing anywhere new
+        if (mode !== LOCATION_RESET) {
+          const moved = this.singleItem ? [this.$parent.inventoryId] : this.selected.map(e => e.split('/').pop());
+          const loop = await locationLoop(moved, this.location.value, mode);
+          if (loop) {
+            alert(loop);
+            return;
+          }
+        }
+
         await Promise.all(
           (this.singleItem ? [location.pathname] : this.selected).map((e) => {
             return writeItem(e, {}, {

@@ -61,7 +61,7 @@ import QrScanner from 'qr-scanner';
 
 import {
   PREFIX, LOCATION_CURRENT, LOCATION_REGULAR,
-  fetchInventoryItem, remotePrint, removeFromPrintQueue, setLocation, writeItem
+  fetchInventoryItem, locationLoop, remotePrint, removeFromPrintQueue, setLocation, writeItem
 } from '@/utils/api.js';
 
 const ID_REGEX = /^[SVL]-[A-Z]{2}[0-9]{6}(-[A-Z])?$/;
@@ -225,6 +225,11 @@ export default {
       const { id } = this.scanned;
       this.busy = true;
       try {
+        const loop = await locationLoop([id], this.container, mode);
+        if (loop) {
+          alert(loop);
+          return;
+        }
         await writeItem(`/${PREFIX}/${id}`, {}, {
           summary: `location update (mode=${mode})`,
           replacer: (yaml) => setLocation(yaml, mode, { location: this.container.toUpperCase() })
