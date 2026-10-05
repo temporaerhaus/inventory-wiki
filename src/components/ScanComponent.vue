@@ -8,7 +8,7 @@
     <span class="invwiki-toolbar-label">Inventaraufkleber Scannen</span>
   </button>
 
-  <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" icon="qrcode-scan" ref="dialog" @close="onClose()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
+  <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" icon="qrcode-scan" ref="dialog" @close="onClose()" @open="focusInput()" @keydown.enter="onScanSuccess($refs.scan.value)">
     <!-- what to do with a scanned item -->
     <div class="invwiki-scan-result" v-if="scanned && !direct">
       <p>
@@ -63,7 +63,7 @@
         {{ status.text }}
         <a href="#" v-if="status.undo" @click.prevent="undo()">Rückgängig</a>
       </blockquote>
-      <input type="text" autofocus placeholder="V-XX012345..." ref="scan" autocomplete="off" />
+      <input type="text" placeholder="V-XX012345..." ref="scan" autocomplete="off" />
       <video ref="scanner"></video>
       <div style="margin-top: -5.5em; padding: 2em; text-align: right; margin-bottom: .5em;">
         <mdi-icon :icon="!flash ? 'flashlight' : 'flashlight-off'" style="filter: invert(1); scale: 200%; margin-right: 2em;" @click="toggleFlash()" v-if="hasFlash || true" />
@@ -184,6 +184,14 @@ export default {
       this.current = null;
     },
 
+    // The field takes what a barcode scanner types, so it has the focus; but
+    // not on a phone, whose keyboard would come up and cover the camera
+    focusInput() {
+      if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+        this.$refs.scan.focus();
+      }
+    },
+
     onClose() {
       this.stopScan();
       this.scanned = null;
@@ -248,7 +256,7 @@ export default {
       this.last = { id: this.scanned?.id || '', time: Date.now() };
       this.status = { text, undo, error };
       this.scanned = null;
-      this.$nextTick(() => this.$refs.scan.focus());
+      this.$nextTick(() => this.focusInput());
     },
 
     openScanned() {
