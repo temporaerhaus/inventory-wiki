@@ -16,6 +16,15 @@
             Inhaltsliste{{ entry.levels > 0 ? `, Unter-Behälter ${entry.levels} ${entry.levels === 1 ? 'Ebene' : 'Ebenen'} tief` : '' }}
           </small>
         </div>
+        <span class="invwiki-print-queue-count" v-if="entry.levels === null" title="Anzahl Aufkleber">
+          <button type="button" title="Ein Aufkleber weniger" @click="setCount(entry, entry.count - 1)" :disabled="loading || entry.count <= 1">
+            <mdi-icon icon="minus" title="Ein Aufkleber weniger" />
+          </button>
+          <input type="number" min="1" :max="MAX_COPIES" :value="entry.count" @change="setCount(entry, $event.target.value, $event.target)" :disabled="loading" aria-label="Anzahl Aufkleber" />
+          <button type="button" title="Ein Aufkleber mehr" @click="setCount(entry, entry.count + 1)" :disabled="loading || entry.count >= MAX_COPIES">
+            <mdi-icon icon="plus" title="Ein Aufkleber mehr" />
+          </button>
+        </span>
         <button type="button" title="Aus der Druckwarteschlange entfernen" @click="remove([entry.entry])" :disabled="loading">
           <mdi-icon icon="delete-outline" title="Aus der Druckwarteschlange entfernen" />
         </button>
@@ -40,7 +49,7 @@
 </template>
 
 <script>
-import { PREFIX, fetchInventory, fetchPrintQueue, removeFromPrintQueue } from '@/utils/api.js';
+import { PREFIX, MAX_COPIES, clampCount, changePrintQueue, fetchInventoryItem, fetchPrintQueue, removeFromPrintQueue } from '@/utils/api.js';
 
 // the label printer looks at the queue every 10 seconds
 const REFRESH = 10 * 1000;
@@ -49,6 +58,7 @@ const CONTENTS_REGEX = /^inhaltsliste:([^:]+)(?::([0-9]+))?$/i;
 export default {
   data: () => ({
     PREFIX,
+    MAX_COPIES,
     loading: false,
     loaded: false,
     error: '',
@@ -58,16 +68,13 @@ export default {
   }),
 
   computed: {
-    // one row per entry, in the order of the queue; an entry queued twice is printed once
+    // one row per entry, in the order of the queue
     rows() {
-      const seen = new Set();
-      return this.entries
-        .filter(e => !seen.has(e.toUpperCase()) && seen.add(e.toUpperCase()))
-        .map((entry) => {
-          const contents = CONTENTS_REGEX.exec(entry);
-          const id = (contents ? contents[1] : entry).toUpperCase();
-          return { entry, id, title: this.titles[id] || '', levels: contents ? Number(contents[2] || 0) : null };
-        });
+      return this.entries.map(({ entry, count }) => {
+        const contents = CONTENTS_REGEX.exec(entry);
+        const id = (contents ? contents[1] : entry).toUpperCase();
+        return { entry, count, id, title: this.titles[id] || '', levels: contents ? Number(contents[2] || 0) : null };
+      });
     }
   },
 
@@ -78,11 +85,21 @@ export default {
       await this.load();
       this.stopRefresh();
       this.timer = setInterval(() => this.load({ quiet: true }), REFRESH);
+    },
 
-      // the titles are only for display, the queue does without them
-      fetchInventory()
-        .then(items => this.titles = Object.fromEntries(items.map(e => [e.id, e.title])))
-        .catch(() => {});
+    // the titles of the queued items, each looked up once; they are only for
+    // display, the queue does without them
+    loadTitles() {
+      for (const { id } of this.rows) {
+        if (id in this.titles) {
+          continue;
+        }
+
+        this.titles[id] = '';
+        fetchInventoryItem(id)
+          .then(item => this.titles[id] = item?.title || '')
+          .catch(() => {});
+      }
     },
 
     stopRefresh() {
@@ -100,6 +117,7 @@ export default {
         this.entries = await fetchPrintQueue();
         this.error = '';
         this.loaded = true;
+        this.loadTitles();
       } catch (e) {
         this.error = e.message;
       } finally {
@@ -121,8 +139,29 @@ export default {
 
     async removeAll() {
       if (confirm(`Alle ${this.rows.length} Einträge aus der Druckwarteschlange entfernen?`)) {
-        await this.remove(this.entries);
+        await this.remove(this.entries.map(e => e.entry));
       }
+    },
+
+    async setCount(row, count, input = null) {
+      count = clampCount(count);
+      // e.g. a typed 9 is a 5
+      if (input) {
+        input.value = count;
+      }
+      if (count === row.count) {
+        return;
+      }
+
+      this.loading = true;
+      try {
+        await changePrintQueue([{ entry: row.entry, count }]);
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+      } finally {
+        this.loading = false;
+      }
+      await this.load();
     }
   },
 

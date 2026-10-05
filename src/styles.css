@@ -1266,3 +1266,17 @@ button.invwiki-container.expanded {
 .invwiki ul.invwiki-print-queue button svg {
   margin: 0;
 }
+
+.invwiki .invwiki-print-queue-count {
+  display: flex;
+  align-items: center;
+  gap: .25em;
+  margin-right: .5em;
+}
+
+.invwiki .invwiki-print-queue-count input[type='number'] {
+  width: 3.5em;
+  margin: 0;
+  padding: .4em;
+  text-align: center;
+}

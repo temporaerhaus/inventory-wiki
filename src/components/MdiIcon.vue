@@ -60,6 +60,8 @@ import {
   mdiTrayFull,
   mdiQrcode,
   mdiRefresh,
+  mdiMinus,
+  mdiPlus,
 } from '@mdi/js';
 
 export default {
@@ -126,6 +128,8 @@ export default {
       mdiTrayFull,
       mdiQrcode,
       mdiRefresh,
+      mdiMinus,
+      mdiPlus,
     }
   }),
 

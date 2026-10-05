@@ -102,7 +102,13 @@ async function saveViaEditor(page, update, summary) {
   }
 
   const data = new FormData(form);
-  data.set('wikitext', update(String(data.get('wikitext') || '').replaceAll('\r\n', '\n')));
+  const text = String(data.get('wikitext') || '').replaceAll('\r\n', '\n');
+  const updated = update(text);
+  // there would be no new revision to find below
+  if (updated === text) {
+    return;
+  }
+  data.set('wikitext', updated);
   data.set('summary', summary);
   data.set('do[save]', '1');
   await fetch(`${path}?do=edit`, { method: 'post', body: data });
@@ -489,10 +495,16 @@ export async function renderPreview(path, content) {
 //   * V-GM000376              a label for that item
 //   * inhaltsliste:39C3       an A4 contents list of that container, direct contents only
 //   * inhaltsliste:39C3:2     the same, including the contents of sub containers 2 levels deep
+// adds what is not queued yet; how many labels of an entry are printed is set
+// in the queue itself, see changePrintQueue
 async function queuePrint(entries) {
   const token = await lock();
   try {
-    await saveViaEditor(PRINT_QUEUE_PAGE, (text) => `${text}\n  * ${entries.join('\n  * ')}`, 'add entry');
+    await saveViaEditor(PRINT_QUEUE_PAGE, (text) => {
+      const queued = parseQueue(text).map(e => e.entry);
+      const added = entries.filter((e, i) => ![...queued, ...entries.slice(0, i)].some(q => sameEntry(q, e)));
+      return added.length > 0 ? `${text.trimEnd()}\n${added.map(e => queueLine(e, 1)).join('\n')}` : text;
+    }, 'add entry');
   } finally {
     await release(token);
   }
@@ -507,28 +519,68 @@ export async function remotePrintContents(inventoryId, levels = 0) {
 }
 
 // The entries of the print queue, "  * <entry>" lines on its page: inventory
-// numbers, and "inhaltsliste:<number>[:<levels>]" for contents lists. The label
-// printer takes them off once they are printed (see the label-terminal
-// repository), so the queue shows what is still to be printed.
-const isQueueEntry = (line) => line.startsWith('  *');
-const queueEntry = (line) => line.slice(3).trim();
+// numbers, and "inhaltsliste:<number>[:<levels>]" for contents lists, followed
+// by " x <count>" for more than one label. The label printer takes them off
+// once they are printed (see the label-terminal repository, which reads and
+// writes them the same way), so the queue shows what is still to be printed.
+export const MAX_COPIES = 5;
+const COUNT_REGEX = /^(.*?)\s+x\s*([0-9]+)$/i;
+const isQueueLine = (line) => line.startsWith('  *');
 const sameEntry = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+export const clampCount = (count) => Math.min(MAX_COPIES, Math.max(1, Math.round(Number(count)) || 1));
+const queueLine = (entry, count) => `  * ${entry}${count > 1 ? ` x ${count}` : ''}`;
+
+const parseLine = (line) => {
+  const text = line.slice(3).trim();
+  const match = COUNT_REGEX.exec(text);
+  return match ? { entry: match[1].trim(), count: clampCount(match[2]) } : { entry: text, count: 1 };
+};
+
+// [{entry, count}] in the order of the queue; an entry queued more than once
+// counts once, with the most labels any of its lines asks for
+const parseQueue = (text) => {
+  const entries = [];
+  for (const { entry, count } of text.split('\n').filter(isQueueLine).map(parseLine)) {
+    const known = entries.find(e => sameEntry(e.entry, entry));
+    if (known) {
+      known.count = Math.max(known.count, count);
+    } else if (entry) {
+      entries.push({ entry, count });
+    }
+  }
+  return entries;
+};
 
 export async function fetchPrintQueue() {
-  const text = (await rpc('core.getPage', { page: PRINT_QUEUE_PAGE })).replaceAll('\r\n', '\n');
-  return text.split('\n').filter(isQueueEntry).map(queueEntry).filter(Boolean);
+  return parseQueue((await rpc('core.getPage', { page: PRINT_QUEUE_PAGE })).replaceAll('\r\n', '\n'));
 }
 
-// takes entries off the print queue, every line of each
-export async function removeFromPrintQueue(entries) {
+// sets how many labels of entries are printed, [{entry, count}], a count of
+// 0 takes the entry off the queue
+export async function changePrintQueue(changes) {
   const token = await lock();
   try {
-    await saveViaEditor(PRINT_QUEUE_PAGE, (text) => text.split('\n')
-      .filter(e => !isQueueEntry(e) || !entries.some(entry => sameEntry(entry, queueEntry(e))))
-      .join('\n'), 'remove entry');
+    await saveViaEditor(PRINT_QUEUE_PAGE, (text) => {
+      const done = new Set();
+      return text.split('\n').flatMap((line) => {
+        const change = isQueueLine(line) && changes.find(e => sameEntry(e.entry, parseLine(line).entry));
+        if (!change) {
+          return [line];
+        }
+        if (change.count === 0 || done.has(change)) {
+          return [];
+        }
+        done.add(change);
+        return [queueLine(parseLine(line).entry, clampCount(change.count))];
+      }).join('\n');
+    }, 'change entry');
   } finally {
     await release(token);
   }
+}
+
+export async function removeFromPrintQueue(entries) {
+  await changePrintQueue(entries.map(entry => ({ entry, count: 0 })));
 }
 
 // fired on window after every saved item, so that views showing items (such as
