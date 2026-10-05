@@ -506,6 +506,31 @@ export async function remotePrintContents(inventoryId, levels = 0) {
   await queuePrint([`inhaltsliste:${inventoryId}${levels > 0 ? `:${levels}` : ''}`]);
 }
 
+// The entries of the print queue, "  * <entry>" lines on its page: inventory
+// numbers, and "inhaltsliste:<number>[:<levels>]" for contents lists. The label
+// printer takes them off once they are printed (see the label-terminal
+// repository), so the queue shows what is still to be printed.
+const isQueueEntry = (line) => line.startsWith('  *');
+const queueEntry = (line) => line.slice(3).trim();
+const sameEntry = (a, b) => a.trim().toLowerCase() === b.trim().toLowerCase();
+
+export async function fetchPrintQueue() {
+  const text = (await rpc('core.getPage', { page: PRINT_QUEUE_PAGE })).replaceAll('\r\n', '\n');
+  return text.split('\n').filter(isQueueEntry).map(queueEntry).filter(Boolean);
+}
+
+// takes entries off the print queue, every line of each
+export async function removeFromPrintQueue(entries) {
+  const token = await lock();
+  try {
+    await saveViaEditor(PRINT_QUEUE_PAGE, (text) => text.split('\n')
+      .filter(e => !isQueueEntry(e) || !entries.some(entry => sameEntry(entry, queueEntry(e))))
+      .join('\n'), 'remove entry');
+  } finally {
+    await release(token);
+  }
+}
+
 // fired on window after every saved item, so that views showing items (such as
 // the table) can load them again when they are saved without a page reload
 export const ITEM_SAVED_EVENT = 'invwiki-item-saved';

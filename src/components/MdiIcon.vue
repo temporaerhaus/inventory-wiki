@@ -57,6 +57,9 @@ import {
   mdiDeleteOutline,
   mdiMapMarkerOutline,
   mdiAlert,
+  mdiTrayFull,
+  mdiQrcode,
+  mdiRefresh,
 } from '@mdi/js';
 
 export default {
@@ -120,6 +123,9 @@ export default {
       mdiDeleteOutline,
       mdiMapMarkerOutline,
       mdiAlert,
+      mdiTrayFull,
+      mdiQrcode,
+      mdiRefresh,
     }
   }),
 

@@ -18,6 +18,7 @@
     </button>
     <location-component :selected="selected" />
     <bulk-edit-component :selected="selected" />
+    <print-queue-component />
     <button @click="toggleAll()" v-if="indexCount > 0">
       <mdi-icon :icon="allSelected ? 'checkbox-blank-outline' : 'checkbox-multiple-marked-outline'" left />
       {{ allSelected ? 'Auswahl aufheben' : `Alle ${indexCount} auswählen` }}
@@ -39,6 +40,7 @@ import MdiIcon from '@/components/MdiIcon.vue';
 import XDialog from '@/components/XDialog.vue';
 import ItemComponent from '@/components/ItemComponent.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
+import PrintQueueComponent from '@/components/PrintQueueComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
 import BulkEditComponent from '@/components/BulkEditComponent.vue';
@@ -50,7 +52,8 @@ export default {
     BulkEditComponent,
     TableComponent,
     CreateComponent,
-    ScanComponent
+    ScanComponent,
+    PrintQueueComponent
   },
 
   data: () => ({

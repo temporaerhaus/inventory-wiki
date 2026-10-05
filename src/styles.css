@@ -1227,3 +1227,42 @@ button.invwiki-container.expanded {
 .invwiki.invwiki-login-warning p {
   margin: 0;
 }
+
+/* the entries of the print queue dialog, see PrintQueueComponent.vue */
+.invwiki ul.invwiki-print-queue {
+  margin: 0 0 1em;
+  padding: 0;
+}
+
+.invwiki ul.invwiki-print-queue li {
+  list-style: none;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: .25em;
+  padding: .25em 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-main);
+}
+
+.invwiki ul.invwiki-print-queue li > div {
+  flex: 1;
+}
+
+.invwiki ul.invwiki-print-queue li b {
+  font-family: monospace;
+}
+
+.invwiki ul.invwiki-print-queue small {
+  display: block;
+  color: var(--text-muted);
+}
+
+.invwiki ul.invwiki-print-queue button {
+  margin: 0;
+  padding: .4em .6em;
+}
+
+.invwiki ul.invwiki-print-queue button svg {
+  margin: 0;
+}
