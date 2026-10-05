@@ -16,6 +16,10 @@
       <div v-if="container && selectedPaths.length > 0" class="invwiki-selection-actions">
         <selection-menu-component :selected="selectedPaths" @print="printSelected()" />
       </div>
+      <!-- scans items into this container, one after another -->
+      <div v-if="container" class="invwiki-add-contained">
+        <scan-component direct :container="inventoryId" :container-title="title" />
+      </div>
     </div>
     <div class="invwiki item-card location-card">
       <ul>
@@ -116,6 +120,7 @@ import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
 import SelectionMenuComponent from '@/components/SelectionMenuComponent.vue';
+import ScanComponent from '@/components/ScanComponent.vue';
 import ContentsListComponent from '@/components/ContentsListComponent.vue';
 import ContainedItemsList from '@/components/ContainedItemsList.vue';
 
@@ -145,6 +150,7 @@ export default {
     CreateComponent,
     LocationComponent,
     SelectionMenuComponent,
+    ScanComponent,
     ContentsListComponent,
     ContainedItemsList
   },

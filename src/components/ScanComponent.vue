@@ -1,12 +1,16 @@
 <template>
-  <button @click="startScan()" v-if="!pick" title="Inventaraufkleber Scannen" aria-label="Inventaraufkleber Scannen">
+  <button @click="startScan()" v-if="direct">
+    <mdi-icon icon="package-variant-plus" left />
+    Gegenstand hineinlegen
+  </button>
+  <button @click="startScan()" v-else-if="!pick" title="Inventaraufkleber Scannen" aria-label="Inventaraufkleber Scannen">
     <mdi-icon icon="qrcode-scan" left />
     <span class="invwiki-toolbar-label">Inventaraufkleber Scannen</span>
   </button>
 
-  <x-dialog :title="title || 'Inventaraufkleber Scannen'" icon="qrcode-scan" ref="dialog" @close="onClose()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
+  <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" icon="qrcode-scan" ref="dialog" @close="onClose()" @open="$refs.scan.focus()" @keydown.enter="onScanSuccess($refs.scan.value)">
     <!-- what to do with a scanned item -->
-    <div class="invwiki-scan-result" v-if="scanned">
+    <div class="invwiki-scan-result" v-if="scanned && !direct">
       <p>
         <mdi-icon icon="toy-brick-outline" left />
         <b>{{ scanned.id }}</b><template v-if="scanned.title">: {{ scanned.title }}</template>
@@ -40,9 +44,22 @@
       </div>
     </div>
 
-    <div v-show="!scanned">
+    <div v-show="!scanned || direct">
+      <!-- in direct mode, how scanned items are put into the container -->
+      <div class="invwiki-scan-mode" v-if="direct">
+        <label>
+          <input type="radio" :value="LOCATION_CURRENT" v-model="mode" />
+          als aktueller Aufenthaltsort
+        </label>
+        <label>
+          <input type="radio" :value="LOCATION_REGULAR" v-model="mode" />
+          als regulärer Aufenthaltsort
+        </label>
+      </div>
+
+      <p class="invwiki-scan-status" v-if="direct && scanned">{{ scanned.id }} wird hineingelegt …</p>
       <!-- what the last action did, scanning goes on for the next item -->
-      <blockquote class="invwiki-scan-status" v-if="status">
+      <blockquote :class="{ 'invwiki-scan-status': true, 'is-error': status.error }" v-else-if="status">
         {{ status.text }}
         <a href="#" v-if="status.undo" @click.prevent="undo()">Rückgängig</a>
       </blockquote>
@@ -67,6 +84,7 @@ import {
 const ID_REGEX = /^[SVL]-[A-Z]{2}[0-9]{6}(-[A-Z])?$/;
 // the label just handled is still in front of the camera for a moment
 const RESCAN_PAUSE = 4000;
+const MODE_STORAGE_KEY = 'invwiki-scan-into-mode';
 
 export default {
   props: {
@@ -78,6 +96,9 @@ export default {
     // scanned items can then be put into
     container: String,
     containerTitle: String,
+    // put every scanned item into the container right away, rather than
+    // asking what to do with it
+    direct: Boolean,
   },
 
   emits: ['scan'],
@@ -94,8 +115,10 @@ export default {
     // {id, title, loading, missing} of the scanned item, while its actions are shown
     scanned: null,
     busy: false,
-    // {text, undo} of what the last action did
+    // {text, undo, error} of what the last action did
     status: null,
+    // how the direct mode puts items into the container, remembered
+    mode: LOCATION_CURRENT,
     last: { id: '', time: 0 },
     // whether an item was put into the container, whose page is then reloaded
     changedContainer: false,
@@ -107,8 +130,27 @@ export default {
     }
   },
 
+  watch: {
+    mode(value) {
+      try {
+        localStorage.setItem(MODE_STORAGE_KEY, String(value));
+      } catch {
+        // ignore
+      }
+    }
+  },
+
   mounted() {
-    if (!this.pick && location.hash === '#scan') {
+    try {
+      const mode = Number(localStorage.getItem(MODE_STORAGE_KEY));
+      if (mode === LOCATION_REGULAR) {
+        this.mode = mode;
+      }
+    } catch {
+      // ignore
+    }
+
+    if (!this.pick && !this.direct && location.hash === '#scan') {
       history.replaceState('', '', '#');
       this.startScan();
     }
@@ -191,12 +233,20 @@ export default {
       } catch {
         this.scanned = { id: upper, title: '', loading: false, missing: false };
       }
+
+      if (this.direct) {
+        if (this.scanned.missing) {
+          this.done(`Es gibt keinen Gegenstand ${upper}.`, null, true);
+        } else {
+          await this.putIntoContainer(this.mode);
+        }
+      }
     },
 
     // back to scanning, for the next item
-    done(text, undo = null) {
+    done(text, undo = null, error = false) {
       this.last = { id: this.scanned?.id || '', time: Date.now() };
-      this.status = { text, undo };
+      this.status = { text, undo, error };
       this.scanned = null;
       this.$nextTick(() => this.$refs.scan.focus());
     },
@@ -221,13 +271,16 @@ export default {
       }
     },
 
+    // refusals and errors are reported like the results, so that scanning
+    // goes on without a dialog to click away
     async putIntoContainer(mode) {
-      const { id } = this.scanned;
+      const { id, title } = this.scanned;
+      const name = title ? `${id} (${title})` : id;
       this.busy = true;
       try {
         const loop = await locationLoop([id], this.container, mode);
         if (loop) {
-          alert(loop);
+          this.done(loop, null, true);
           return;
         }
         await writeItem(`/${PREFIX}/${id}`, {}, {
@@ -235,9 +288,9 @@ export default {
           replacer: (yaml) => setLocation(yaml, mode, { location: this.container.toUpperCase() })
         });
         this.changedContainer = true;
-        this.done(`${id} liegt jetzt ${mode === LOCATION_CURRENT ? 'vorübergehend' : 'regulär'} in ${this.container.toUpperCase()}${this.containerTitle ? ` (${this.containerTitle})` : ''}.`);
+        this.done(`${name} liegt jetzt ${mode === LOCATION_CURRENT ? 'vorübergehend' : 'regulär'} in ${this.container.toUpperCase()}${this.containerTitle ? ` (${this.containerTitle})` : ''}.`);
       } catch (e) {
-        alert(`Fehler: ${e.message}`);
+        this.done(`${id}: ${e.message}`, null, true);
       } finally {
         this.busy = false;
       }

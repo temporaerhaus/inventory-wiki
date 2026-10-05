@@ -1568,3 +1568,31 @@ button.invwiki-container.expanded {
     margin-right: 0 !important;
   }
 }
+
+/* scanning items into a container, see ScanComponent.vue */
+.invwiki .invwiki-add-contained {
+  margin-top: .5em;
+}
+
+.invwiki .invwiki-scan-mode {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .25em 1.5em;
+  margin-bottom: 1em;
+}
+
+.invwiki .dialog .invwiki-scan-mode label {
+  margin-top: 0;
+  font-weight: normal;
+}
+
+.invwiki .invwiki-scan-mode input[type='radio'] {
+  width: auto;
+  display: inline;
+  margin: 0 .4em 0 0;
+}
+
+.invwiki .dialog blockquote.invwiki-scan-status.is-error {
+  border-left-color: #b00020;
+}
+

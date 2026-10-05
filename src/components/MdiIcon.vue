@@ -66,6 +66,7 @@ import {
   mdiEyeOffOutline,
   mdiOpenInNew,
   mdiSubdirectoryArrowLeft,
+  mdiPackageVariantPlus,
 } from '@mdi/js';
 
 export default {
@@ -138,6 +139,7 @@ export default {
       mdiEyeOffOutline,
       mdiOpenInNew,
       mdiSubdirectoryArrowLeft,
+      mdiPackageVariantPlus,
     }
   }),
 
