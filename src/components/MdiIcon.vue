@@ -62,6 +62,8 @@ import {
   mdiRefresh,
   mdiMinus,
   mdiPlus,
+  mdiMapMarkerQuestionOutline,
+  mdiEyeOffOutline,
 } from '@mdi/js';
 
 export default {
@@ -130,6 +132,8 @@ export default {
       mdiRefresh,
       mdiMinus,
       mdiPlus,
+      mdiMapMarkerQuestionOutline,
+      mdiEyeOffOutline,
     }
   }),
 

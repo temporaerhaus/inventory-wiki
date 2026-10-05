@@ -1280,3 +1280,12 @@ button.invwiki-container.expanded {
   padding: .4em;
   text-align: center;
 }
+
+/* a location or last-seen time that is not set yet, see ItemComponent.vue */
+.location-card li.invwiki-location-unknown {
+  color: var(--text-muted);
+}
+
+.location-card li.invwiki-location-unknown svg {
+  fill: var(--text-muted);
+}

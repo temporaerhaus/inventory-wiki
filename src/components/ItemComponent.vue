@@ -20,6 +20,12 @@
     </div>
     <div class="invwiki item-card location-card">
       <ul>
+        <!-- what is not known is said so, rather than left out -->
+        <li v-if="!nominal?.location" class="invwiki-location invwiki-location-unknown">
+          <mdi-icon icon="map-marker-question-outline" left title="Kein regulärer Aufenthaltsort festgelegt" />
+          <small class="invwiki-location-label">Regulärer Aufenthaltsort</small>
+          <div>nicht festgelegt</div>
+        </li>
         <li v-for="entry in locations" :key="entry.key" :class="{ 'invwiki-location': true, 'invwiki-location-elsewhere': entry.elsewhere }">
           <mdi-icon :icon="entry.icon" left :title="entry.label" />
           <small class="invwiki-location-label">
@@ -43,6 +49,10 @@
         <li :title="`Zuletzt Gesehen am: ${lastSeenAt}`" v-if="lastSeenAt">
           <mdi-icon icon="eye-outline" left :title="`Zuletzt Gesehen am: ${lastSeenAt}`" />
           <b>zuletzt gesehen {{ relative(lastSeenAt) }}</b>
+        </li>
+        <li class="invwiki-location-unknown" v-else>
+          <mdi-icon icon="eye-off-outline" left title="Noch nicht gesehen" />
+          <b>noch nicht gesehen</b>
         </li>
       </ul>
       <location-component single-item />
