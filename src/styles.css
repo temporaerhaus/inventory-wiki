@@ -1097,3 +1097,12 @@ button.invwiki-container.expanded {
     display: none;
   }
 }
+
+/* the delete button sits apart from saving, on the other side of the dialog */
+.invwiki .invwiki-delete {
+  float: left;
+}
+
+.invwiki .invwiki-delete svg {
+  fill: #b00020;
+}

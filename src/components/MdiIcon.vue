@@ -54,6 +54,7 @@ import {
   mdiChevronLeft,
   mdiChevronRight,
   mdiMagnify,
+  mdiDeleteOutline,
 } from '@mdi/js';
 
 export default {
@@ -114,6 +115,7 @@ export default {
       mdiChevronLeft,
       mdiChevronRight,
       mdiMagnify,
+      mdiDeleteOutline,
     }
   }),
 

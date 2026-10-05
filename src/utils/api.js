@@ -9,6 +9,8 @@ const REGEX = new RegExp(`^[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
 
 export const PREFIX = 'inventar';
 export const SEP = '/';
+// deleted items are moved here rather than deleted, so that they can be restored
+export const TRASH = 'inv-trash';
 
 const LOCK_TIMEOUT = 10 * 1000;
 // shared with the label printer, which takes the same lock around emptying the print queue,
@@ -242,7 +244,12 @@ export async function fetchInventory({ reload = false } = {}) {
 };
 
 export async function nextNumber() {
-  const items = await fetchItems();
+  // deleted items keep their number, its label may still be stuck to something
+  const items = [
+    ...await fetchItems(),
+    ...(await rpc('core.listPages', { namespace: TRASH, depth: 1 }))
+      .map(e => e.id.split(':').pop().replace(/_[0-9]+$/, '').toUpperCase()),
+  ];
   return String(Math.max(...items.map(e => Number(REGEX.exec(e)?.[1])).filter(e => !isNaN(e))) + 1).padStart(6, '0');
 };
 
@@ -472,6 +479,35 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
     // fails loudly, e.g. when somebody else has the page open in the wiki's editor
     await rpc('core.savePage', { page, text: wikitext, summary: opts.summary || 'edit metadata' });
     window.dispatchEvent(new CustomEvent(ITEM_SAVED_EVENT, { detail: { page } }));
+  } finally {
+    await release(token);
+  }
+}
+
+// Moves an item page into the trash namespace: a copy of the page is saved
+// there, then the item page is emptied, which is how dokuwiki deletes a page.
+// Both keep their history, the item's attachments stay where they are, so that
+// the links in the moved page still work. An item deleted twice (after its
+// number was given out again) gets a numbered page in the trash.
+export async function trashItem(path) {
+  const page = pageId(path);
+  const name = page.split(':').pop();
+  const token = await lock();
+  try {
+    const text = await rpc('core.getPage', { page });
+    if (!YAML_REGEX.test(text.replaceAll('\r\n', '\n'))) {
+      throw new Error('Kein gültiger YAML-Block gefunden');
+    }
+
+    let trash = `${TRASH}:${name}`;
+    for (let i = 2; await pageExists(trash); i++) {
+      trash = `${TRASH}:${name}_${i}`;
+    }
+
+    await rpc('core.savePage', { page: trash, text, summary: `deleted from ${page}` });
+    await rpc('core.savePage', { page, text: '', summary: `deleted, moved to ${trash}` });
+    window.dispatchEvent(new CustomEvent(ITEM_SAVED_EVENT, { detail: { page } }));
+    return trash;
   } finally {
     await release(token);
   }

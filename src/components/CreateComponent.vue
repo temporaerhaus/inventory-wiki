@@ -165,6 +165,10 @@
       </blockquote>
 
       <div style="text-align: right; padding-top: 1em; padding-bottom: 5em; padding-right: 1em;">
+        <button @click="deleteItem()" :disabled="loading" v-if="edit" class="invwiki-delete">
+          <mdi-icon icon="delete-outline" left title="Löschen" />
+          Löschen
+        </button>
         <button @click="saveItem()" :disabled="disabled" v-if="!edit">
           <mdi-icon icon="toy-brick-plus-outline" left title="Gegenstand Anlegen" />
           Gegenstand Anlegen
@@ -185,7 +189,7 @@ import categories from '@/utils/categories.js';
 import { buildIndex, suggest } from '@/utils/suggest.js';
 import { itemText, loadEnrichment } from '@/utils/enrichment.js';
 
-import { SEP, PREFIX, nextNumber, writeItem, fetchInventory, fetchItemContent } from '@/utils/api.js';
+import { SEP, PREFIX, TRASH, nextNumber, writeItem, trashItem, fetchInventory, fetchItemContent } from '@/utils/api.js';
 
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
 const SUGGEST_DEBOUNCE = 150;
@@ -405,6 +409,21 @@ export default {
         } else {
           location.href = `/${PREFIX}${SEP}${this.id}#print-label`;
         }
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+        this.loading = false;
+      }
+    },
+
+    async deleteItem() {
+      if (!confirm(`${this.inventoryId} (${this.title}) wirklich löschen?\n\nDie Seite wird in den Papierkorb (${TRASH}) verschoben.`)) {
+        return;
+      }
+
+      this.loading = true;
+      try {
+        await trashItem(location.pathname);
+        location.href = `/${PREFIX}`;
       } catch (e) {
         alert(`Fehler: ${e.message}`);
         this.loading = false;
