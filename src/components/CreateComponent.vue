@@ -135,17 +135,21 @@
         </label>
         <input :id="`invwiki-form-number-${nonce}`" type="text" :value="number" disabled />
 
-        <label :for="`invwiki-form-suffix-${nonce}`" v-if="sub">
-          <mdi-icon icon="sort-alphabetical-descending" left title="Optionales Suffix" />
-          Optionales Suffix
-        </label>
-        <select :id="`invwiki-form-suffix-${nonce}`" v-model="suffix" @focus="$refs.c?.close?.()">
-          <option value=""></option>
-          <option v-for="s in suffixOptions" :key="s" :value="s">{{s}}</option>
-        </select>
-        <blockquote>
-          Wenn Netzteile ein eigenes Label erhalten, aber nicht extra inventarisiert werden, so endet der QR-Code und die Nummer auf -N. Bei sonstigen Zubehör, auf -Z (und dann das Alphabet rückwärts).
-        </blockquote>
+        <template v-if="sub">
+          <label :for="`invwiki-form-suffix-${nonce}`">
+            <mdi-icon icon="sort-alphabetical-descending" left title="Suffix" />
+            Suffix
+          </label>
+          <select :id="`invwiki-form-suffix-${nonce}`" v-model="suffix" @change="suffixChosen = true" @focus="$refs.c?.close?.()">
+            <option v-for="s in suffixOptions" :key="s" :value="s" :disabled="takenSuffixes.includes(s)">
+              {{ s }}{{ takenSuffixes.includes(s) ? ' (vergeben)' : '' }}
+            </option>
+          </select>
+          <blockquote>
+            Wenn Netzteile ein eigenes Label erhalten, aber nicht extra inventarisiert werden, so endet der QR-Code und die Nummer auf -N. Bei sonstigen Zubehör, auf -Z (und dann das Alphabet rückwärts).
+            Das Suffix wird anhand des Namens vorgeschlagen, bereits vergebene sind nicht auswählbar.
+          </blockquote>
+        </template>
 
         <label :for="`invwiki-form-id-${nonce}`">
           <mdi-icon icon="barcode" left title="Inventarnummer" />
@@ -189,9 +193,11 @@ import categories from '@/utils/categories.js';
 import { buildIndex, suggest } from '@/utils/suggest.js';
 import { itemText, loadEnrichment } from '@/utils/enrichment.js';
 
-import { SEP, PREFIX, TRASH, nextNumber, writeItem, trashItem, fetchInventory, fetchItemContent } from '@/utils/api.js';
+import { SEP, PREFIX, TRASH, nextNumber, takenSuffixes, writeItem, trashItem, fetchInventory, fetchItemContent } from '@/utils/api.js';
 
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
+// names of power supplies, which get the suffix N, all other accessories get Z
+const POWER_SUPPLY_REGEX = /netz(teil|gerät|adapter)|lade(gerät|adapter)|power ?supply|\bpsu\b|charger|trafo|transformator|stromversorgung|\b(ac|dc|usb)[- ]?adapter/i;
 const SUGGEST_DEBOUNCE = 150;
 
 export default {
@@ -220,6 +226,10 @@ export default {
     number: '',
     title: '',
     suffix: '',
+    // the suffixes of the existing sub-items of the item, which cannot be chosen
+    takenSuffixes: [],
+    // whether the suffix was chosen by hand, which stops the suggestions
+    suffixChosen: false,
     inventoryId: '',
     description: '',
     serial: '',
@@ -246,6 +256,7 @@ export default {
 
   watch: {
     title() {
+      this.suggestSuffix();
       this.scheduleSuggestions();
     },
 
@@ -316,6 +327,18 @@ export default {
       return this.classificationsByCode[code]?.text || 'Nicht in der Liste — bisher im Haus verwendet';
     },
 
+    // N for power supplies, Z for everything else, or, if that is taken, the
+    // next free one in the order of the list
+    suggestSuffix() {
+      if (!this.sub || this.suffixChosen) {
+        return;
+      }
+
+      const start = POWER_SUPPLY_REGEX.test(this.title) ? 0 : 1;
+      const order = [...this.suffixOptions.slice(start), ...this.suffixOptions.slice(0, start)];
+      this.suffix = order.find(e => !this.takenSuffixes.includes(e)) ?? '';
+    },
+
     async refreshNumber() {
       if (this.edit || this.sub) {
         return;
@@ -364,16 +387,27 @@ export default {
         text: res?.[2] || '??',
         example: ''
       };
-      this.suffix = res?.[4] || '';
+      // a sub-item gets a suffix of its own, a duplicate a new number and none
+      this.suffix = this.sub || this.clone ? '' : res?.[4] || '';
       if (res?.[1] == 'L') {
         this.lended = true;
       }
+
+      this.suffixChosen = false;
+      this.takenSuffixes = [];
+      this.suggestSuffix();
 
       this.$refs.dialog.show();
 
       this.loading = true;
       try {
-        this.content = this.initialContent = await fetchItemContent(location.pathname);
+        const [content, taken] = await Promise.all([
+          fetchItemContent(location.pathname),
+          this.sub ? takenSuffixes(`${res?.[1]}-${res?.[2]}${res?.[3]}`) : [],
+        ]);
+        this.content = this.initialContent = content;
+        this.takenSuffixes = taken;
+        this.suggestSuffix();
       } catch (e) {
         alert(`Fehler beim Laden der Inhalte: ${e.message}`);
       } finally {
@@ -462,7 +496,7 @@ export default {
     },
 
     disabled() {
-      return this.id.includes('?') && !this.edit || this.loading;
+      return this.id.includes('?') && !this.edit || this.sub && !this.suffix || this.loading;
     },
 
     weights() {

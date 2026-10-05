@@ -243,13 +243,27 @@ export async function fetchInventory({ reload = false } = {}) {
   return inventoryCache;
 };
 
-export async function nextNumber() {
-  // deleted items keep their number, its label may still be stuck to something
-  const items = [
+// the inventory ids of the items and of the deleted ones, which keep their
+// ids, since their labels may still be stuck to something
+async function fetchTakenIds() {
+  return [
     ...await fetchItems(),
     ...(await rpc('core.listPages', { namespace: TRASH, depth: 1 }))
       .map(e => e.id.split(':').pop().replace(/_[0-9]+$/, '').toUpperCase()),
   ];
+}
+
+// the suffixes given to sub-items of an inventory id, e.g. ['N', 'Z'] for V-GM000123
+export async function takenSuffixes(base) {
+  const prefix = `${base.toUpperCase()}-`;
+  return (await fetchTakenIds())
+    .filter(e => e.startsWith(prefix))
+    .map(e => e.slice(prefix.length))
+    .filter(e => /^[A-Z]$/.test(e));
+}
+
+export async function nextNumber() {
+  const items = await fetchTakenIds();
   return String(Math.max(...items.map(e => Number(REGEX.exec(e)?.[1])).filter(e => !isNaN(e))) + 1).padStart(6, '0');
 };
 
