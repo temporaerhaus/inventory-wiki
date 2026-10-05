@@ -947,6 +947,13 @@ button.invwiki-container.expanded {
   margin: 0;
 }
 
+.invwiki .invwiki-table-columns-menu .invwiki-table-columns-reset {
+  display: block;
+  width: auto;
+  margin: .5em 1em 0;
+  white-space: nowrap;
+}
+
 /* on wide screens the filters sit in the table head instead */
 .invwiki-table-controls .invwiki-table-filters {
   display: none;
@@ -997,11 +1004,22 @@ button.invwiki-container.expanded {
   white-space: nowrap;
 }
 
+/* the same amber as the bar on the item page */
+.invwiki .invwiki-table-elsewhere svg {
+  fill: #d39e00;
+}
+
 /* the checkbox column only as wide as the checkbox, the table hands its spare width to the others */
 @media only screen and (min-width: 769px) {
   /* the column headers sort, cards on narrow screens have none */
   .invwiki .invwiki-table-sort {
     display: none;
+  }
+
+  /* the column selector ends the row of controls, so its menu opens to the left */
+  .invwiki .invwiki-table-columns-menu {
+    left: auto;
+    right: 0;
   }
 
   .invwiki .invwiki-table th:first-child,

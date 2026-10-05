@@ -36,13 +36,13 @@
             <input type="checkbox" :checked="column.key === 'id' || visible.includes(column.key)" :disabled="column.key === 'id'" @change="toggleColumn(column.key)" />
             {{ column.label }}
           </label>
+          <button type="button" class="invwiki-table-columns-reset" @click="resetColumns()" :disabled="isDefaultColumns">
+            <mdi-icon icon="undo-variant" left />
+            Standardspalten wiederherstellen
+          </button>
         </div>
       </div>
 
-      <button @click="exportCsv()" :disabled="!total || exporting">
-        <mdi-icon icon="file-delimited-outline" left />
-        {{ exporting ? 'Exportiere…' : 'CSV-Export' }}
-      </button>
     </div>
 
     <p v-if="loading && !loaded">Lade Inventar…</p>
@@ -70,7 +70,15 @@
           <tr v-for="item in items" :key="item.id">
             <td><input type="checkbox" :checked="isSelected(item.id)" @change="$emit('toggle', [item.id], $event.target.checked)" /></td>
             <td v-for="column in shownColumns" :key="column.key" :data-label="column.label" :class="{ 'invwiki-table-id': column.key === 'id' }">
-              <a v-if="column.key === 'id'" :href="`/${PREFIX}/${item.id}`">{{ item.id }}</a>
+              <template v-if="column.key === 'id'">
+                <mdi-icon :icon="item.container ? 'package-variant' : 'toy-brick-outline'" :title="item.container ? 'Behälter' : 'Gegenstand'" left />
+                <a :href="`/${PREFIX}/${item.id}`">{{ item.id }}</a>
+              </template>
+              <span v-else-if="column.key === 'place' && item.temporary" :title="item.nominal ? `Regulärer Aufenthaltsort: ${item.nominal}` : 'Kein regulärer Aufenthaltsort'" :class="{ 'invwiki-table-elsewhere': elsewhere(item) }">
+                <mdi-icon icon="map-clock-outline" left :title="elsewhere(item) ? 'Aktueller Aufenthaltsort, nicht am regulären Aufenthaltsort' : 'Aktueller Aufenthaltsort'" />{{ item.temporary }}
+              </span>
+              <template v-else-if="column.key === 'place'">{{ item.nominal }}</template>
+              <span v-else-if="column.key === 'lastSeenAt' && item.lastSeenAt" :title="seenAt(item.lastSeenAt).full">{{ seenAt(item.lastSeenAt).date }}</span>
               <template v-else>{{ display(column, item[column.key]) }}</template>
             </td>
           </tr>
@@ -96,7 +104,9 @@
 <script>
 import { PREFIX, ITEM_SAVED_EVENT, isPluginMissing, queryItems } from '@/utils/api.js';
 
-// the keys are the plugin's column names, see Index::COLUMNS
+// the keys are the plugin's column names, see Index::COLUMNS; a column that
+// combines several of them names the one it filters and sorts by as "field"
+// and the others it shows as "needs"
 const COLUMNS = [
   { key: 'id', label: 'Inventarnummer' },
   { key: 'title', label: 'Name' },
@@ -107,6 +117,8 @@ const COLUMNS = [
   { key: 'category', label: 'Kategorie' },
   { key: 'origin', label: 'Ursprung' },
   { key: 'owner', label: 'Eigentümer*in' },
+  // the temporary location if there is one, the nominal one otherwise, which is what "location" holds
+  { key: 'place', label: 'Aufenthaltsort', field: 'location', needs: ['nominal', 'temporary'] },
   { key: 'location', label: 'Aktueller Aufenthaltsort' },
   { key: 'nominal', label: 'Regulärer Aufenthaltsort' },
   { key: 'lastSeenAt', label: 'Zuletzt gesehen' },
@@ -114,7 +126,7 @@ const COLUMNS = [
   { key: 'small', label: 'Kleines Label', flag: true },
 ];
 
-const DEFAULT_COLUMNS = ['id', 'title', 'serial', 'invoice', 'date', 'owner', 'location'];
+const DEFAULT_COLUMNS = ['id', 'title', 'serial', 'date', 'owner', 'place', 'lastSeenAt'];
 const STORAGE_KEY = 'invwiki-table-columns';
 // wait for a pause in typing before asking the wiki
 const DEBOUNCE = 300;
@@ -124,9 +136,9 @@ const AFTER_SAVE = 1000;
 const loadColumns = () => {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(stored) ? stored.filter(key => COLUMNS.some(e => e.key === key)) : DEFAULT_COLUMNS;
+    return Array.isArray(stored) ? stored.filter(key => COLUMNS.some(e => e.key === key)) : [...DEFAULT_COLUMNS];
   } catch {
-    return DEFAULT_COLUMNS;
+    return [...DEFAULT_COLUMNS];
   }
 };
 
@@ -151,7 +163,6 @@ export default {
     loading: false,
     // the first answer has arrived
     loaded: false,
-    exporting: false,
     columnsOpen: false,
     search: '',
     filters: {},
@@ -170,14 +181,22 @@ export default {
 
     // everything the wiki needs to answer, without the page
     query() {
-      const keys = this.shownColumns.map(e => e.key);
+      const shown = this.shownColumns;
+      const field = (column) => column.field ?? column.key;
+      const sorted = shown.find(e => e.key === this.sort.key);
       return {
         search: this.search.trim(),
-        filters: Object.fromEntries(Object.entries(this.filters).filter(([key, value]) => value && keys.includes(key))),
-        sort: keys.includes(this.sort.key) ? this.sort.key : 'id',
+        filters: Object.fromEntries(shown.filter(e => this.filters[e.key]).map(e => [field(e), this.filters[e.key]])),
+        sort: sorted ? field(sorted) : 'id',
         desc: this.sort.desc,
-        columns: keys
+        // the container flag for the icon next to every inventory number
+        columns: [...new Set([...shown.flatMap(e => [field(e), ...(e.needs ?? [])]), 'container'])]
       };
+    },
+
+    isDefaultColumns() {
+      const shown = this.shownColumns.map(e => e.key);
+      return shown.length === DEFAULT_COLUMNS.length && DEFAULT_COLUMNS.every(key => shown.includes(key));
     },
 
     activeFilters() {
@@ -276,17 +295,42 @@ export default {
       }
     },
 
+    // temporarily somewhere else than it belongs, as on the item page
+    elsewhere(item) {
+      return Boolean(item.temporary && item.nominal && item.temporary.trim().toUpperCase() !== item.nominal.trim().toUpperCase());
+    },
+
+    // a timestamp such as 2026-09-30T10:00:00.000Z as the local day, like the
+    // other dates in the table, the time is there on hover
+    seenAt(value) {
+      const date = new Date(value);
+      // a plain date has no time to show
+      if (!value.includes('T') || isNaN(date)) {
+        return { date: value, full: null };
+      }
+      const day = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+      return { date: day, full: date.toLocaleString('de-DE') };
+    },
+
     display(column, value) {
       return column.flag ? (value ? 'ja' : '') : value;
     },
 
     toggleColumn(key) {
-      this.visible = this.visible.includes(key)
+      this.setColumns(this.visible.includes(key)
         ? this.visible.filter(e => e !== key)
-        : this.columns.map(e => e.key).filter(e => e === key || this.visible.includes(e));
+        : this.columns.map(e => e.key).filter(e => e === key || this.visible.includes(e)));
+    },
 
+    resetColumns() {
+      this.setColumns([...DEFAULT_COLUMNS]);
+    },
+
+    // remembered in this browser, so the table keeps its columns across visits
+    setColumns(keys) {
+      this.visible = keys;
       try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.visible));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(keys));
       } catch {
         // only a convenience
       }
@@ -299,31 +343,6 @@ export default {
     toggleAll() {
       this.$emit('toggle', this.items.map(item => item.id), !this.allChecked);
     },
-
-    // all matching items, not only the current page
-    async exportCsv() {
-      this.exporting = true;
-      try {
-        const { items } = await queryItems({ ...this.query, limit: 0 });
-        const quote = (value) => /[";\n]/.test(value) ? `"${value.replaceAll('"', '""')}"` : value;
-        const lines = [
-          this.shownColumns.map(e => quote(e.label)),
-          ...items.map(item => this.shownColumns.map(e => quote(String(this.display(e, item[e.key]) ?? ''))))
-        ].map(e => e.join(';'));
-
-        // semicolons and a byte order mark, so that a German Excel opens it right away
-        const blob = new Blob(['﻿' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = `inventar-${new Date().toISOString().slice(0, 10)}.csv`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      } catch (e) {
-        this.error = `Fehler beim Export: ${e.message}`;
-      } finally {
-        this.exporting = false;
-      }
-    }
   }
 }
 </script>
