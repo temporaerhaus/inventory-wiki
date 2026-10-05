@@ -414,6 +414,34 @@ export async function fetchInventoryItem(inventoryId) {
 // whether an error of the calls below means that the wiki plugin is not installed
 export const isPluginMissing = (e) => e?.message === 'Method does not exist';
 
+// The items best matching a query as it is typed, from the wiki plugin, which
+// also finds a word with a typo in it; where it is not installed, from the
+// wiki's fulltext search, which only finds whole words and knows less about
+// the items. {total, items: [{id, title, description, location, container,
+// small, match: {field, value} or null}]}
+export async function searchInventory(query, limit = 8) {
+  try {
+    return await rpc('plugin.inventory.searchItems', { query, limit });
+  } catch (e) {
+    if (!isPluginMissing(e)) {
+      throw e;
+    }
+  }
+
+  const items = (await rpc('core.searchPages', { query: `${query} @${PREFIX}` }))
+    .filter(e => e.id.startsWith(`${PREFIX}:`) && ENTRY_ID_REGEX.test(e.id.split(':').pop().toUpperCase()))
+    .map(e => ({
+      id: e.id.split(':').pop().toUpperCase(),
+      title: e.title && e.title !== e.id ? e.title : '',
+      description: '',
+      location: '',
+      container: false,
+      small: false,
+      match: null,
+    }));
+  return { total: items.length, items: items.slice(0, limit) };
+}
+
 // One page of the inventory as a table, filtered and sorted by the wiki plugin
 // in dokuwiki-plugin/inventory. Throws if the plugin is not installed.
 //   search   whitespace separated terms, each has to appear in one of the columns

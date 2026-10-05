@@ -45,6 +45,13 @@
   padding-left: 1em;
 }
 
+/* the buttons in a row, wrapped when there are too many */
+.invwiki.invwiki-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 #qrcode-scanner img[alt="Info icon"] {
   display: none;
 }
@@ -1322,4 +1329,118 @@ button.invwiki-container.expanded {
 .invwiki .invwiki-scan-actions button {
   margin: 0;
   text-align: left;
+}
+
+/* the search in the toolbar, see SearchComponent.vue */
+.invwiki .invwiki-search {
+  position: relative;
+  /* whatever is left of the buttons' line, or a line of its own */
+  flex: 1 1 8em;
+  /* not wider than the input's own idea of its size */
+  min-width: 0;
+  margin-right: 6px;
+  margin-bottom: 6px;
+}
+
+.invwiki .invwiki-search-field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  font-weight: normal;
+}
+
+.invwiki .invwiki-search-field svg {
+  position: absolute;
+  left: 10px;
+  width: 1.2em;
+  height: 1.2em;
+  margin: 0;
+  fill: var(--text-muted);
+  pointer-events: none;
+}
+
+.invwiki .invwiki-search-field input[type='search'] {
+  flex: 1;
+  width: auto;
+  min-width: 0;
+  margin: 0;
+  padding-left: calc(10px + 1.2em + .5em);
+}
+
+.invwiki .invwiki-search-results {
+  position: absolute;
+  top: calc(100% + 4px);
+  /* the field is at the end of the toolbar, the list opens to the left */
+  right: 0;
+  z-index: 999;
+  width: max(100%, min(32em, 90vw));
+  max-height: 70vh;
+  overflow-y: auto;
+  background-color: var(--background-body);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .15);
+}
+
+.invwiki .invwiki-search-results > p {
+  margin: 0;
+  padding: .75em 1em;
+  color: var(--text-muted);
+}
+
+.invwiki .invwiki-search-results > a {
+  display: flex;
+  align-items: flex-start;
+  gap: .5em;
+  padding: .5em 1em;
+  color: var(--text-main);
+  text-decoration: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.invwiki .invwiki-search-results > a.is-active {
+  background-color: #4AAE9B;
+  color: white;
+}
+
+.invwiki .invwiki-search-results > a svg {
+  flex-shrink: 0;
+  margin-top: .15em;
+}
+
+.invwiki .invwiki-search-results > a.is-active svg {
+  fill: white;
+}
+
+.invwiki .invwiki-search-results b {
+  font-family: monospace;
+}
+
+.invwiki .invwiki-search-results small {
+  display: block;
+  color: var(--text-muted);
+}
+
+.invwiki .invwiki-search-results > a.is-active small {
+  color: white;
+}
+
+.invwiki .invwiki-search-results small svg {
+  width: 1em;
+  height: 1em;
+  margin: 0 .2em 0 0;
+  vertical-align: -.1em;
+}
+
+.invwiki .invwiki-search-more {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1em;
+  padding: .5em 1em;
+}
+
+.invwiki .invwiki-search-more button {
+  margin: 0;
+  padding: .4em .8em;
 }

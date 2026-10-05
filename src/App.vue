@@ -22,6 +22,8 @@
       <mdi-icon :icon="allSelected ? 'checkbox-blank-outline' : 'checkbox-multiple-marked-outline'" left />
       {{ allSelected ? 'Auswahl aufheben' : `Alle ${indexCount} auswählen` }}
     </button>
+    <!-- last, it fills what is left of the line -->
+    <search-component />
     <x-dialog ref="dialog" :loading="loading" />
 
     <teleport v-if="tableTarget" :to="tableTarget">
@@ -40,6 +42,7 @@ import XDialog from '@/components/XDialog.vue';
 import ItemComponent from '@/components/ItemComponent.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
 import PrintQueueComponent from '@/components/PrintQueueComponent.vue';
+import SearchComponent from '@/components/SearchComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
 import BulkEditComponent from '@/components/BulkEditComponent.vue';
@@ -52,7 +55,8 @@ export default {
     TableComponent,
     CreateComponent,
     ScanComponent,
-    PrintQueueComponent
+    PrintQueueComponent,
+    SearchComponent
   },
 
   data: () => ({
