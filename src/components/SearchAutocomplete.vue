@@ -6,9 +6,13 @@
     </label>
     <div class="invwiki-autocomplete-field" :class="{ 'has-action': $slots.action }">
       <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" :disabled="disabled" @focus="onFocus" ref="input" autocomplete="off" />
-      <!-- e.g. a button that fills the field in another way -->
-      <span class="invwiki-autocomplete-action" v-if="$slots.action">
+      <span class="invwiki-autocomplete-action">
+        <!-- e.g. a button that fills the field in another way -->
         <slot name="action"></slot>
+        <!-- what tells it from a plain text field: it has a list to choose from -->
+        <button type="button" class="invwiki-autocomplete-toggle" tabindex="-1" :title="isOpen ? 'Liste schließen' : 'Liste öffnen'" :aria-label="isOpen ? 'Liste schließen' : 'Liste öffnen'" :aria-expanded="isOpen" @click="toggle()" :disabled="disabled">
+          <mdi-icon :icon="isOpen ? 'menu-up' : 'menu-down'" />
+        </button>
       </span>
     </div>
     <ul v-show="isOpen" class="invwiki-autocomplete-results">
@@ -195,6 +199,17 @@ export default {
 
     onArrowUp(e) {
       this.onArrowDown(e, -1);
+    },
+
+    toggle() {
+      if (this.isOpen) {
+        this.isOpen = false;
+        return;
+      }
+
+      // focusing opens the list as well, see onFocus
+      this.isOpen = true;
+      this.$refs.input.focus();
     },
 
     onFocus() {

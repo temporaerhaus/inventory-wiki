@@ -1177,15 +1177,19 @@ button.invwiki-container.expanded {
 }
 
 /* a field with a button inside it, at its right end */
-.invwiki-autocomplete-field.has-action {
+.invwiki-autocomplete-field {
   position: relative;
   width: calc(100% - 1.5em);
 }
 
-.invwiki .invwiki-autocomplete-field.has-action input {
+.invwiki .invwiki-autocomplete-field input {
   width: 100%;
   box-sizing: border-box;
-  padding-right: 3em;
+  padding-right: 2.5em;
+}
+
+.invwiki .invwiki-autocomplete-field.has-action input {
+  padding-right: 5.5em;
 }
 
 .invwiki-autocomplete-action {
@@ -1209,6 +1213,10 @@ button.invwiki-container.expanded {
   margin: 0;
   width: 1.4em;
   height: 1.4em;
+}
+
+.invwiki .invwiki-autocomplete-action .invwiki-autocomplete-toggle {
+  padding: 0 .5em;
 }
 
 /* shown to readers who are not logged in, see App.vue */
