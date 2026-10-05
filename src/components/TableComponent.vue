@@ -3,7 +3,10 @@
     <blockquote v-if="error">{{ error }}</blockquote>
 
     <div class="invwiki-table-controls">
-      <input type="search" v-model="search" placeholder="Suchen in allen sichtbaren Spalten" />
+      <label class="invwiki-table-search">
+        <mdi-icon icon="magnify" title="Suchen" />
+        <input type="search" v-model="search" placeholder="Suchen in allen sichtbaren Spalten" />
+      </label>
 
       <label class="invwiki-table-sort">
         Sortieren
@@ -23,17 +26,22 @@
         </label>
       </details>
 
-      <details>
-        <summary>Spalten</summary>
-        <label v-for="column in columns" :key="column.key">
-          <input type="checkbox" :checked="visible.includes(column.key)" :disabled="column.key === 'id'" @change="toggleColumn(column.key)" />
-          {{ column.label }}
-        </label>
-      </details>
+      <div class="invwiki-table-columns" ref="columnsMenu">
+        <button type="button" @click="columnsOpen = !columnsOpen" :aria-expanded="columnsOpen">
+          Spalten ({{ shownColumns.length }} von {{ columns.length }})
+          <mdi-icon :icon="columnsOpen ? 'menu-up' : 'menu-down'" right />
+        </button>
+        <div class="invwiki-table-columns-menu" v-if="columnsOpen">
+          <label v-for="column in columns" :key="column.key">
+            <input type="checkbox" :checked="column.key === 'id' || visible.includes(column.key)" :disabled="column.key === 'id'" @change="toggleColumn(column.key)" />
+            {{ column.label }}
+          </label>
+        </div>
+      </div>
 
       <button @click="exportCsv()" :disabled="!total || exporting">
         <mdi-icon icon="file-delimited-outline" left />
-        {{ exporting ? 'Exportiere…' : 'CSV' }}
+        {{ exporting ? 'Exportiere…' : 'CSV-Export' }}
       </button>
     </div>
 
@@ -144,6 +152,7 @@ export default {
     // the first answer has arrived
     loaded: false,
     exporting: false,
+    columnsOpen: false,
     search: '',
     filters: {},
     sort: { key: 'id', desc: false },
@@ -195,10 +204,14 @@ export default {
   mounted() {
     this.load();
     window.addEventListener(ITEM_SAVED_EVENT, this.onItemSaved);
+    document.addEventListener('click', this.closeColumnsOutside);
+    document.addEventListener('keydown', this.closeColumnsOnEscape);
   },
 
   beforeUnmount() {
     window.removeEventListener(ITEM_SAVED_EVENT, this.onItemSaved);
+    document.removeEventListener('click', this.closeColumnsOutside);
+    document.removeEventListener('keydown', this.closeColumnsOnEscape);
     clearTimeout(this.timer);
   },
 
@@ -207,6 +220,19 @@ export default {
     onItemSaved() {
       if (this.available) {
         this.schedule(AFTER_SAVE);
+      }
+    },
+
+    // the column menu closes like a dropdown: a click elsewhere or Escape
+    closeColumnsOutside(e) {
+      if (this.columnsOpen && !this.$refs.columnsMenu?.contains(e.target)) {
+        this.columnsOpen = false;
+      }
+    },
+
+    closeColumnsOnEscape(e) {
+      if (this.columnsOpen && e.key === 'Escape') {
+        this.columnsOpen = false;
       }
     },
 

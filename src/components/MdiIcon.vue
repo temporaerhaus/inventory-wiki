@@ -54,6 +54,7 @@ import {
   mdiMenuUp,
   mdiChevronLeft,
   mdiChevronRight,
+  mdiMagnify,
 } from '@mdi/js';
 
 export default {
@@ -114,6 +115,7 @@ export default {
       mdiMenuUp,
       mdiChevronLeft,
       mdiChevronRight,
+      mdiMagnify,
     }
   }),
 
