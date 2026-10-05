@@ -1,52 +1,45 @@
 <template>
-  <button @click="open">
-    <mdi-icon icon="table" left />
-    Tabelle
-  </button>
+  <div class="invwiki invwiki-table-view" v-if="available">
+    <blockquote v-if="error">{{ error }}</blockquote>
 
-  <x-dialog title="Inventar als Tabelle" icon="table" ref="dialog" :loading="exporting || (loading && !items.length)" class="invwiki-table-dialog">
-    <div>
-      <blockquote v-if="error">{{ error }}</blockquote>
+    <div class="invwiki-table-controls">
+      <input type="search" v-model="search" placeholder="Suchen in allen sichtbaren Spalten" />
 
-      <div class="invwiki-table-controls">
-        <input type="search" v-model="search" placeholder="Suchen in allen sichtbaren Spalten" />
+      <label class="invwiki-table-sort">
+        Sortieren
+        <select v-model="sort.key">
+          <option v-for="column in shownColumns" :key="column.key" :value="column.key">{{ column.label }}</option>
+        </select>
+        <button @click="sort.desc = !sort.desc" :title="sort.desc ? 'absteigend' : 'aufsteigend'">
+          <mdi-icon :icon="sort.desc ? 'menu-down' : 'menu-up'" />
+        </button>
+      </label>
 
-        <label class="invwiki-table-sort">
-          Sortieren
-          <select v-model="sort.key">
-            <option v-for="column in shownColumns" :key="column.key" :value="column.key">{{ column.label }}</option>
-          </select>
-          <button @click="sort.desc = !sort.desc" :title="sort.desc ? 'absteigend' : 'aufsteigend'">
-            <mdi-icon :icon="sort.desc ? 'menu-down' : 'menu-up'" />
-          </button>
+      <details class="invwiki-table-filters">
+        <summary>Filter{{ activeFilters ? ` (${activeFilters})` : '' }}</summary>
+        <label v-for="column in shownColumns" :key="column.key">
+          {{ column.label }}
+          <input type="search" v-model="filters[column.key]" />
         </label>
+      </details>
 
-        <details class="invwiki-table-filters">
-          <summary>Filter{{ activeFilters ? ` (${activeFilters})` : '' }}</summary>
-          <label v-for="column in shownColumns" :key="column.key">
-            {{ column.label }}
-            <input type="search" v-model="filters[column.key]" />
-          </label>
-        </details>
+      <details>
+        <summary>Spalten</summary>
+        <label v-for="column in columns" :key="column.key">
+          <input type="checkbox" :checked="visible.includes(column.key)" :disabled="column.key === 'id'" @change="toggleColumn(column.key)" />
+          {{ column.label }}
+        </label>
+      </details>
 
-        <details>
-          <summary>Spalten</summary>
-          <label v-for="column in columns" :key="column.key">
-            <input type="checkbox" :checked="visible.includes(column.key)" :disabled="column.key === 'id'" @change="toggleColumn(column.key)" />
-            {{ column.label }}
-          </label>
-        </details>
+      <button @click="exportCsv()" :disabled="!total || exporting">
+        <mdi-icon icon="file-delimited-outline" left />
+        {{ exporting ? 'Exportiere…' : 'CSV' }}
+      </button>
+    </div>
 
-        <button @click="exportCsv()" :disabled="!total">
-          <mdi-icon icon="file-delimited-outline" left />
-          CSV
-        </button>
-        <button @click="applySelection()" v-if="checked.length">
-          <mdi-icon icon="checkbox-multiple-marked-outline" left />
-          {{ checked.length }} auswählen und schließen
-        </button>
-      </div>
+    <p v-if="loading && !loaded">Lade Inventar…</p>
 
+    <div class="invwiki-table-scroll" v-else>
       <table class="invwiki-table" :class="{ 'invwiki-table-busy': loading }">
         <thead>
           <tr>
@@ -67,7 +60,7 @@
         </thead>
         <tbody>
           <tr v-for="item in items" :key="item.id">
-            <td><input type="checkbox" v-model="selection[item.id]" /></td>
+            <td><input type="checkbox" :checked="isSelected(item.id)" @change="$emit('toggle', [item.id], $event.target.checked)" /></td>
             <td v-for="column in shownColumns" :key="column.key" :data-label="column.label" :class="{ 'invwiki-table-id': column.key === 'id' }">
               <a v-if="column.key === 'id'" :href="`/${PREFIX}/${item.id}`">{{ item.id }}</a>
               <template v-else>{{ display(column, item[column.key]) }}</template>
@@ -75,25 +68,25 @@
           </tr>
         </tbody>
       </table>
-
-      <div class="invwiki-table-pages">
-        <button @click="goTo(offset - limit)" :disabled="offset === 0">
-          <mdi-icon icon="chevron-left" />
-        </button>
-        <span>{{ total ? `${offset + 1}–${Math.min(offset + limit, total)} von ${total}` : 'Keine Treffer' }}</span>
-        <button @click="goTo(offset + limit)" :disabled="offset + limit >= total">
-          <mdi-icon icon="chevron-right" />
-        </button>
-        <select v-model.number="limit" @change="goTo(0)" title="Einträge pro Seite">
-          <option v-for="size in [25, 50, 100, 200]" :key="size" :value="size">{{ size }} pro Seite</option>
-        </select>
-      </div>
     </div>
-  </x-dialog>
+
+    <div class="invwiki-table-pages" v-if="loaded">
+      <button @click="goTo(offset - limit)" :disabled="offset === 0">
+        <mdi-icon icon="chevron-left" />
+      </button>
+      <span>{{ total ? `${offset + 1}–${Math.min(offset + limit, total)} von ${total}` : 'Keine Treffer' }}</span>
+      <button @click="goTo(offset + limit)" :disabled="offset + limit >= total">
+        <mdi-icon icon="chevron-right" />
+      </button>
+      <select v-model.number="limit" @change="goTo(0)" title="Einträge pro Seite">
+        <option v-for="size in [25, 50, 100, 200]" :key="size" :value="size">{{ size }} pro Seite</option>
+      </select>
+    </div>
+  </div>
 </template>
 
 <script>
-import { PREFIX, queryItems } from '@/utils/api.js';
+import { PREFIX, ITEM_SAVED_EVENT, isPluginMissing, queryItems } from '@/utils/api.js';
 
 // the keys are the plugin's column names, see Index::COLUMNS
 const COLUMNS = [
@@ -106,8 +99,8 @@ const COLUMNS = [
   { key: 'category', label: 'Kategorie' },
   { key: 'origin', label: 'Ursprung' },
   { key: 'owner', label: 'Eigentümer*in' },
-  { key: 'location', label: 'Ort' },
-  { key: 'nominal', label: 'Soll-Ort' },
+  { key: 'location', label: 'Aktueller Aufenthaltsort' },
+  { key: 'nominal', label: 'Regulärer Aufenthaltsort' },
   { key: 'lastSeenAt', label: 'Zuletzt gesehen' },
   { key: 'container', label: 'Behälter', flag: true },
   { key: 'small', label: 'Kleines Label', flag: true },
@@ -117,6 +110,8 @@ const DEFAULT_COLUMNS = ['id', 'title', 'serial', 'invoice', 'date', 'owner', 'l
 const STORAGE_KEY = 'invwiki-table-columns';
 // wait for a pause in typing before asking the wiki
 const DEBOUNCE = 300;
+// a bulk edit saves one item after the other, load once they are through
+const AFTER_SAVE = 1000;
 
 const loadColumns = () => {
   try {
@@ -128,7 +123,12 @@ const loadColumns = () => {
 };
 
 export default {
-  emits: ['select'],
+  props: {
+    // the selection of the index page, "check:<page id>" => checked
+    selection: Object
+  },
+
+  emits: ['toggle'],
 
   data: () => ({
     PREFIX,
@@ -137,16 +137,18 @@ export default {
     items: [],
     total: 0,
     error: '',
+    // false without the wiki plugin, the table then stays away and the
+    // index page's own list of items is all there is
+    available: true,
     loading: false,
+    // the first answer has arrived
+    loaded: false,
     exporting: false,
-    opened: false,
     search: '',
     filters: {},
     sort: { key: 'id', desc: false },
     offset: 0,
     limit: 50,
-    // inventory id => checked, kept across pages
-    selection: {},
     timer: null,
     // number of the latest request, older answers that arrive late are dropped
     request: 0
@@ -173,12 +175,8 @@ export default {
       return Object.keys(this.query.filters).length;
     },
 
-    checked() {
-      return Object.keys(this.selection).filter(id => this.selection[id]);
-    },
-
     allChecked() {
-      return this.items.length > 0 && this.items.every(item => this.selection[item.id]);
+      return this.items.length > 0 && this.items.every(item => this.isSelected(item.id));
     }
   },
 
@@ -194,12 +192,26 @@ export default {
     }
   },
 
+  mounted() {
+    this.load();
+    window.addEventListener(ITEM_SAVED_EVENT, this.onItemSaved);
+  },
+
+  beforeUnmount() {
+    window.removeEventListener(ITEM_SAVED_EVENT, this.onItemSaved);
+    clearTimeout(this.timer);
+  },
+
   methods: {
-    async open() {
-      this.$refs.dialog.show();
-      this.opened = true;
-      // always fresh, an item may have changed since the dialog was last open
-      await this.load();
+    // stays on the current page, only the values change
+    onItemSaved() {
+      if (this.available) {
+        this.schedule(AFTER_SAVE);
+      }
+    },
+
+    isSelected(id) {
+      return Boolean(this.selection?.[`check:${PREFIX}:${id.toLowerCase()}`]);
     },
 
     goTo(offset) {
@@ -209,9 +221,7 @@ export default {
 
     schedule(delay) {
       clearTimeout(this.timer);
-      if (this.opened) {
-        this.timer = setTimeout(() => this.load(), delay);
-      }
+      this.timer = setTimeout(() => this.load(), delay);
     },
 
     async load() {
@@ -224,14 +234,14 @@ export default {
         if (request === this.request) {
           this.items = result.items;
           this.total = result.total;
+          this.loaded = true;
         }
       } catch (e) {
         if (request === this.request) {
           this.items = [];
           this.total = 0;
-          this.error = e.message === 'Method does not exist'
-            ? 'Das Wiki-Plugin "inventory" ist nicht installiert, ohne es kann die Tabelle nicht geladen werden.'
-            : `Fehler beim Laden: ${e.message}`;
+          this.available = !isPluginMissing(e);
+          this.error = `Fehler beim Laden: ${e.message}`;
         }
       } finally {
         if (request === this.request) {
@@ -261,19 +271,7 @@ export default {
     },
 
     toggleAll() {
-      const value = !this.allChecked;
-      for (const item of this.items) {
-        this.selection[item.id] = value;
-      }
-    },
-
-    // hand the checked items to the selection of the index page, so that the
-    // toolbar's actions (print, location, bulk edit) work on them
-    applySelection() {
-      this.$emit('select', this.checked);
-      this.selection = {};
-      this.opened = false;
-      this.$refs.dialog.close();
+      this.$emit('toggle', this.items.map(item => item.id), !this.allChecked);
     },
 
     // all matching items, not only the current page

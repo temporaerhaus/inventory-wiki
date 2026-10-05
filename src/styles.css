@@ -828,12 +828,11 @@ button.invwiki-container.expanded {
   white-space: nowrap;
 }
 
-.invwiki .invwiki-table-dialog .dialog {
-  width: 95vw;
+.invwiki.invwiki-table-view {
+  margin: 1em 0 2em;
 }
 
-.invwiki .invwiki-table-dialog .invwiki-dialog-body {
-  max-width: none;
+.invwiki-table-scroll {
   overflow-x: auto;
 }
 
@@ -860,11 +859,17 @@ button.invwiki-container.expanded {
   white-space: nowrap;
 }
 
-.invwiki .dialog .invwiki-table-sort {
+.invwiki .invwiki-table-sort {
   display: flex;
   align-items: center;
   gap: .5em;
+  max-width: 100%;
   font-weight: normal;
+}
+
+.invwiki .invwiki-table-sort select {
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .invwiki .invwiki-table-sort select,
@@ -903,19 +908,13 @@ button.invwiki-container.expanded {
 }
 
 .invwiki .invwiki-table thead th {
-  position: sticky;
   background-color: var(--background);
   white-space: nowrap;
 }
 
 .invwiki .invwiki-table thead tr:first-child th {
-  top: 0;
   cursor: pointer;
   user-select: none;
-}
-
-.invwiki .invwiki-table thead tr:nth-child(2) th {
-  top: 2em;
 }
 
 .invwiki .invwiki-table thead input {

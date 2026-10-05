@@ -179,46 +179,63 @@ export async function fetchItems() {
     .map(e => e.id.split(':').pop().toUpperCase());
 };
 
-// The overview page lists every item as "[date] - [ns:id] Title"; that is the
-// only place where inventory numbers and titles appear together, which is what
-// the Kennbuchstabe suggestions are built from. The API is no help here: with
-// useheading off it reports page ids as titles, and reading every page would
-// take one request per item.
+// Inventory numbers and titles of all items, which is what the Kennbuchstabe
+// suggestions are built from. The API alone is no help here: with useheading
+// off it reports page ids as titles, and reading every page would take one
+// request per item. They come from the wiki plugin in dokuwiki-plugin/inventory
+// in one request, or, where it is not installed, from the overview page, which
+// lists every item as "[date] - [ns:id] Title".
 const ENTRY_ID_REGEX = /^([SVL])-([A-Z]{2})([0-9]{6})(?:-([A-Z0-9]+))?$/;
 const ENTRY_PREFIX_REGEX = /^(?:\s*\[[^\]]*\]\s*-?\s*)+/;
+
+const inventoryEntry = (id, title) => {
+  const res = ENTRY_ID_REGEX.exec(id);
+  if (!res || !title) {
+    return null;
+  }
+
+  return {
+    id,
+    lended: res[1] === 'L',
+    code: res[2],
+    number: res[3],
+    suffix: res[4] || '',
+    title,
+  };
+};
+
+async function inventoryFromPlugin() {
+  const { items } = await queryItems({ limit: 0, columns: ['title'] });
+  return items.map(e => inventoryEntry(e.id, e.title.trim())).filter(Boolean);
+}
+
+async function inventoryFromOverview() {
+  const res = await fetch(`/${PREFIX}`);
+  const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+
+  return [...doc.querySelectorAll('#dokuwiki__content a[data-wiki-id]')]
+    .map(e => inventoryEntry(
+      String(e.getAttribute('data-wiki-id')).split(':').pop().toUpperCase(),
+      e.innerText.replace(ENTRY_PREFIX_REGEX, '').trim()
+    ))
+    .filter(Boolean);
+}
 
 let inventoryCache = null;
 
 export async function fetchInventory({ reload = false } = {}) {
   if (!inventoryCache || reload) {
-    inventoryCache = (async () => {
-      const res = await fetch(`/${PREFIX}`);
-      const html = await res.text();
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-
-      return [...doc.querySelectorAll('#dokuwiki__content a[data-wiki-id]')]
-        .map((e) => {
-          const id = String(e.getAttribute('data-wiki-id')).split(':').pop().toUpperCase();
-          const res = ENTRY_ID_REGEX.exec(id);
-          if (!res) {
-            return null;
-          }
-
-          return {
-            id,
-            lended: res[1] === 'L',
-            code: res[2],
-            number: res[3],
-            suffix: res[4] || '',
-            title: e.innerText.replace(ENTRY_PREFIX_REGEX, '').trim(),
-          };
-        })
-        .filter(e => e && e.title);
-    })().catch((e) => {
-      inventoryCache = null;
-      throw e;
-    });
+    inventoryCache = inventoryFromPlugin()
+      .catch((e) => {
+        if (isPluginMissing(e)) {
+          return inventoryFromOverview();
+        }
+        throw e;
+      })
+      .catch((e) => {
+        inventoryCache = null;
+        throw e;
+      });
   }
 
   return inventoryCache;
@@ -267,6 +284,9 @@ export async function fetchInventoryItem(inventoryId) {
 
   return null;
 };
+
+// whether an error of the calls below means that the wiki plugin is not installed
+export const isPluginMissing = (e) => e?.message === 'Method does not exist';
 
 // One page of the inventory as a table, filtered and sorted by the wiki plugin
 // in dokuwiki-plugin/inventory. Throws if the plugin is not installed.
@@ -366,6 +386,10 @@ export async function remotePrintContents(inventoryId, levels = 0) {
   await queuePrint([`inhaltsliste:${inventoryId}${levels > 0 ? `:${levels}` : ''}`]);
 }
 
+// fired on window after every saved item, so that views showing items (such as
+// the table) can load them again when they are saved without a page reload
+export const ITEM_SAVED_EVENT = 'invwiki-item-saved';
+
 export async function writeItem(path, entry = { }, opts = { create: false, summary: '', replacer: null, content: undefined }) {
   const page = pageId(path);
   const token = await lock();
@@ -447,6 +471,7 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
 
     // fails loudly, e.g. when somebody else has the page open in the wiki's editor
     await rpc('core.savePage', { page, text: wikitext, summary: opts.summary || 'edit metadata' });
+    window.dispatchEvent(new CustomEvent(ITEM_SAVED_EVENT, { detail: { page } }));
   } finally {
     await release(token);
   }

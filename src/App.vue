@@ -9,12 +9,15 @@
     </button>
     <location-component :selected="selected" />
     <bulk-edit-component :selected="selected" />
-    <table-component v-if="indexCount > 0" @select="select" />
     <button @click="toggleAll()" v-if="indexCount > 0">
       <mdi-icon :icon="allSelected ? 'checkbox-blank-outline' : 'checkbox-multiple-marked-outline'" left />
       {{ allSelected ? 'Auswahl aufheben' : `Alle ${indexCount} auswählen` }}
     </button>
     <x-dialog ref="dialog" :loading="loading" />
+
+    <teleport v-if="tableTarget" :to="tableTarget">
+      <table-component :selection="selection" @toggle="toggleItems" />
+    </teleport>
   </div>
 </template>
 
@@ -46,6 +49,8 @@ export default {
     selection: {},
     // number of items with a checkbox on the index page
     indexCount: 0,
+    // where the table goes in the page content, only on the index page
+    tableTarget: null,
     loading: false
   }),
 
@@ -152,20 +157,38 @@ export default {
       }
 
       this.indexCount = document.querySelectorAll('input.invwiki-index[type="checkbox"]').length;
+
+      // above the list of items, or else right below the page's heading
+      const content = document.querySelector('#dokuwiki__content');
+      if (content && !document.getElementById('invwiki-table')) {
+        const target = document.createElement('div');
+        target.id = 'invwiki-table';
+
+        const list = content.querySelector('.plugin_nspages');
+        const heading = content.querySelector('h1');
+        if (list) {
+          list.before(target);
+        } else if (heading) {
+          heading.after(target);
+        } else {
+          content.prepend(target);
+        }
+        this.tableTarget = target;
+      }
     }
   },
 
   methods: {
-    // select the given inventory ids as if their boxes were clicked,
-    // also those that have no box on this page
-    select(ids) {
+    // (un)select the given inventory ids from the table, as if their boxes in
+    // the list were clicked, also those that have no box on this page
+    toggleItems(ids, value) {
       for (const id of ids) {
         const key = `check:${PREFIX}:${id.toLowerCase()}`;
-        this.selection[key] = true;
+        this.selection[key] = value;
 
         const box = document.getElementById(key);
         if (box) {
-          box.checked = true;
+          box.checked = value;
         }
       }
       this.previousInteraction = null;
