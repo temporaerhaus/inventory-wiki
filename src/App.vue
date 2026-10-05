@@ -1,4 +1,13 @@
 <template>
+  <div class="invwiki invwiki-login-warning" role="alert" v-if="active && anonymous">
+    <mdi-icon icon="alert" left />
+    <p>
+      <b>Warnung:</b> Du bist nicht angemeldet.
+      Du siehst das Inventar, weil dein Netzwerk freigeschaltet ist, aber Änderungen werden nicht deinem Namen zugeordnet und manche Funktionen stehen nicht zur Verfügung.
+      <a :href="loginUrl"><b>Melde dich an</b></a>, um Gegenstände unter deinem Namen zu bearbeiten.
+    </p>
+  </div>
+
   <div class="invwiki invwiki-toolbar sticky-header" v-if="active">
     <scan-component />
     <scan-component reprint />
@@ -234,6 +243,26 @@ export default {
   },
 
   computed: {
+    // nobody is logged in, and the page can still be read, through the wiki's
+    // IP allowlist. The core marks the page of a logged in user with the class
+    // loggedIn (in templates that use tpl_classes, which add mode_* as well);
+    // otherwise the user tools tell, by a link to log in or out
+    anonymous() {
+      // not where the wiki turns the reader away, or is logging them in already
+      if (['denied', 'login', 'register', 'resendpwd'].includes(window.JSINFO?.ACT)) {
+        return false;
+      }
+      if (document.querySelector('.dokuwiki.loggedIn, a[href*="do=logout"]')) {
+        return false;
+      }
+      return Boolean(document.querySelector('.dokuwiki[class*="mode_"], a[href*="do=login"]'));
+    },
+
+    // the wiki's own link, which returns to this page after logging in
+    loginUrl() {
+      return document.querySelector('a[href*="do=login"]')?.href ?? `${location.pathname}?do=login`;
+    },
+
     active() {
       return location.pathname.startsWith('/inventar') || import.meta.env.MODE === 'development';
     },

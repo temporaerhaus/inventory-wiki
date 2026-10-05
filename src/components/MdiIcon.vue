@@ -56,6 +56,7 @@ import {
   mdiMagnify,
   mdiDeleteOutline,
   mdiMapMarkerOutline,
+  mdiAlert,
 } from '@mdi/js';
 
 export default {
@@ -118,6 +119,7 @@ export default {
       mdiMagnify,
       mdiDeleteOutline,
       mdiMapMarkerOutline,
+      mdiAlert,
     }
   }),
 

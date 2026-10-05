@@ -1203,3 +1203,27 @@ button.invwiki-container.expanded {
   width: 1.4em;
   height: 1.4em;
 }
+
+/* shown to readers who are not logged in, see App.vue */
+.invwiki.invwiki-login-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: .25em;
+  margin-bottom: 1em;
+  padding: .75em 1em;
+  color: var(--text-main);
+  background-color: #fef6e7;
+  border: 1px solid #a66200;
+  border-radius: 2px;
+}
+
+.invwiki.invwiki-login-warning svg {
+  flex-shrink: 0;
+  width: 1.4em;
+  height: 1.4em;
+  fill: #a66200;
+}
+
+.invwiki.invwiki-login-warning p {
+  margin: 0;
+}
