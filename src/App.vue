@@ -48,6 +48,18 @@ import LocationComponent from '@/components/LocationComponent.vue';
 import BulkEditComponent from '@/components/BulkEditComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 
+// The yaml of a code block on the page, null if it is none. The wiki puts a
+// "Copy" button into code blocks in newer releases, whose text is not part of it.
+const codeYaml = (element) => {
+  const copy = element.cloneNode(true);
+  copy.querySelectorAll('button').forEach(e => e.remove());
+  try {
+    return YAML.parse(copy.textContent);
+  } catch {
+    return null;
+  }
+};
+
 export default {
   components: {
     LocationComponent,
@@ -76,7 +88,7 @@ export default {
 
     for (const e of document.querySelectorAll('#dokuwiki__content .code.yaml')) {
       try {
-        const data = YAML.parse(e.innerText);
+        const data = codeYaml(e);
         if (e.classList.contains('processed') || !data?.inventory) {
           continue;
         }
@@ -294,8 +306,8 @@ export default {
 
     yaml() {
       return this.active && [...document.querySelectorAll('#dokuwiki__content .code.yaml')]
-          .map(e => YAML.parse(e.innerText))
-          .find(e => e.inventory);
+          .map(codeYaml)
+          .find(e => e?.inventory);
     },
 
     allSelected() {
