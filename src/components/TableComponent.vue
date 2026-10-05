@@ -78,7 +78,7 @@
                 <mdi-icon icon="map-clock-outline" left :title="elsewhere(item) ? 'Aktueller Aufenthaltsort, nicht am regulären Aufenthaltsort' : 'Aktueller Aufenthaltsort'" />{{ item.temporary }}
               </span>
               <template v-else-if="column.key === 'place'">{{ item.nominal }}</template>
-              <span v-else-if="column.key === 'lastSeenAt' && item.lastSeenAt" :title="seenAt(item.lastSeenAt).full">{{ seenAt(item.lastSeenAt).date }}</span>
+              <span v-else-if="column.timestamp && item[column.key]" :title="seenAt(item[column.key]).full">{{ seenAt(item[column.key]).date }}</span>
               <template v-else>{{ display(column, item[column.key]) }}</template>
             </td>
           </tr>
@@ -121,7 +121,10 @@ const COLUMNS = [
   { key: 'place', label: 'Aufenthaltsort', field: 'location', needs: ['nominal', 'temporary'] },
   { key: 'location', label: 'Aktueller Aufenthaltsort' },
   { key: 'nominal', label: 'Regulärer Aufenthaltsort' },
-  { key: 'lastSeenAt', label: 'Zuletzt gesehen' },
+  { key: 'lastSeenAt', label: 'Zuletzt gesehen', timestamp: true },
+  // of the item page, kept by the wiki
+  { key: 'created', label: 'Angelegt', timestamp: true },
+  { key: 'modified', label: 'Zuletzt bearbeitet', timestamp: true },
   { key: 'container', label: 'Behälter', flag: true },
   { key: 'small', label: 'Kleines Label', flag: true },
 ];
