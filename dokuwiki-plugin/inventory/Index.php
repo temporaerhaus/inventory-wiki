@@ -52,6 +52,9 @@ class Index
         'container' => 'container',
     ];
 
+    // yes/no columns, stored as '1' or '', nothing to search for in them
+    private const FLAGS = ['small', 'container'];
+
     private PDO $db;
 
     public function __construct()
@@ -239,6 +242,7 @@ class Index
     {
         $where = ['is_item = 1'];
         $params = [];
+        $searchColumns = array_values(array_diff($searchColumns, self::FLAGS));
 
         foreach ($terms as $term) {
             $where[] = '(' . implode(' OR ', array_map(
