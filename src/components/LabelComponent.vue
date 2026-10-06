@@ -140,7 +140,9 @@ export default {
                         }] : [{
                             svg: this.svg,
                             width: this.mm2pt(18),
-                            margin: [this.mm2pt(0), this.mm2pt(3), this.mm2pt(3), this.mm2pt(3)],
+                            // below the QR code a little less than the 3 mm above it: 3 + 18 + 3 mm is the
+                            // label's full height, which pdfmake (0.2.21 here) spills onto a second, empty page
+                            margin: [this.mm2pt(0), this.mm2pt(3), this.mm2pt(3), this.mm2pt(2.5)],
                         }, {
                             width: '*',
                             margin: [this.mm2pt(3), this.mm2pt(1.7), this.mm2pt(2), this.mm2pt(3)],
