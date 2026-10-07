@@ -603,6 +603,30 @@ export async function remotePrintContents(inventoryId, levels = 0) {
   await queuePrint([`inhaltsliste:${inventoryId}${levels > 0 ? `:${levels}` : ''}`]);
 }
 
+// contents lists of several containers, of what is directly in them; returns
+// the entries that were not queued yet
+export async function remotePrintContentsLists(inventoryIds) {
+  return await queuePrint(inventoryIds.map(e => `inhaltsliste:${e}`));
+}
+
+// the containers among inventory numbers, in their order: from the wiki
+// plugin in one request, or from the item pages where it is not installed
+export async function containersAmong(inventoryIds) {
+  const ids = inventoryIds.map(e => String(e).toUpperCase());
+  try {
+    const { items } = await queryItems({ filters: { container: '1' }, limit: 0, columns: ['title'] });
+    const containers = new Set(items.map(e => e.id.toUpperCase()));
+    return ids.filter(e => containers.has(e));
+  } catch (e) {
+    if (!isPluginMissing(e)) {
+      throw e;
+    }
+  }
+
+  const items = await Promise.all(ids.map(e => fetchInventoryItem(e).catch(() => null)));
+  return ids.filter((_, i) => items[i]?.container);
+}
+
 // an A4 page of large labels of an item, see utils/sign.js
 export async function remotePrintSign(inventoryId) {
   await queuePrint([`schild:${inventoryId}`]);
