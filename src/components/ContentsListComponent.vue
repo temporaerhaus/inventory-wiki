@@ -61,15 +61,14 @@ import { markRaw } from 'vue';
 
 import logo from '@/assets/logo-full.svg?raw';
 import pdfMake, { mm2pt } from '@/utils/pdf.js';
-import { PREFIX, fetchInventoryItem, remotePrintContents, remotePrintSign, searchItems } from '@/utils/api.js';
+import { PREFIX, MAX_CONTENTS_LEVELS, fetchInventoryItem, remotePrintContents, remotePrintSign, searchItems } from '@/utils/api.js';
 import { labelDescription } from '@/utils/label.js';
 import { signDocument } from '@/utils/sign.js';
 
 // the dev server runs on localhost but proxies this wiki
 const WIKI_ORIGIN = import.meta.env.DEV ? 'https://wiki.temporaerhaus.de' : location.origin;
 
-// "all levels" still stops here, to deal with potential circular links
-const MAX_DEPTH = 10;
+const MAX_DEPTH = MAX_CONTENTS_LEVELS;
 
 export default {
   props: {

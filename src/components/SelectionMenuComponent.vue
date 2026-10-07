@@ -11,7 +11,7 @@
         <mdi-icon icon="cloud-print-outline" left />
         Aufkleber drucken
       </button>
-      <button @click="run(() => printContents())" :disabled="busy">
+      <button @click="run(() => openContents())">
         <mdi-icon icon="format-list-checks" left />
         Inhaltslisten drucken
       </button>
@@ -26,6 +26,47 @@
     </div>
   </div>
 
+  <!-- what to print for each selected container, as for a single one -->
+  <x-dialog title="Inhaltslisten drucken" icon="format-list-checks" ref="contents" :loading="busy">
+    <p v-if="containers === null">Suche die Behälter unter den ausgewählten Gegenständen …</p>
+    <p v-else-if="containers.length === 0">{{ selected.length === 1 ? 'Der ausgewählte Gegenstand ist kein Behälter.' : 'Keiner der ausgewählten Gegenstände ist ein Behälter.' }}</p>
+    <p v-else>
+      {{ containers.length === selected.length
+        ? (selected.length === 1 ? 'Der ausgewählte Gegenstand ist ein Behälter.' : `Alle ${selected.length} ausgewählten Gegenstände sind Behälter.`)
+        : `${containers.length} der ${selected.length} ausgewählten Gegenstände ${containers.length === 1 ? 'ist ein Behälter' : 'sind Behälter'}.` }}
+    </p>
+
+    <label :for="`${uid}-kind`">
+      <mdi-icon icon="file-document-outline" left title="Art" />
+      Art
+    </label>
+    <select :id="`${uid}-kind`" v-model="kind">
+      <option value="list">Liste der beinhalteten Gegenstände</option>
+      <option value="sign">Große Aufkleber für den Behälter, 4 auf einer A4-Seite</option>
+    </select>
+
+    <template v-if="kind === 'list'">
+      <label :for="`${uid}-levels`">
+        <mdi-icon icon="package-variant" left title="Unter-Behälter" />
+        Inhalt von Unter-Behältern auflisten
+      </label>
+      <select :id="`${uid}-levels`" v-model.number="levels">
+        <option :value="0">Nein, nur direkt enthaltene Gegenstände</option>
+        <option :value="1">1 Ebene tief</option>
+        <option :value="2">2 Ebenen tief</option>
+        <option :value="3">3 Ebenen tief</option>
+        <option :value="MAX_CONTENTS_LEVELS">Alle Ebenen</option>
+      </select>
+    </template>
+
+    <template #footer>
+      <button @click="printContents()" :disabled="busy || !containers?.length">
+        <mdi-icon icon="cloud-print-outline" left />
+        Zur Druckwarteschlange hinzufügen
+      </button>
+    </template>
+  </x-dialog>
+
   <!-- their dialogs, opened from the menu -->
   <location-component :selected="selected" ref="location" />
   <bulk-edit-component :selected="selected" ref="edit" />
@@ -34,7 +75,7 @@
 <script>
 import LocationComponent from '@/components/LocationComponent.vue';
 import BulkEditComponent from '@/components/BulkEditComponent.vue';
-import { containersAmong, remotePrintContentsLists } from '@/utils/api.js';
+import { MAX_CONTENTS_LEVELS, containersAmong, remotePrintContentsLists, remotePrintSigns } from '@/utils/api.js';
 
 // The actions for the selected items, behind one button
 export default {
@@ -53,8 +94,16 @@ export default {
 
   data: () => ({
     open: false,
-    // while contents lists are being queued
+    MAX_CONTENTS_LEVELS,
+    uid: `invwiki-selection-${Math.round(Math.random() * 10000)}`,
+    // while the containers are looked up, or their lists queued
     busy: false,
+    // the inventory numbers of the selected containers, null until known
+    containers: null,
+    // list: the contained items, sign: large labels of the containers
+    kind: 'list',
+    // how many levels of sub-containers to list the contents of
+    levels: 0,
   }),
 
   computed: {
@@ -83,29 +132,42 @@ export default {
   },
 
   methods: {
-    // a contents list for each selected container, of what is directly in
-    // it; the selection may hold other items too, which have none
-    async printContents() {
-      const ids = this.selected.map(e => e.split('/').pop().toUpperCase());
+    // which of the selected items are containers, which is what the dialog
+    // tells before anything is queued
+    async openContents() {
+      this.containers = null;
+      this.$refs.contents.show();
       this.busy = true;
       try {
-        const containers = await containersAmong(ids);
-        if (containers.length === 0) {
-          alert(ids.length === 1 ? 'Der ausgewählte Gegenstand ist kein Behälter.' : 'Keiner der ausgewählten Gegenstände ist ein Behälter.');
-          return;
-        }
+        this.containers = await containersAmong(this.selected.map(e => e.split('/').pop()));
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+        this.$refs.contents.close();
+      } finally {
+        this.busy = false;
+      }
+    },
 
-        const added = await remotePrintContentsLists(containers);
-        const lists = (n) => `${n} ${n === 1 ? 'Inhaltsliste' : 'Inhaltslisten'}`;
+    // the chosen lists or large labels of the selected containers
+    async printContents() {
+      const containers = this.containers || [];
+      this.busy = true;
+      try {
+        const added = this.kind === 'sign'
+          ? await remotePrintSigns(containers)
+          : await remotePrintContentsLists(containers, this.levels);
         const queued = containers.length - added.length;
-        const others = ids.length - containers.length;
+        const what = (n) => this.kind === 'sign'
+          ? `${n} ${n === 1 ? 'Seite' : 'Seiten'} große Aufkleber`
+          : `${n} ${n === 1 ? 'Inhaltsliste' : 'Inhaltslisten'}`;
+        const were = (n) => n === 1 ? 'war' : 'waren';
         alert([
           added.length > 0
-            ? `${lists(added.length)} zur Druckwarteschlange hinzugefügt.`
-            : `${queued === 1 ? 'Die Inhaltsliste war' : `Die ${lists(queued)} waren`} schon in der Druckwarteschlange.`,
-          added.length > 0 && queued > 0 ? `${lists(queued)} ${queued === 1 ? 'war' : 'waren'} schon darin.` : '',
-          others > 0 ? `${others} der ausgewählten Gegenstände ${others === 1 ? 'ist kein Behälter' : 'sind keine Behälter'}.` : '',
+            ? `${what(added.length)} zur Druckwarteschlange hinzugefügt.`
+            : `${what(queued)} ${were(queued)} schon in der Druckwarteschlange.`,
+          added.length > 0 && queued > 0 ? `${what(queued)} ${were(queued)} schon darin.` : '',
         ].filter(Boolean).join(' '));
+        this.$refs.contents.close();
       } catch (e) {
         alert(`Fehler: ${e.message}`);
       } finally {

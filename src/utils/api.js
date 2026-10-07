@@ -603,10 +603,20 @@ export async function remotePrintContents(inventoryId, levels = 0) {
   await queuePrint([`inhaltsliste:${inventoryId}${levels > 0 ? `:${levels}` : ''}`]);
 }
 
-// contents lists of several containers, of what is directly in them; returns
-// the entries that were not queued yet
-export async function remotePrintContentsLists(inventoryIds) {
-  return await queuePrint(inventoryIds.map(e => `inhaltsliste:${e}`));
+// "all levels" of sub-containers in a contents list still stops here, to deal
+// with potential circular links
+export const MAX_CONTENTS_LEVELS = 10;
+
+// contents lists of several containers, with the contents of their
+// sub-containers that many levels deep; returns the entries not queued yet
+export async function remotePrintContentsLists(inventoryIds, levels = 0) {
+  return await queuePrint(inventoryIds.map(e => `inhaltsliste:${e}${levels > 0 ? `:${levels}` : ''}`));
+}
+
+// pages of large labels of several items, see utils/sign.js; returns the
+// entries not queued yet
+export async function remotePrintSigns(inventoryIds) {
+  return await queuePrint(inventoryIds.map(e => `schild:${e}`));
 }
 
 // the containers among inventory numbers, in their order: from the wiki
