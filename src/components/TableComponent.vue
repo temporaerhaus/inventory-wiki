@@ -95,7 +95,7 @@
         <mdi-icon icon="chevron-right" />
       </button>
       <select v-model.number="limit" @change="goTo(0)" title="Einträge pro Seite">
-        <option v-for="size in [25, 50, 100, 200]" :key="size" :value="size">{{ size }} pro Seite</option>
+        <option v-for="size in PAGE_SIZES" :key="size" :value="size">{{ size }} pro Seite</option>
       </select>
     </div>
   </div>
@@ -136,6 +136,76 @@ const DEBOUNCE = 300;
 // a bulk edit saves one item after the other, load once they are through
 const AFTER_SAVE = 1000;
 
+// The search, filters, sort and page are kept in the page's address, so that
+// going back to the index page (or a link to it) shows the table as it was:
+// t-search, t-sort (the column key, "-" in front for descending), t-page
+// (from 1), t-per and t-f-<column key> for each filter. What is the default
+// is left out.
+const PAGE_SIZES = [25, 50, 100, 200];
+const DEFAULT_LIMIT = 50;
+const URL_PREFIX = 't-';
+const FILTER_PREFIX = `${URL_PREFIX}f-`;
+
+const stateFromUrl = () => {
+  const params = new URLSearchParams(location.search);
+  const column = (key) => COLUMNS.some(e => e.key === key);
+
+  const sortParam = params.get(`${URL_PREFIX}sort`) || '';
+  const desc = sortParam.startsWith('-');
+  const sortKey = sortParam.replace(/^-/, '');
+
+  const per = Number(params.get(`${URL_PREFIX}per`));
+  const limit = PAGE_SIZES.includes(per) ? per : DEFAULT_LIMIT;
+  const page = Math.max(1, Math.floor(Number(params.get(`${URL_PREFIX}page`))) || 1);
+
+  const filters = {};
+  for (const [name, value] of params) {
+    const key = name.slice(FILTER_PREFIX.length);
+    if (name.startsWith(FILTER_PREFIX) && column(key) && value) {
+      filters[key] = value;
+    }
+  }
+
+  return {
+    search: params.get(`${URL_PREFIX}search`) || '',
+    filters,
+    sort: column(sortKey) ? { key: sortKey, desc } : { key: 'id', desc: false },
+    offset: (page - 1) * limit,
+    limit,
+  };
+};
+
+// the address with the table's state, the page's other parameters kept
+const urlOf = ({ search, filters, sort, offset, limit }) => {
+  const params = new URLSearchParams(location.search);
+  for (const name of [...params.keys()]) {
+    if (name.startsWith(URL_PREFIX)) {
+      params.delete(name);
+    }
+  }
+
+  if (search.trim()) {
+    params.set(`${URL_PREFIX}search`, search.trim());
+  }
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) {
+      params.set(`${FILTER_PREFIX}${key}`, value);
+    }
+  }
+  if (sort.key !== 'id' || sort.desc) {
+    params.set(`${URL_PREFIX}sort`, `${sort.desc ? '-' : ''}${sort.key}`);
+  }
+  if (offset > 0) {
+    params.set(`${URL_PREFIX}page`, String(Math.floor(offset / limit) + 1));
+  }
+  if (limit !== DEFAULT_LIMIT) {
+    params.set(`${URL_PREFIX}per`, String(limit));
+  }
+
+  const query = params.toString();
+  return `${location.pathname}${query ? `?${query}` : ''}${location.hash}`;
+};
+
 const loadColumns = () => {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
@@ -155,6 +225,7 @@ export default {
 
   data: () => ({
     PREFIX,
+    PAGE_SIZES,
     columns: COLUMNS,
     visible: loadColumns(),
     items: [],
@@ -167,11 +238,8 @@ export default {
     // the first answer has arrived
     loaded: false,
     columnsOpen: false,
-    search: '',
-    filters: {},
-    sort: { key: 'id', desc: false },
-    offset: 0,
-    limit: 50,
+    // search, filters, sort, offset and limit, as the address has them
+    ...stateFromUrl(),
     timer: null,
     // number of the latest request, older answers that arrive late are dropped
     request: 0
@@ -206,12 +274,24 @@ export default {
       return Object.keys(this.query.filters).length;
     },
 
+    url() {
+      return urlOf(this);
+    },
+
     allChecked() {
       return this.items.length > 0 && this.items.every(item => this.isSelected(item.id));
     }
   },
 
   watch: {
+    // the address follows the table, without a new step for the back button
+    // at every keystroke or click
+    url(value) {
+      if (value !== `${location.pathname}${location.search}${location.hash}`) {
+        history.replaceState(history.state, '', value);
+      }
+    },
+
     // a different question starts on the first page again, typing is debounced
     query: {
       deep: true,
