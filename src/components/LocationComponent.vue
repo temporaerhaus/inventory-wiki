@@ -5,7 +5,7 @@
   </button>
 
   <!-- for selected items, it is opened from SelectionMenuComponent -->
-  <x-dialog :title="`Aufenthaltsort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading">
+  <x-dialog :title="`Aufenthaltsort Aktualisieren (${singleItem ? $parent.inventoryId : `${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'}`})`" icon="home-map-marker" ref="dialog" :loading="loading" :progress="progress">
     <div>
       <search-autocomplete v-model="location" :items="locations" :keys="keys" :serializer="(e) => e.value" label="Aufenthaltsort" autofocus restrict>
         <template #action>
@@ -61,7 +61,7 @@
 </template>
 
 <script>
-import { LOCATION_RESET, fetchLocationTree, locationLoop, setLocation, writeItem } from '@/utils/api.js';
+import { LOCATION_RESET, fetchLocationTree, locationLoop, progressText, setLocation, settleWithProgress, writeItem } from '@/utils/api.js';
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
 import ScanComponent from '@/components/ScanComponent.vue';
 
@@ -80,6 +80,8 @@ export default {
 
   data: () => ({
     loading: false,
+    // how far saving several items is, below the loading indicator
+    progress: '',
     locations: [],
     location: null,
     keys: ['value', 'title', 'description', 'path'],
@@ -146,31 +148,44 @@ export default {
           }
         }
 
-        await Promise.all(
-          (this.singleItem ? [location.pathname] : this.selected).map((e) => {
-            return writeItem(e, {}, {
-              summary: `location update (mode=${mode})`,
-              replacer: (yaml) => setLocation(yaml, mode, {
-                location: this.location?.value,
-                description: this.description,
-                updateLastSeen: this.updateLastSeen
-              })
-            });
-          })
+        const paths = this.singleItem ? [location.pathname] : this.selected;
+        const results = await settleWithProgress(
+          paths.map(e => () => writeItem(e, {}, {
+            summary: `location update (mode=${mode})`,
+            replacer: (yaml) => setLocation(yaml, mode, {
+              location: this.location?.value,
+              description: this.description,
+              updateLastSeen: this.updateLastSeen
+            })
+          })),
+          // one item needs no counting
+          (...counts) => this.progress = this.singleItem ? '' : progressText(...counts)
         );
+        const failed = results
+          .map((result, i) => [paths[i], result])
+          .filter(([, result]) => result.status === 'rejected');
 
         if (this.singleItem) {
+          if (failed.length) {
+            throw failed[0][1].reason;
+          }
           location.reload();
         } else {
           // refresh cache by loading all items
+          this.progress = this.progress.replace(/ …$/, ', lade neu …');
           await Promise.all(this.selected.map(e => fetch(e)));
-          alert(`${this.selected.length} ${this.selected.length > 1 ? 'Gegenstände' : 'Gegenstand'} aktualisiert`);
-          this.$refs.dialog.close();
+          if (failed.length) {
+            alert(`Fehler bei ${failed.length} von ${paths.length}:\n${failed.map(([path, result]) => `${path.split('/').pop().toUpperCase()}: ${result.reason?.message}`).join('\n')}`);
+          } else {
+            alert(`${this.selected.length} ${this.selected.length > 1 ? 'Gegenstände' : 'Gegenstand'} aktualisiert`);
+            this.$refs.dialog.close();
+          }
         }
       } catch (e) {
         alert(`Fehler: ${e.message}`);
       } finally {
         this.loading = false;
+        this.progress = '';
       }
     }
   }

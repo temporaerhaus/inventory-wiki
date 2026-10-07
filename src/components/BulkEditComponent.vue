@@ -1,6 +1,6 @@
 <template>
   <!-- opened from SelectionMenuComponent -->
-  <x-dialog :title="`${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'} bearbeiten`" icon="square-edit-outline" ref="dialog" :loading="loading">
+  <x-dialog :title="`${selected.length} ${selected.length > 1 ? 'Gegenstände' : 'Gegenstand'} bearbeiten`" icon="square-edit-outline" ref="dialog" :loading="loading" :progress="progress">
     <div>
       <blockquote>
         Nur angehakte Felder werden geändert, alle anderen behalten bei jedem Gegenstand ihren bisherigen Wert.
@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import { writeItem } from '@/utils/api.js';
+import { progressText, settleWithProgress, writeItem } from '@/utils/api.js';
 
 const FIELDS = [
   { key: 'description', label: 'Kurzbeschreibung', icon: 'clipboard-text-outline', type: 'textarea' },
@@ -55,6 +55,8 @@ export default {
     uid: `invwiki-bulk-${Math.round(Math.random() * 10000)}`,
     fields: FIELDS,
     loading: false,
+    // how far saving is, below the loading indicator
+    progress: '',
     apply: {},
     values: {}
   }),
@@ -83,12 +85,16 @@ export default {
 
       this.loading = true;
       try {
-        const results = await Promise.allSettled(this.selected.map(path => writeItem(path, entry, { summary })));
+        const results = await settleWithProgress(
+          this.selected.map(path => () => writeItem(path, entry, { summary })),
+          (...counts) => this.progress = progressText(...counts)
+        );
         const failed = results
           .map((result, i) => [this.selected[i], result])
           .filter(([, result]) => result.status === 'rejected');
 
         // refresh cache by loading all items
+        this.progress = this.progress.replace(/ …$/, ', lade neu …');
         await Promise.all(this.selected.map(e => fetch(e)));
 
         if (failed.length) {
@@ -99,6 +105,7 @@ export default {
         }
       } finally {
         this.loading = false;
+        this.progress = '';
       }
     }
   }

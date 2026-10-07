@@ -27,6 +27,8 @@
       <div class="loader-line-wrap"><div class="loader-line"></div></div>
       <div class="loader-line-wrap"><div class="loader-line"></div></div>
     </div>
+    <!-- how far a longer task is, e.g. "3 von 10 gespeichert …" -->
+    <div class="loader-progress" v-if="loading && progress" role="status">{{ progress }}</div>
   </div>
 </template>
 
@@ -34,6 +36,8 @@
 export default {
   props: {
     loading: Boolean,
+    // text below the loading indicator
+    progress: String,
     title: String,
     icon: String
   },

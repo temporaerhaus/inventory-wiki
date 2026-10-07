@@ -708,6 +708,29 @@ export async function removeFromPrintQueue(entries) {
   await changePrintQueue(entries.map(entry => ({ entry, count: 0 })));
 }
 
+// Runs the tasks (functions that return a promise) together, as
+// Promise.allSettled, and reports after each one how many are done and how
+// many of those failed: report(done, failed, total).
+export async function settleWithProgress(tasks, report) {
+  let done = 0;
+  let failed = 0;
+  report(done, failed, tasks.length);
+  return Promise.allSettled(tasks.map(task => task().then(
+    (value) => {
+      report(++done, failed, tasks.length);
+      return value;
+    },
+    (error) => {
+      report(++done, ++failed, tasks.length);
+      throw error;
+    }
+  )));
+}
+
+// the text for it, below a dialog's loading indicator
+export const progressText = (done, failed, total) =>
+  `${done} von ${total} gespeichert${failed > 0 ? `, ${failed} Fehler` : ''} …`;
+
 // fired on window after every saved item, so that views showing items (such as
 // the table) can load them again when they are saved without a page reload
 export const ITEM_SAVED_EVENT = 'invwiki-item-saved';

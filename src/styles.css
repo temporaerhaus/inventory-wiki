@@ -1841,3 +1841,17 @@ button.invwiki-container.expanded {
     margin-right: 0 !important;
   }
 }
+
+/* how far a longer task is, below the loading indicator, see XDialog.vue */
+.invwiki .loader-progress {
+  position: absolute;
+  left: 50%;
+  top: calc(50% + 45px);
+  transform: translateX(-50%);
+  z-index: 999999;
+  padding: .3em .9em;
+  border-radius: 1em;
+  color: white;
+  background-color: rgba(0, 0, 0, .7);
+  white-space: nowrap;
+}
