@@ -9,7 +9,13 @@
   </div>
 
   <div class="invwiki invwiki-toolbar sticky-header" v-if="active">
-    <scan-component :container="yaml?.container ? id : ''" :container-title="title" />
+    <scan-component
+      :container="yaml?.container ? id : ''"
+      :container-title="title"
+      :selectable="indexPage"
+      :selected-ids="selectedIds"
+      @select="(id, value) => toggleItems([id], value)"
+    />
     <create-component />
     <selection-menu-component :selected="selected" @print="printRemote()" />
     <print-queue-component />
@@ -124,7 +130,7 @@ export default {
     }
 
     // only when the page is shown, not while it is edited, previewed or the like
-    if ((location.pathname === '/inventar' || location.pathname === '/inventar/') && this.showing) {
+    if (this.indexPage) {
       document.querySelector('.plugin_nspages > ul')?.classList?.add?.('invwiki');
       for (const e of document.querySelectorAll('a.wikilink1')) {
         if (e.dataset.wikiId.startsWith('inventar:')) {
@@ -326,6 +332,16 @@ export default {
 
     selected() {
       return Object.entries(this.selection).filter(e => e[1]).map(e => e[0].replace(/^check:/, '/').replace(/:/g, '/'));
+    },
+
+    // the inventory numbers of the selected items, as the scanner compares them
+    selectedIds() {
+      return this.selected.map(e => e.split('/').pop().toUpperCase());
+    },
+
+    // the overview, whose items can be selected
+    indexPage() {
+      return (location.pathname === '/inventar' || location.pathname === '/inventar/') && this.showing;
     }
   }
 }

@@ -19,6 +19,11 @@
       </p>
 
       <div class="invwiki-scan-actions">
+        <!-- on the overview, to pick items for the selection menu by scanning them -->
+        <button v-if="selectable" @click="selectScanned()" :disabled="busy || scanned.loading || scanned.missing">
+          <mdi-icon :icon="scannedSelected ? 'checkbox-blank-outline' : 'checkbox-marked-outline'" left />
+          {{ scannedSelected ? 'Auswahl aufheben' : 'Auswählen' }}
+        </button>
         <button @click="openScanned()" :disabled="busy">
           <mdi-icon icon="open-in-new" left />
           {{ scanned.missing ? 'Gegenstand anlegen' : 'Öffnen' }}
@@ -128,9 +133,14 @@ export default {
     // put every scanned item into the container right away, rather than
     // asking what to do with it
     direct: Boolean,
+    // the page has a selection of items (the overview), which scanned items
+    // can be added to ("select" event: inventory number, whether selected)
+    selectable: Boolean,
+    // the inventory numbers selected on the page
+    selectedIds: { type: Array, default: () => [] },
   },
 
-  emits: ['scan'],
+  emits: ['scan', 'select'],
 
   data: () => ({
     LOCATION_CURRENT,
@@ -171,6 +181,10 @@ export default {
     // the newest entry, or all of them when the history is open
     shownLog() {
       return this.showHistory ? this.log : this.log.slice(0, 1);
+    },
+
+    scannedSelected() {
+      return Boolean(this.scanned) && this.selectedIds.includes(this.scanned.id);
     },
 
     // the items put into the container in this session, and not taken out again
@@ -327,6 +341,18 @@ export default {
       this.signal = kind;
       this.signalTimer = setTimeout(() => this.signal = '', 800);
       navigator.vibrate?.(kind === 'error' ? [80, 60, 80, 60, 80] : 120);
+    },
+
+    selectScanned() {
+      const { id, title } = this.scanned;
+      const select = !this.scannedSelected;
+      // the page's selection follows the event, after this
+      const count = this.selectedIds.length + (select ? 1 : -1);
+      this.$emit('select', id, select);
+      this.done(
+        `${title ? `${id} (${title})` : id} ${select ? 'ausgewählt' : 'nicht mehr ausgewählt'}, ${count} ${count === 1 ? 'Gegenstand' : 'Gegenstände'} ausgewählt.`,
+        () => this.$emit('select', id, !select)
+      );
     },
 
     openScanned() {

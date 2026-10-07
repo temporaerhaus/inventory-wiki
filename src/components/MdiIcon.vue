@@ -72,6 +72,7 @@ import {
   mdiImageSizeSelectLarge,
   mdiCheckCircleOutline,
   mdiAlertCircleOutline,
+  mdiCheckboxMarkedOutline,
 } from '@mdi/js';
 
 export default {
@@ -150,6 +151,7 @@ export default {
       mdiImageSizeSelectLarge,
       mdiCheckCircleOutline,
       mdiAlertCircleOutline,
+      mdiCheckboxMarkedOutline,
     }
   }),
 
