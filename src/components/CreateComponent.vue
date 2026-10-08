@@ -167,10 +167,17 @@
         <mdi-icon icon="language-markdown-outline" left title="Weitere Inhalte" />
         Weitere Inhalte
       </label>
-      <markdown-editor :id="`invwiki-form-content-${nonce}`" v-model="content" :preview-path="pagePath" :media-namespace="mediaNamespace" />
+      <markdown-editor
+        :id="`invwiki-form-content-${nonce}`"
+        v-model="content"
+        :preview-path="pagePath"
+        :media-namespace="mediaNamespace"
+        upload-hint="Erst möglich, wenn der Gegenstand angelegt ist"
+      />
       <blockquote>
         Beliebiger Markdown-Inhalt, der auf der Wiki-Seite unterhalb der Gegenstandsdaten angezeigt wird, z.B. Notizen, Links oder Anhänge.
-        Bilder und Dateien können per Drag &amp; Drop in das Feld gezogen werden.
+        <template v-if="edit">Bilder und Dateien können per Drag &amp; Drop in das Feld gezogen werden.</template>
+        <template v-else>Bilder und Dateien können hinzugefügt werden, sobald der Gegenstand angelegt ist, über <em>Gegenstand Bearbeiten</em>.</template>
       </blockquote>
       <div class="accordion-panel">
         <label class="accordion-toggle" @click="togglePanel()" :aria-controls="`invwiki-form-details-${nonce}`" :aria-expanded="String(detailsOpen)">
@@ -571,10 +578,10 @@ export default {
       return this.id.includes('?') ? null : `/${PREFIX}${SEP}${this.id}`;
     },
 
-    // uploads of an item are kept in a namespace of their own
+    // uploads of an item are kept in a namespace of their own; only once the
+    // item exists, uploading for one that is still being created fails
     mediaNamespace() {
-      const id = this.edit ? this.inventoryId : this.id;
-      return !id || id.includes('?') ? null : `${PREFIX}:${id.toLowerCase()}`;
+      return this.edit && this.inventoryId ? `${PREFIX}:${this.inventoryId.toLowerCase()}` : null;
     },
 
     suggestionsVisible() {

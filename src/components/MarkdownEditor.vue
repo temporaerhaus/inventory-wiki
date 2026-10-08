@@ -9,11 +9,11 @@
         <mdi-icon icon="eye-outline" left />
         Vorschau
       </button>
-      <button type="button" @click="$refs.file.click()" :disabled="!mediaNamespace || uploading > 0" :title="mediaNamespace ? '' : 'Erst möglich, wenn die Inventarnummer feststeht'">
+      <button type="button" @click="$refs.file.click()" :disabled="!mediaNamespace || uploading > 0" :title="mediaNamespace ? '' : uploadHint">
         <mdi-icon icon="upload" left />
         Datei hochladen
       </button>
-      <button type="button" class="only-touch" @click="$refs.camera.click()" :disabled="!mediaNamespace || uploading > 0" :title="mediaNamespace ? '' : 'Erst möglich, wenn die Inventarnummer feststeht'">
+      <button type="button" class="only-touch" @click="$refs.camera.click()" :disabled="!mediaNamespace || uploading > 0" :title="mediaNamespace ? '' : uploadHint">
         <mdi-icon icon="camera" left />
         Foto aufnehmen
       </button>
@@ -60,8 +60,10 @@ export default {
     modelValue: String,
     // page the preview is rendered for, null while it is not known yet
     previewPath: String,
-    // media namespace uploads are stored in, null while it is not known yet
-    mediaNamespace: String
+    // media namespace uploads are stored in, null while there is none to use
+    mediaNamespace: String,
+    // why uploading is not possible yet, while there is no media namespace
+    uploadHint: { type: String, default: 'Erst möglich, wenn die Inventarnummer feststeht' }
   },
 
   emits: ['update:modelValue'],
@@ -120,7 +122,7 @@ export default {
       }
 
       if (!this.mediaNamespace) {
-        this.uploadError = 'Hochladen ist erst möglich, wenn die Inventarnummer feststeht.';
+        this.uploadError = `Hochladen: ${this.uploadHint}.`;
         return;
       }
 
