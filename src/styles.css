@@ -1028,11 +1028,6 @@ button.invwiki-container.expanded {
 
 /* the checkbox column only as wide as the checkbox, the table hands its spare width to the others */
 @media only screen and (min-width: 769px) {
-  /* the column headers sort, cards on narrow screens have none */
-  .invwiki .invwiki-table-sort {
-    display: none;
-  }
-
   /* the column selector ends the row of controls, so its menu opens to the left */
   .invwiki .invwiki-table-columns-menu {
     left: auto;

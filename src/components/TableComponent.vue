@@ -11,7 +11,7 @@
       <label class="invwiki-table-sort">
         Sortieren
         <select v-model="sort.key">
-          <option v-for="column in shownColumns" :key="column.key" :value="column.key">{{ column.label }}</option>
+          <option v-for="column in columns" :key="column.key" :value="column.key">{{ column.label }}</option>
         </select>
         <button @click="sort.desc = !sort.desc" :title="sort.desc ? 'absteigend' : 'aufsteigend'">
           <mdi-icon :icon="sort.desc ? 'menu-down' : 'menu-up'" />
@@ -130,6 +130,8 @@ const COLUMNS = [
 ];
 
 const DEFAULT_COLUMNS = ['id', 'title', 'serial', 'date', 'owner', 'place', 'lastSeenAt'];
+// the most recently changed items first
+const DEFAULT_SORT = { key: 'modified', desc: true };
 const STORAGE_KEY = 'invwiki-table-columns';
 // wait for a pause in typing before asking the wiki
 const DEBOUNCE = 300;
@@ -169,7 +171,7 @@ const stateFromUrl = () => {
   return {
     search: params.get(`${URL_PREFIX}search`) || '',
     filters,
-    sort: column(sortKey) ? { key: sortKey, desc } : { key: 'id', desc: false },
+    sort: column(sortKey) ? { key: sortKey, desc } : { ...DEFAULT_SORT },
     offset: (page - 1) * limit,
     limit,
   };
@@ -192,7 +194,7 @@ const urlOf = ({ search, filters, sort, offset, limit }) => {
       params.set(`${FILTER_PREFIX}${key}`, value);
     }
   }
-  if (sort.key !== 'id' || sort.desc) {
+  if (sort.key !== DEFAULT_SORT.key || sort.desc !== DEFAULT_SORT.desc) {
     params.set(`${URL_PREFIX}sort`, `${sort.desc ? '-' : ''}${sort.key}`);
   }
   if (offset > 0) {
@@ -254,7 +256,8 @@ export default {
     query() {
       const shown = this.shownColumns;
       const field = (column) => column.field ?? column.key;
-      const sorted = shown.find(e => e.key === this.sort.key);
+      // by any column, shown or not
+      const sorted = this.columns.find(e => e.key === this.sort.key);
       return {
         search: this.search.trim(),
         filters: Object.fromEntries(shown.filter(e => this.filters[e.key]).map(e => [field(e), this.filters[e.key]])),
