@@ -31,7 +31,7 @@
         Bitte einen bestehenden Aufenthaltsort aus der Liste auswählen.
       </blockquote>
 
-      <label :for="`invwiki-location-description-${nonce}`">Weitere Infos</label>
+      <label :for="`invwiki-location-description-${nonce}`">Genauere Infos zum Ort</label>
       <textarea :id="`invwiki-location-description-${nonce}`" v-model="description" autocomplete="off" />
       
       <label :for="`invwiki-location-update-last-seen-${nonce}`">
