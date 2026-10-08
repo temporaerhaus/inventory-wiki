@@ -9,17 +9,16 @@
       Inventaraufkleber
       <span title="Kleiner Aufkleber" style="float: right;margin-right:2em;" v-if="small">🤏</span>
     </template>
-    <!-- the label as the pdf has it: the same layout, and the same lines of
-         the title and description, fitted to the label by label.js -->
-    <div class="invwiki-preview" :style="{ width: pt(layout.width), height: pt(layout.height), lineHeight: LINE_HEIGHT }">
-      <img :src="`data:image/svg+xml,${encodeURIComponent(svg)}`" v-if="svg" alt="" :style="{ width: pt(layout.qr.width), margin: margin(layout.qr.margin) }" />
-      <div :style="{ margin: margin(layout.text.margin), marginLeft: pt(layout.text.margin[0] + COLUMN_GAP), marginRight: pt(layout.text.margin[2] + COLUMN_GAP) }">
-        <div :style="{ fontWeight: 'bold', fontSize: `${layout.text.idSize}pt`, marginBottom: pt(layout.text.gap) }">{{ inventoryId?.toUpperCase() }}</div>
-        <div :style="{ fontSize: `${layout.text.titleSize}pt`, marginBottom: pt(layout.text.gap) }">{{ printed.title }}</div>
-        <div :style="{ fontSize: `${layout.text.size}pt`, lineHeight: LINE_HEIGHT * DESCRIPTION_LINE_HEIGHT }">{{ printed.description.replace(/^ +/gm, '') }}</div>
-      </div>
-      <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: pt(layout.logo.width), margin: margin(layout.logo.margin) }" />
-    </div>
+    <!-- the label as the pdf has it: the same layout, the same lines of the
+         title and description (fitted to the label by label.js), and every
+         line where pdfmake puts it, which css line boxes, rounded to pixels,
+         cannot do; in pt, as the pdf. The size as a style, as the wiki sizes
+         svg elements as icons. -->
+    <svg class="invwiki-preview" :style="{ width: `${mm2pt(layout.width)}pt`, height: `${mm2pt(layout.height)}pt` }" :viewBox="`0 0 ${mm2pt(layout.width)} ${mm2pt(layout.height)}`" :font-family="`'${LABEL_FONT}', 'Roboto Mono', monospace`">
+      <image v-if="svg" :href="`data:image/svg+xml,${encodeURIComponent(svg)}`" x="0" :y="mm2pt(layout.qr.margin[1])" :width="mm2pt(layout.qr.width)" :height="mm2pt(layout.qr.width)" />
+      <text v-for="(line, i) in previewLines" :key="i" :x="textX" :y="line.y" :font-size="line.size" :font-weight="line.bold ? 'bold' : 'normal'" xml:space="preserve">{{ line.text }}</text>
+      <image :href="`data:image/svg+xml,${encodeURIComponent(logo)}`" :x="mm2pt(layout.width - layout.logo.width)" :y="mm2pt(layout.logo.margin[1])" :width="mm2pt(layout.logo.width)" :height="mm2pt(layout.logo.width * LOGO_ASPECT)" />
+    </svg>
 
     <template #footer>
       <a :href="dataURL" :download="`Inventaraufkleber_${inventoryId}.pdf`">
@@ -44,7 +43,7 @@
 import QRCode from 'qrcode';
 
 import logo from '@/assets/logo.svg?raw';
-import pdfMake from '@/utils/pdf.js';
+import pdfMake, { LABEL_FONT, loadLabelFonts } from '@/utils/pdf.js';
 import { LAYOUTS, labelDescription, shortenDescription, truncateText } from '@/utils/label.js';
 
 import { remotePrint } from '@/utils/api.js';
@@ -74,14 +73,17 @@ const GEOMETRY = {
 };
 const COLUMN_GAP = .5;
 const DESCRIPTION_LINE_HEIGHT = .8;
-// of Roboto Mono, ascender to descender, in em: pdfmake's line height of 1
+// of Roboto Mono, in em: from the top of a line to its baseline, and
+// ascender to descender, which is pdfmake's line height of 1
+const ASCENDER = 2146 / 2048;
+// height to width of the logo (240 × 320)
+const LOGO_ASPECT = 320 / 240;
 const LINE_HEIGHT = (2146 + 555) / 2048;
 
 export default {
     data: () => ({
-        LINE_HEIGHT,
-        DESCRIPTION_LINE_HEIGHT,
-        COLUMN_GAP,
+        LABEL_FONT,
+        LOGO_ASPECT,
         svg: null,
         pdf: null,
         dataURL: null,
@@ -108,17 +110,6 @@ export default {
     methods: {
         mm2pt(mm) {
             return mm / 25.4 * 72;
-        },
-
-        // a length in mm for the preview's styles
-        pt(mm) {
-            return `${this.mm2pt(mm)}pt`;
-        },
-
-        // pdfmake's [left, top, right, bottom], or [horizontal, vertical], in mm as css
-        margin(m) {
-            const [left, top, right = left, bottom = top] = m;
-            return [top, right, bottom, left].map(this.pt).join(' ');
         },
 
         createQRCode(s) {
@@ -191,6 +182,7 @@ export default {
 
         async genLabel() {
             [this.pdf, this.dataURL] = await this.createPDF(this.inventoryId);
+            await loadLabelFonts();
             this.$refs.dialog.show();
         },
 
@@ -228,6 +220,37 @@ export default {
                 title: truncateText(this.title || '', { fontSize: fit.titleFontSize, maxWidth: fit.maxWidth }),
                 description: shortenDescription(this.fullDescription, fit),
             };
+        },
+
+        // where the text starts: pdfmake leaves out the left and right margin
+        // of the qr code in its column, the text's own margin counts
+        textX() {
+            return this.mm2pt(this.layout.qr.width + COLUMN_GAP + this.layout.text.margin[0]);
+        },
+
+        // the lines of text with their baselines, as pdfmake lays them out: a
+        // line is as high as its line height, and its baseline is the
+        // ascender below its top, whatever the line height
+        previewLines() {
+            const { text } = this.layout;
+            const lines = [];
+            let top = this.mm2pt(text.margin[1]);
+            const add = (content, size, lineHeight, bold = false) => {
+                lines.push({ text: content, size, bold, y: top + ASCENDER * size });
+                top += LINE_HEIGHT * size * lineHeight;
+            };
+
+            add((this.inventoryId || '').toUpperCase(), text.idSize, 1, true);
+            top += this.mm2pt(text.gap);
+            if (this.printed.title) {
+                add(this.printed.title, text.titleSize, 1);
+            }
+            top += this.mm2pt(text.gap);
+            // pdfmake starts a wrapped line without the space it was wrapped at
+            for (const line of this.printed.description.split('\n').map(e => e.replace(/^ +/, ''))) {
+                add(line, text.size, DESCRIPTION_LINE_HEIGHT);
+            }
+            return lines;
         }
 
     }
