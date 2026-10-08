@@ -57,7 +57,9 @@ const GEOMETRY = {
         width: 50,
         height: 12,
         qr: { width: 10, margin: [0, 1, 3, 1] },
-        text: { margin: [1, .3, 1, 3], idSize: 7, titleSize: 6, size: 6, gap: .1 },
+        // no margin below the text: with two lines of description, it would make the
+        // column higher than the label, which pdfmake spills onto a second, empty page
+        text: { margin: [1, .3, 1, 0], idSize: 7, titleSize: 6, size: 6, gap: .1 },
         logo: { width: 7.5, margin: [0, 1] },
     },
     large: {
