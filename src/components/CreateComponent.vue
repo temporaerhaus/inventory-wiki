@@ -137,12 +137,6 @@
           {{ classification.text }}
         </blockquote>
 
-        <label :for="`invwiki-form-number-${nonce}`">
-          <mdi-icon icon="numeric-positive1" left title="Fortlaufende Nummer" />
-          Fortlaufende Nummer
-        </label>
-        <input :id="`invwiki-form-number-${nonce}`" type="text" :value="number" disabled autocomplete="off" />
-
         <template v-if="subItem">
           <label :for="`invwiki-form-suffix-${nonce}`">
             <mdi-icon icon="sort-alphabetical-descending" left title="Suffix" />
