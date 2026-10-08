@@ -428,8 +428,8 @@ export default [{
     example: "",
     children: [{
         value: "HL",
-        text: "Trennen von Stoffgemischen durch Klassieren",
-        example: "* Sieb"
+        text: "Erzeugen eines neuen Produktes durch Zusammenbau / Trennen von Stoffgemischen durch Klassieren",
+        example: "*Montageroboter\n* Sieb"
     }, {
         value: "HM",
         text: "Trennen von Stoffgemischen durch Fliehkraft",
