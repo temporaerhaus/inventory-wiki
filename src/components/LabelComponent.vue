@@ -9,14 +9,16 @@
       Inventaraufkleber
       <span title="Kleiner Aufkleber" style="float: right;margin-right:2em;" v-if="small">🤏</span>
     </template>
-    <div class="invwiki-preview" :style="{ width: `${mm2pt(95)}pt`, height: `${mm2pt(24)}pt` }">
-        <img :src="`data:image/svg+xml,${encodeURIComponent(svg)}`" v-if="svg" alt=""  :style="{ width: `${mm2pt(18)}pt`, height: 'auto', marginRight: `${mm2pt(3)}pt` }" />
-        <div :style="{ paddingTop: `${mm2pt(1.7)}pt`, paddingBottom: `${mm2pt(1.7)}pt`, paddingRight: `${mm2pt(1.7)}pt`, width: `${mm2pt(95-18-13.45-3-3-2)}pt` }">
-            <div style="font-size: 11pt; font-weight: bold;">{{ inventoryId }}</div>
-            <div :style="{paddingTop: `${mm2pt(.5)}pt`, paddingBottom: `${mm2pt(.5)}pt`, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden'}">{{ title }}</div>
-            <div style="font-size: 8pt; line-height: 8pt; white-space: pre-wrap; textOverflow: ellipsis; overflow: hidden; max-height: 42px;">{{ fullDescription }}</div>
-        </div>
-        <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: `${mm2pt(13.45)}pt`, height: 'auto', marginLeft: `${mm2pt(3)}pt` }" />
+    <!-- the label as the pdf has it: the same layout, and the same lines of
+         the title and description, fitted to the label by label.js -->
+    <div class="invwiki-preview" :style="{ width: pt(layout.width), height: pt(layout.height), lineHeight: LINE_HEIGHT }">
+      <img :src="`data:image/svg+xml,${encodeURIComponent(svg)}`" v-if="svg" alt="" :style="{ width: pt(layout.qr.width), margin: margin(layout.qr.margin) }" />
+      <div :style="{ margin: margin(layout.text.margin), marginLeft: pt(layout.text.margin[0] + COLUMN_GAP), marginRight: pt(layout.text.margin[2] + COLUMN_GAP) }">
+        <div :style="{ fontWeight: 'bold', fontSize: `${layout.text.idSize}pt`, marginBottom: pt(layout.text.gap) }">{{ inventoryId?.toUpperCase() }}</div>
+        <div :style="{ fontSize: `${layout.text.titleSize}pt`, marginBottom: pt(layout.text.gap) }">{{ printed.title }}</div>
+        <div :style="{ fontSize: `${layout.text.size}pt`, lineHeight: LINE_HEIGHT * DESCRIPTION_LINE_HEIGHT }">{{ printed.description.replace(/^ +/gm, '') }}</div>
+      </div>
+      <img :src="`data:image/svg+xml,${encodeURIComponent(logo)}`" v-if="logo" alt="" :style="{ width: pt(layout.logo.width), margin: margin(layout.logo.margin) }" />
     </div>
 
     <template #footer>
@@ -47,8 +49,37 @@ import { LAYOUTS, labelDescription, shortenDescription, truncateText } from '@/u
 
 import { remotePrint } from '@/utils/api.js';
 
+// The two label sizes, in mm: the QR code, the text and the logo side by side.
+// Margins as pdfmake has them, [left, top, right, bottom] or [horizontal,
+// vertical]; idSize, titleSize and size are the font sizes in pt.
+const GEOMETRY = {
+    small: {
+        width: 50,
+        height: 12,
+        qr: { width: 10, margin: [0, 1, 3, 1] },
+        text: { margin: [1, .3, 1, 3], idSize: 7, titleSize: 6, size: 6, gap: .1 },
+        logo: { width: 7.5, margin: [0, 1] },
+    },
+    large: {
+        width: 95,
+        height: 24,
+        // below the QR code a little less than the 3 mm above it: 3 + 18 + 3 mm is the
+        // label's full height, which pdfmake (0.2.21 here) spills onto a second, empty page
+        qr: { width: 18, margin: [0, 3, 3, 2.5] },
+        text: { margin: [3, 1.7, 2, 3], idSize: 11, titleSize: 9, size: 8, gap: .5 },
+        logo: { width: 13.45, margin: [0, 3] },
+    },
+};
+const COLUMN_GAP = .5;
+const DESCRIPTION_LINE_HEIGHT = .8;
+// of Roboto Mono, ascender to descender, in em: pdfmake's line height of 1
+const LINE_HEIGHT = (2146 + 555) / 2048;
+
 export default {
     data: () => ({
+        LINE_HEIGHT,
+        DESCRIPTION_LINE_HEIGHT,
+        COLUMN_GAP,
         svg: null,
         pdf: null,
         dataURL: null,
@@ -77,6 +108,17 @@ export default {
             return mm / 25.4 * 72;
         },
 
+        // a length in mm for the preview's styles
+        pt(mm) {
+            return `${this.mm2pt(mm)}pt`;
+        },
+
+        // pdfmake's [left, top, right, bottom], or [horizontal, vertical], in mm as css
+        margin(m) {
+            const [left, top, right = left, bottom = top] = m;
+            return [top, right, bottom, left].map(this.pt).join(' ');
+        },
+
         createQRCode(s) {
             return new Promise((resolve, reject) => QRCode.toString(s, {
                 version: 1,
@@ -93,13 +135,14 @@ export default {
             }));
         },
 
-        async createPDF(id, title, description) {
+        async createPDF(id) {
+            const { layout, printed } = this;
             this.svg = await this.createQRCode(id);
             return new Promise(async (resolve) => {
                 const pdf = pdfMake.createPdf({
                     pageSize: {
-                        width: this.small ? this.mm2pt(50) : this.mm2pt(95),
-                        height: this.small ? this.mm2pt(12) : this.mm2pt(24)
+                        width: this.mm2pt(layout.width),
+                        height: this.mm2pt(layout.height)
                     },
                     pageOrientation: 'landscape',
                     pageMargins: 0,
@@ -110,60 +153,33 @@ export default {
                     },
 
                     content: [{
-                        columnGap: this.mm2pt(.5),
+                        columnGap: this.mm2pt(COLUMN_GAP),
                         margins: 0,
-                        columns: this.small ? [{
+                        columns: [{
                             svg: this.svg,
-                            width: this.mm2pt(10),
-                            margin: [this.mm2pt(0), this.mm2pt(1), this.mm2pt(3), this.mm2pt(1)],
+                            width: this.mm2pt(layout.qr.width),
+                            margin: layout.qr.margin.map(this.mm2pt),
                         }, {
                             width: '*',
-                            margin: [this.mm2pt(1), this.mm2pt(.3), this.mm2pt(1), this.mm2pt(3)],
+                            margin: layout.text.margin.map(this.mm2pt),
                             stack: [{
                                 bold: true,
-                                fontSize: 7,
+                                fontSize: layout.text.idSize,
                                 text: id.toUpperCase(),
-                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.1) ]
+                                margin: [0, 0, 0, this.mm2pt(layout.text.gap)]
                             }, {
-                                text: truncateText(title, { fontSize: LAYOUTS.small.titleFontSize, maxWidth: LAYOUTS.small.maxWidth }),
-                                fontSize: 6,
-                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.1) ],
+                                fontSize: layout.text.titleSize,
+                                text: printed.title,
+                                margin: [0, 0, 0, this.mm2pt(layout.text.gap)],
                             }, {
-                                text: shortenDescription(description, LAYOUTS.small),
-                                lineHeight: .8,
-                                fontSize: 6
+                                text: printed.description,
+                                lineHeight: DESCRIPTION_LINE_HEIGHT,
+                                fontSize: layout.text.size
                             }]
                         }, {
                             svg: logo,
-                            margin: [this.mm2pt(0), this.mm2pt(1)],
-                            width: this.mm2pt(7.5)
-                        }] : [{
-                            svg: this.svg,
-                            width: this.mm2pt(18),
-                            // below the QR code a little less than the 3 mm above it: 3 + 18 + 3 mm is the
-                            // label's full height, which pdfmake (0.2.21 here) spills onto a second, empty page
-                            margin: [this.mm2pt(0), this.mm2pt(3), this.mm2pt(3), this.mm2pt(2.5)],
-                        }, {
-                            width: '*',
-                            margin: [this.mm2pt(3), this.mm2pt(1.7), this.mm2pt(2), this.mm2pt(3)],
-                            stack: [{
-                                bold: true,
-                                fontSize: 11,
-                                text: id.toUpperCase(),
-                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ]
-                            }, {
-                                fontSize: 9,
-                                text: truncateText(title, { fontSize: LAYOUTS.large.titleFontSize, maxWidth: LAYOUTS.large.maxWidth }),
-                                margin: [ this.mm2pt(0), this.mm2pt(0), this.mm2pt(0), this.mm2pt(.5) ],
-                            }, {
-                                text: shortenDescription(description, LAYOUTS.large),
-                                lineHeight: .8,
-                                fontSize: 8
-                            }]
-                        }, {
-                            svg: logo,
-                            margin: [this.mm2pt(0), this.mm2pt(3)],
-                            width: this.mm2pt(13.45)
+                            margin: layout.logo.margin.map(this.mm2pt),
+                            width: this.mm2pt(layout.logo.width)
                         }]
                     }]
                 });
@@ -172,7 +188,7 @@ export default {
         },
 
         async genLabel() {
-            [this.pdf, this.dataURL] = await this.createPDF(this.inventoryId, this.title, this.fullDescription);
+            [this.pdf, this.dataURL] = await this.createPDF(this.inventoryId);
             this.$refs.dialog.show();
         },
 
@@ -197,6 +213,19 @@ export default {
     computed: {
         fullDescription() {
             return labelDescription(this);
+        },
+
+        layout() {
+            return this.small ? GEOMETRY.small : GEOMETRY.large;
+        },
+
+        // what is printed of the title and the description
+        printed() {
+            const fit = LAYOUTS[this.small ? 'small' : 'large'];
+            return {
+                title: truncateText(this.title || '', { fontSize: fit.titleFontSize, maxWidth: fit.maxWidth }),
+                description: shortenDescription(this.fullDescription, fit),
+            };
         }
 
     }
