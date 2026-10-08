@@ -1666,11 +1666,9 @@ button.invwiki-container.expanded {
   white-space: pre-wrap;
 }
 
-.accordion-arrow {
-  font-size: 1.5em;
-  transform-origin: center 35%;
+svg.accordion-arrow {
+  font-size: 1.2em;
   transition: transform 0.4s;
-  transform: translate(0, 20%) rotateX(180deg);
 }
 
 .accordion-panel {
@@ -1695,12 +1693,12 @@ button.invwiki-container.expanded {
   user-select: none;
 }
 
-.accordion-panel > .accordion-toggle span:last-child {
+.accordion-panel > .accordion-toggle span {
   text-decoration: underline;
 }
 
-.accordion-panel > .accordion-toggle[aria-expanded="true"] .accordion-arrow {
-  transform: translate(0, 20%);
+.accordion-panel > .accordion-toggle[aria-expanded="true"] svg.accordion-arrow {
+  transform: rotateX(180deg);
 }
 
 .accordion-panel > .accordion-content {

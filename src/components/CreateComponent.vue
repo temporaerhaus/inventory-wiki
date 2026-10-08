@@ -178,7 +178,7 @@
       </blockquote>
       <div class="accordion-panel">
         <label class="accordion-toggle" @click="togglePanel()" :aria-controls="`invwiki-form-details-${nonce}`" :aria-expanded="String(detailsOpen)">
-          <span class="accordion-arrow">&#8963;</span>
+          <mdi-icon icon="chevron-down" left title="Mehr Details" class="accordion-arrow" />
           <span>Mehr Details</span>
         </label>
         <div class="accordion-content" :id="`invwiki-form-details-${nonce}`" ref="details">
