@@ -500,10 +500,12 @@ export async function queryItems({ search = '', filters = {}, sort = 'id', desc 
 
 // Who worked on the items on which day, from the change logs of the item
 // pages (needs the inventory plugin). Returns { me, users: { login: name },
-// days: [{ user, day: 'YYYY-MM-DD', created, located, edited }] }, user ''
-// for changes without a login.
-export async function fetchActivity() {
-  return rpc('plugin.inventory.listActivity', {});
+// days: [{ user, day: 'YYYY-MM-DD', created, located, edited }], recent:
+// { login: { created: [{ id, title, time }], changed: [{ id, title, time,
+// kind }] } } }, user '' for changes without a login, recent the last of
+// each per user.
+export async function fetchActivity(recent = 10) {
+  return rpc('plugin.inventory.listActivity', { recent });
 }
 
 // only strip surrounding blank lines, leading spaces are syntax (e.g. dokuwiki lists)

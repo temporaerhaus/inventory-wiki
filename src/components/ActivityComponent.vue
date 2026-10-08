@@ -74,12 +74,27 @@
         <span v-for="l in 5" :key="l" class="invwiki-contributions-cell" :class="`level-${l - 1}`"></span>
         mehr
       </p>
+
+      <!-- what the selected person did last -->
+      <div class="invwiki-activity-recent" v-if="selected !== null">
+        <section v-for="list in RECENT_LISTS" :key="list.key">
+          <h3>{{ list.label }}</h3>
+          <ul v-if="recentOf(list.key).length > 0">
+            <li v-for="item in recentOf(list.key)" :key="item.id">
+              <a :href="`/${PREFIX}/${item.id.toLowerCase()}`">{{ item.id }}</a>
+              {{ item.title }}
+              <small>{{ list.key === 'changed' ? `${KINDS[item.kind]} am` : 'am' }} {{ dateOf(item.time) }}</small>
+            </li>
+          </ul>
+          <p v-else>{{ list.none }}</p>
+        </section>
+      </div>
     </template>
   </div>
 </template>
 
 <script>
-import { fetchActivity } from '@/utils/api.js';
+import { PREFIX, fetchActivity } from '@/utils/api.js';
 
 // what each kind of work is worth on the leaderboard
 const POINTS = { created: 3, located: 1, edited: 1 };
@@ -90,6 +105,13 @@ const PERIODS = [
   { days: 0, label: 'Gesamt' },
 ];
 const MEDALS = ['🥇', '🥈', '🥉'];
+// the items a selected person created and changed last, as many of each
+const RECENT = 10;
+const RECENT_LISTS = [
+  { key: 'created', label: 'Zuletzt angelegt', none: 'Noch keine Gegenstände angelegt.' },
+  { key: 'changed', label: 'Zuletzt bearbeitet', none: 'Noch keine Gegenstände bearbeitet.' },
+];
+const KINDS = { located: 'verortet', edited: 'bearbeitet' };
 const WEEKDAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const MONTHS = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
 
@@ -107,6 +129,9 @@ export default {
     PERIODS,
     MEDALS,
     WEEKDAYS,
+    RECENT_LISTS,
+    KINDS,
+    PREFIX,
     activity: null,
     error: '',
     // days of the leaderboard, 0 for all time
@@ -221,7 +246,7 @@ export default {
 
   async mounted() {
     try {
-      this.activity = await fetchActivity();
+      this.activity = await fetchActivity(RECENT);
       // the latest weeks are on the right, also where the graph has to scroll
       this.$nextTick(() => {
         if (this.$refs.scroll) {
@@ -238,6 +263,15 @@ export default {
   methods: {
     nameOf(user) {
       return this.activity.users[user] || user || 'Ohne Anmeldung';
+    },
+
+    // the items the selected person created or changed last
+    recentOf(list) {
+      return this.activity.recent?.[this.selected]?.[list] || [];
+    },
+
+    dateOf(time) {
+      return new Date(time).toLocaleDateString('de-DE');
     },
 
     select(user) {

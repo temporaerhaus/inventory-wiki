@@ -246,9 +246,14 @@ class remote_plugin_inventory extends RemotePlugin
      * allowed in by their address, are counted under an empty user, without
      * the address.
      *
-     * @return array {me: user of the caller, users: {login: full name}, days: [{user, day: YYYY-MM-DD in the wiki's time zone, created, located, edited}]}
+     * Also, for every user with a login, the items they created and changed
+     * last, $recent of each, the latest first: an item changed several times
+     * is listed once, by the latest of these changes.
+     *
+     * @param int $recent number of items created and changed last per user
+     * @return array {me: user of the caller, users: {login: full name}, days: [{user, day: YYYY-MM-DD in the wiki's time zone, created, located, edited}], recent: {login: {created: [{id, title, time}], changed: [{id, title, time, kind: located|edited}]}}}
      */
-    public function listActivity()
+    public function listActivity($recent = 10)
     {
         global $auth, $INPUT;
 
@@ -256,7 +261,9 @@ class remote_plugin_inventory extends RemotePlugin
         $index->sync();
 
         $days = [];
-        foreach ($index->allItems(['id']) as $row) {
+        // user => kind => item id => the latest such change of the item
+        $latest = [];
+        foreach ($index->allItems(['id', 'title']) as $row) {
             $id = $row['_id'];
             if (isHiddenPage($id) || auth_quickaclcheck($id) < AUTH_READ) {
                 continue;
@@ -278,6 +285,27 @@ class remote_plugin_inventory extends RemotePlugin
                 $day = date('Y-m-d', (int) $entry[0]);
                 $days["$user\t$day"] ??= ['user' => $user, 'day' => $day, 'created' => 0, 'located' => 0, 'edited' => 0];
                 $days["$user\t$day"][$kind]++;
+
+                if ($user !== '') {
+                    $list = $kind === 'created' ? 'created' : 'changed';
+                    $latest[$user][$list][$id] = [
+                        'id' => strtoupper(noNS($id)),
+                        'title' => $row['title'],
+                        'time' => gmdate('Y-m-d\TH:i:s', (int) $entry[0]) . '.000Z',
+                        'kind' => $kind,
+                    ];
+                }
+            }
+        }
+
+        $limit = max(1, (int) $recent);
+        $recentItems = [];
+        foreach ($latest as $user => $lists) {
+            foreach (['created', 'changed'] as $list) {
+                $items = array_values($lists[$list] ?? []);
+                // the timestamps sort as text
+                usort($items, static fn($a, $b) => strcmp($b['time'], $a['time']));
+                $recentItems[$user][$list] = array_slice($items, 0, $limit);
             }
         }
 
@@ -290,6 +318,7 @@ class remote_plugin_inventory extends RemotePlugin
             'me' => $INPUT->server->str('REMOTE_USER'),
             'users' => (object) $users,
             'days' => array_values($days),
+            'recent' => (object) $recentItems,
         ];
     }
 
