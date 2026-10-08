@@ -49,9 +49,9 @@
           </div>
           <blockquote v-if="entry.description">{{ entry.description }}</blockquote>
         </li>
-        <li :title="`Zuletzt Gesehen am: ${lastSeenAt}`" v-if="lastSeenAt">
-          <mdi-icon icon="eye-outline" left :title="`Zuletzt Gesehen am: ${lastSeenAt}`" />
-          <b>zuletzt gesehen {{ relative(lastSeenAt) }}</b>
+        <li :title="`Zuletzt Gesehen am: ${seenAt}`" v-if="seenAt">
+          <mdi-icon icon="eye-outline" left :title="`Zuletzt Gesehen am: ${seenAt}`" />
+          <b>zuletzt gesehen {{ relative(seenAt) }}</b>
         </li>
         <li class="invwiki-location-unknown" v-else>
           <mdi-icon icon="eye-off-outline" left title="Noch nicht gesehen" />
@@ -59,6 +59,11 @@
         </li>
       </ul>
       <location-component single-item />
+      <!-- just that it is here, without changing where it is -->
+      <button @click="markSeen()" :disabled="markingSeen">
+        <mdi-icon icon="eye-check-outline" left />
+        {{ markingSeen ? 'Wird gespeichert …' : 'Gerade gesehen' }}
+      </button>
     </div>
 
     <div class="invwiki item-card">
@@ -125,7 +130,7 @@
 
 <script>
 import YAML from 'yaml';
-import { PREFIX, fetchInventoryItem, fetchSubItems, mainItemOf, remotePrint, searchItems } from '@/utils/api.js';
+import { PREFIX, fetchInventoryItem, fetchSubItems, mainItemOf, remotePrint, searchItems, writeItem } from '@/utils/api.js';
 import LabelComponent from '@/components/LabelComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import LocationComponent from '@/components/LocationComponent.vue';
@@ -199,6 +204,9 @@ export default {
     mainItem: null,
     // [{id, title}] of the sub-items of this item
     subItems: [],
+    // when "Gerade gesehen" saved the item as seen, which the page shows from then on
+    seenNow: '',
+    markingSeen: false,
   }),
 
   async mounted() {
@@ -260,6 +268,26 @@ export default {
 
     samePlace,
 
+    // the last-seen timestamp of the item set to now, nothing else
+    async markSeen() {
+      this.markingSeen = true;
+      try {
+        const now = new Date().toJSON();
+        await writeItem(location.pathname, {}, {
+          summary: 'seen',
+          replacer: (yaml) => {
+            yaml.lastSeenAt = now;
+            return yaml;
+          }
+        });
+        this.seenNow = now;
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+      } finally {
+        this.markingSeen = false;
+      }
+    },
+
     // the item this one belongs to, or the ones that belong to it; only for
     // display, the page does without them
     async loadRelatedItems() {
@@ -292,6 +320,9 @@ export default {
       const diff = new Date(date) - new Date();
       if (isNaN(diff)) {
         return date;
+      }
+      if (Math.abs(diff) < 60 * 1000) {
+        return 'gerade eben';
       }
 
       for (const interval in intervals) {
@@ -358,6 +389,10 @@ export default {
   },
 
   computed: {
+    seenAt() {
+      return this.seenNow || this.lastSeenAt;
+    },
+
     // the L in L-GM000123
     loan() {
       return String(this.inventoryId).startsWith('L-');
