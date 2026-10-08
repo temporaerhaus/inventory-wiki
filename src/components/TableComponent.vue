@@ -125,6 +125,9 @@ const COLUMNS = [
   // of the item page, kept by the wiki
   { key: 'created', label: 'Angelegt', timestamp: true },
   { key: 'modified', label: 'Zuletzt bearbeitet', timestamp: true },
+  // by their full names, empty for changes without a login
+  { key: 'creator', label: 'Erstellt von' },
+  { key: 'editor', label: 'Zuletzt bearbeitet von' },
   { key: 'container', label: 'Behälter', flag: true },
   { key: 'small', label: 'Kleines Label', flag: true },
 ];

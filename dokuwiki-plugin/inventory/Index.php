@@ -21,7 +21,7 @@ class Index
     public const NS = 'inventar';
 
     // bump to rebuild the database after a change of the schema or the parsing
-    private const VERSION = 3;
+    private const VERSION = 4;
 
     // same as YAML_REGEX in src/utils/api.js
     private const YAML_REGEX = '/```yaml\n(.*?)\n```/s';
@@ -50,9 +50,11 @@ class Index
         'lastSeenAt' => 'last_seen_at',
         'small' => 'small',
         'container' => 'container',
-        // when the item page was created and last changed, see timestamps()
+        // when the item page was created and last changed, and by whom, see history()
         'created' => 'created',
         'modified' => 'modified',
+        'creator' => 'creator',
+        'editor' => 'editor',
     ];
 
     // yes/no columns, stored as '1' or '', nothing to search for in them
@@ -139,7 +141,7 @@ class Index
             foreach ($changed as $page) {
                 $item = $this->parse(rawWiki($page['id']));
                 if ($item) {
-                    $item += self::timestamps($page['id'], $page['mtime']);
+                    $item += self::history($page['id'], $page['mtime']);
                 }
                 $values = [];
                 foreach (array_keys(self::COLUMNS) as $key) {
@@ -160,19 +162,22 @@ class Index
 
     /**
      * When a page was created and last changed, as UTC timestamps like the dates
-     * in the yaml: created from its change log, the latest creation, so that a
-     * page deleted and created again counts from then (the oldest change for a
-     * log without one, the file time without a log); changed from its file,
-     * which also covers changes that were never logged
+     * in the yaml, and by whom: created from its change log, the latest creation,
+     * so that a page deleted and created again counts from then (the oldest
+     * change for a log without one, the file time without a log); changed from
+     * its file, which also covers changes that were never logged. The users are
+     * those of these log entries, by their full names, empty for a change
+     * without a login or without a log.
      *
      * @param string $id page id
      * @param int $mtime modification time of the page file
-     * @return array {created, modified}
+     * @return array {created, modified, creator, editor}
      */
-    private static function timestamps($id, $mtime)
+    private static function history($id, $mtime)
     {
         $created = null;
         $oldest = null;
+        $last = null;
         $log = metaFN($id, '.changes');
         foreach (is_file($log) ? file($log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [] as $line) {
             // timestamp, ip, type, id, user, summary, extra, size change
@@ -180,17 +185,35 @@ class Index
             if (!ctype_digit($entry[0])) {
                 continue;
             }
-            $oldest ??= (int) $entry[0];
+            $oldest ??= $entry;
             if (($entry[2] ?? '') === DOKU_CHANGE_TYPE_CREATE) {
-                $created = (int) $entry[0];
+                $created = $entry;
             }
+            $last = $entry;
         }
+        $created ??= $oldest;
 
         $format = static fn($time) => gmdate('Y-m-d\TH:i:s', $time) . '.000Z';
         return [
-            'created' => $format($created ?? $oldest ?? $mtime),
+            'created' => $format($created ? (int) $created[0] : $mtime),
             'modified' => $format($mtime),
+            'creator' => self::userName($created[4] ?? ''),
+            'editor' => self::userName($last[4] ?? ''),
         ];
+    }
+
+    /**
+     * The full name of a user, the login for one that is gone, '' for none
+     */
+    private static function userName($user)
+    {
+        global $auth;
+        static $names = [];
+
+        if ($user === '') {
+            return '';
+        }
+        return $names[$user] ??= ($auth ? ($auth->getUserData($user)['name'] ?? '') : '') ?: $user;
     }
 
     /**
