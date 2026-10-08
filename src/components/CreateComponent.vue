@@ -50,6 +50,33 @@
         <input :id="`invwiki-form-id-${nonce}`" type="text" :value="inventoryId" disabled autocomplete="off" />
       </template>
 
+      <label :for="`invwiki-form-small-${nonce}`">
+        <input :id="`invwiki-form-small-${nonce}`" type="checkbox" v-model="small" />
+        <mdi-icon icon="image-size-select-small" left />
+        Kleines Label
+      </label>
+
+      <label :for="`invwiki-form-container-${nonce}`">
+        <input :id="`invwiki-form-container-${nonce}`" type="checkbox" v-model="container" />
+        <mdi-icon icon="package-variant" left />
+        Kann andere Gegenstände beherbergen
+      </label>
+
+      <label :for="`invwiki-form-lended-${nonce}`" v-if="!edit">
+        <input :id="`invwiki-form-lended-${nonce}`" type="checkbox" v-model="lended" />
+        <mdi-icon icon="account-question-outline" left />
+        Leihgabe
+      </label>
+
+      <!-- for loans; an owner that is set already stays to be seen and changed -->
+      <template v-if="lended || (edit && owner)">
+        <label :for="`invwiki-form-owner-${nonce}`">
+          <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
+          Eigentümer*in
+        </label>
+        <input :id="`invwiki-form-owner-${nonce}`" type="text" v-model="owner" @focus="$refs.c?.close?.()" autocomplete="off" />
+      </template>
+
       <label :for="`invwiki-form-description-${nonce}`">
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
         Kurzbeschreibung
@@ -67,30 +94,6 @@
         Die Kurzbeschreibung wird mit auf den Inventaraufkleber gedruckt, soweit sie darauf passt; was nicht mehr passt, ist grau.
         Weitere Informationen zum Gegenstand und Anhänge können unten bei <em>Weitere Inhalte</em> hinterlegt werden.
       </blockquote>
-
-      <label :for="`invwiki-form-owner-${nonce}`">
-        <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
-        Eigentümer*in
-      </label>
-      <input :id="`invwiki-form-owner-${nonce}`" type="text" v-model="owner" @focus="$refs.c?.close?.()" autocomplete="off" />
-
-      <label :for="`invwiki-form-lended-${nonce}`" v-if="!edit">
-        <input :id="`invwiki-form-lended-${nonce}`" type="checkbox" v-model="lended" />
-        <mdi-icon icon="account-question-outline" left />
-        Leihgabe
-      </label>
-
-      <label :for="`invwiki-form-small-${nonce}`">
-        <input :id="`invwiki-form-small-${nonce}`" type="checkbox" v-model="small" />
-        <mdi-icon icon="image-size-select-small" left />
-        Kleines Label
-      </label>
-
-      <label :for="`invwiki-form-container-${nonce}`">
-        <input :id="`invwiki-form-container-${nonce}`" type="checkbox" v-model="container" />
-        <mdi-icon icon="package-variant" left />
-        Kann andere Gegenstände beherbergen
-      </label>
 
       <label :for="`invwiki-form-serial-${nonce}`">
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
@@ -492,7 +495,8 @@ export default {
           date: this.date || '',
           category: this.category || '',
           origin: this.origin || '',
-          owner: this.owner || '',
+          // what was typed before "Leihgabe" was unticked again goes with it
+          owner: (this.edit || this.lended) && this.owner || '',
           small: this.small || false,
           container: this.container || false,
         }, {
