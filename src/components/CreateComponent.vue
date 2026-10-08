@@ -102,6 +102,7 @@
       <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" autocomplete="off" />
 
       <template v-if="!edit">
+        <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="subItem" />
         <label v-if="suggestionsVisible">
           <mdi-icon icon="lightbulb-on-outline" left title="Vorschläge" />
           Vorschläge
@@ -114,7 +115,7 @@
             Vorschläge nicht verfügbar ({{ suggestError }}).
           </p>
           <p class="invwiki-suggestions-hint" v-else-if="!suggestions.length">
-            Keine vergleichbaren Gegenstände gefunden — bitte unten selbst auswählen.
+            Keine vergleichbaren Gegenstände gefunden — bitte oben selbst auswählen.
           </p>
           <button
             v-for="suggestion in suggestions"
@@ -132,7 +133,6 @@
           </button>
         </div>
 
-        <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="subItem" />
         <blockquote v-if="classification?.text">
           {{ classification.text }}
         </blockquote>
