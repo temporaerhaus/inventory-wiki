@@ -30,6 +30,9 @@
     <teleport v-if="tableTarget" :to="tableTarget">
       <table-component :selection="selection" @toggle="toggleItems" />
     </teleport>
+    <teleport v-if="activityTarget" :to="activityTarget">
+      <activity-component />
+    </teleport>
   </div>
 </template>
 
@@ -47,6 +50,7 @@ import SearchComponent from '@/components/SearchComponent.vue';
 import CreateComponent from '@/components/CreateComponent.vue';
 import SelectionMenuComponent from '@/components/SelectionMenuComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
+import ActivityComponent from '@/components/ActivityComponent.vue';
 
 // The yaml of a code block on the page, null if it is none. The wiki puts a
 // "Copy" button into code blocks in newer releases, whose text is not part of it.
@@ -64,6 +68,7 @@ export default {
   components: {
     SelectionMenuComponent,
     TableComponent,
+    ActivityComponent,
     CreateComponent,
     ScanComponent,
     PrintQueueComponent,
@@ -77,6 +82,8 @@ export default {
     indexCount: 0,
     // where the table goes in the page content, only on the index page
     tableTarget: null,
+    // where the leaderboard goes, only on its page
+    activityTarget: null,
     loading: false
   }),
 
@@ -127,6 +134,20 @@ export default {
         console.log(e);
         // ignore
       }
+    }
+
+    // the leaderboard below the heading of its page, above what the page says
+    if (this.activityPage) {
+      const content = document.querySelector('#dokuwiki__content');
+      const target = document.createElement('div');
+      target.id = 'invwiki-activity';
+      const heading = content?.querySelector('h1');
+      if (heading) {
+        heading.after(target);
+      } else {
+        content?.prepend(target);
+      }
+      this.activityTarget = target;
     }
 
     // only when the page is shown, not while it is edited, previewed or the like
@@ -342,6 +363,11 @@ export default {
     // the overview, whose items can be selected
     indexPage() {
       return (location.pathname === '/inventar' || location.pathname === '/inventar/') && this.showing;
+    },
+
+    // the leaderboard of who worked on the inventory
+    activityPage() {
+      return location.pathname.replace(/\/$/, '') === '/inventar/rangliste' && this.showing;
     }
   }
 }

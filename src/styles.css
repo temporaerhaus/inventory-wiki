@@ -1874,3 +1874,178 @@ button.invwiki-container.expanded {
   background-color: rgba(0, 0, 0, .7);
   white-space: nowrap;
 }
+
+/* the leaderboard and the graph of who worked on the inventory */
+.invwiki-activity-periods {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5em;
+  margin-bottom: 1em;
+}
+
+.invwiki .invwiki-activity-periods button {
+  margin: 0;
+}
+
+.invwiki .invwiki-activity-periods button.is-active {
+  background-color: #4AAE9B;
+  background-image: none;
+  color: white;
+}
+
+#invwiki-activity .invwiki-leaderboard {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#invwiki-activity .invwiki-leaderboard th,
+#invwiki-activity .invwiki-leaderboard td {
+  padding: .4em .6em;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  text-align: right;
+}
+
+#invwiki-activity .invwiki-leaderboard th:nth-child(2),
+#invwiki-activity .invwiki-leaderboard td:nth-child(2) {
+  position: relative;
+  width: 100%;
+  text-align: left;
+}
+
+#invwiki-activity .invwiki-leaderboard td.invwiki-leaderboard-rank {
+  text-align: center;
+  font-size: 1.2em;
+  white-space: nowrap;
+}
+
+#invwiki-activity .invwiki-leaderboard tbody tr {
+  cursor: pointer;
+}
+
+#invwiki-activity .invwiki-leaderboard tbody tr:hover {
+  background-color: var(--background-alt);
+}
+
+#invwiki-activity .invwiki-leaderboard tr.is-selected {
+  background-color: var(--background);
+}
+
+#invwiki-activity .invwiki-leaderboard tr.is-me td:nth-child(2) {
+  font-weight: bold;
+}
+
+/* how far behind the leader, along the bottom of the name */
+.invwiki-leaderboard-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background-color: #4AAE9B;
+}
+
+.invwiki-leaderboard-me {
+  margin-left: .4em;
+  padding: 0 .4em;
+  border-radius: 1em;
+  font-size: .8em;
+  font-weight: normal;
+  background-color: #4AAE9B;
+  color: white;
+}
+
+.invwiki-activity-note,
+.invwiki-activity-summary,
+.invwiki-contributions-legend {
+  color: var(--text-muted);
+  font-size: .9em;
+}
+
+.invwiki .invwiki-activity-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5em 1em;
+  margin-top: 1.5em;
+}
+
+.invwiki .invwiki-activity-heading button {
+  margin: 0;
+  font-size: .6em;
+}
+
+.invwiki-contributions-scroll {
+  overflow-x: auto;
+  padding-bottom: .5em;
+}
+
+.invwiki-contributions {
+  --cell: 11px;
+  display: grid;
+  grid-template-rows: auto repeat(7, var(--cell));
+  gap: 3px;
+  width: max-content;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.invwiki-contributions-month {
+  grid-row: 1;
+  white-space: nowrap;
+}
+
+/* stays in view while the weeks scroll */
+.invwiki-contributions-weekday {
+  grid-column: 1;
+  position: sticky;
+  left: 0;
+  background-color: var(--background-body);
+  padding-right: .5em;
+  line-height: var(--cell);
+}
+
+.invwiki-contributions-cell {
+  display: inline-block;
+  width: var(--cell);
+  height: var(--cell);
+  border-radius: 2px;
+  outline: 1px solid rgba(27, 31, 36, .06);
+  outline-offset: -1px;
+}
+
+.invwiki-contributions-legend {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+}
+
+.invwiki-contributions-legend .invwiki-contributions-cell {
+  --cell: 11px;
+}
+
+/* a year fills the width of the page where there is room for it */
+@media only screen and (min-width: 1000px) {
+  .invwiki-contributions {
+    --cell: 13px;
+  }
+}
+
+.invwiki-contributions-cell.level-0 { background-color: #ebedf0; }
+.invwiki-contributions-cell.level-1 { background-color: #9be9a8; }
+.invwiki-contributions-cell.level-2 { background-color: #40c463; }
+.invwiki-contributions-cell.level-3 { background-color: #30a14e; }
+.invwiki-contributions-cell.level-4 { background-color: #216e39; }
+
+/* on narrow screens only the name, the place and the points */
+@media only screen and (max-width: 768px) {
+  #invwiki-activity .invwiki-leaderboard th:nth-child(3),
+  #invwiki-activity .invwiki-leaderboard th:nth-child(4),
+  #invwiki-activity .invwiki-leaderboard th:nth-child(5),
+  #invwiki-activity .invwiki-leaderboard td:nth-child(3),
+  #invwiki-activity .invwiki-leaderboard td:nth-child(4),
+  #invwiki-activity .invwiki-leaderboard td:nth-child(5) {
+    display: none;
+  }
+}

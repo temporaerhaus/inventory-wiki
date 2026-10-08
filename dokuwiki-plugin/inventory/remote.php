@@ -236,4 +236,79 @@ class remote_plugin_inventory extends RemotePlugin
 
         return $options;
     }
+
+    /**
+     * Who worked on the inventory items the caller may read, and on which days
+     *
+     * Counted from the change logs of the item pages: a creation, a change of
+     * the location or the "seen" timestamp (by the summaries the frontend
+     * writes), or any other change. Changes without a user, e.g. by readers
+     * allowed in by their address, are counted under an empty user, without
+     * the address.
+     *
+     * @return array {me: user of the caller, users: {login: full name}, days: [{user, day: YYYY-MM-DD in the wiki's time zone, created, located, edited}]}
+     */
+    public function listActivity()
+    {
+        global $auth, $INPUT;
+
+        $index = new Index();
+        $index->sync();
+
+        $days = [];
+        foreach ($index->allItems(['id']) as $row) {
+            $id = $row['_id'];
+            if (isHiddenPage($id) || auth_quickaclcheck($id) < AUTH_READ) {
+                continue;
+            }
+
+            $log = metaFN($id, '.changes');
+            foreach (is_file($log) ? file($log, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) : [] as $line) {
+                // timestamp, ip, type, id, user, summary, extra, size change
+                $entry = explode("\t", $line);
+                if (!ctype_digit($entry[0])) {
+                    continue;
+                }
+                $kind = self::activityKind($entry[2] ?? '', $entry[5] ?? '');
+                if (!$kind) {
+                    continue;
+                }
+
+                $user = $entry[4] ?? '';
+                $day = date('Y-m-d', (int) $entry[0]);
+                $days["$user\t$day"] ??= ['user' => $user, 'day' => $day, 'created' => 0, 'located' => 0, 'edited' => 0];
+                $days["$user\t$day"][$kind]++;
+            }
+        }
+
+        $users = [];
+        foreach (array_unique(array_filter(array_column($days, 'user'), 'strlen')) as $user) {
+            $users[$user] = $auth ? ($auth->getUserData($user)['name'] ?? $user) : $user;
+        }
+
+        return [
+            'me' => $INPUT->server->str('REMOTE_USER'),
+            'users' => (object) $users,
+            'days' => array_values($days),
+        ];
+    }
+
+    /**
+     * What a change log entry counts as: created, located (a new location or
+     * "seen"), edited, or null for what is no work on the item (deleting it,
+     * undoing a location update)
+     */
+    private static function activityKind($type, $summary)
+    {
+        if ($type === DOKU_CHANGE_TYPE_CREATE) {
+            return 'created';
+        }
+        if ($type === DOKU_CHANGE_TYPE_DELETE || $summary === 'location update undone') {
+            return null;
+        }
+        if ($summary === 'seen' || str_starts_with($summary, 'location update')) {
+            return 'located';
+        }
+        return 'edited';
+    }
 }

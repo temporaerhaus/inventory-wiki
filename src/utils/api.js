@@ -498,6 +498,14 @@ export async function queryItems({ search = '', filters = {}, sort = 'id', desc 
   return rpc('plugin.inventory.listItems', { search, filters, sort, desc, offset, limit, columns });
 }
 
+// Who worked on the items on which day, from the change logs of the item
+// pages (needs the inventory plugin). Returns { me, users: { login: name },
+// days: [{ user, day: 'YYYY-MM-DD', created, located, edited }] }, user ''
+// for changes without a login.
+export async function fetchActivity() {
+  return rpc('plugin.inventory.listActivity', {});
+}
+
 // only strip surrounding blank lines, leading spaces are syntax (e.g. dokuwiki lists)
 const cleanContent = (content) => content.replace(/^\s*\n/, '').trimEnd();
 
