@@ -9,11 +9,12 @@
         <mdi-icon icon="eye-outline" left />
         Vorschau
       </button>
-      <button type="button" @click="$refs.file.click()" :disabled="!mediaNamespace || uploading > 0" :title="mediaNamespace ? '' : uploadHint">
+      <!-- only where uploads can go, i.e. once the item exists -->
+      <button type="button" @click="$refs.file.click()" :disabled="uploading > 0" v-if="mediaNamespace">
         <mdi-icon icon="upload" left />
         Datei hochladen
       </button>
-      <button type="button" class="only-touch" @click="$refs.camera.click()" :disabled="!mediaNamespace || uploading > 0" :title="mediaNamespace ? '' : uploadHint">
+      <button type="button" class="only-touch" @click="$refs.camera.click()" :disabled="uploading > 0" v-if="mediaNamespace">
         <mdi-icon icon="camera" left />
         Foto aufnehmen
       </button>
