@@ -52,6 +52,9 @@ import SelectionMenuComponent from '@/components/SelectionMenuComponent.vue';
 import TableComponent from '@/components/TableComponent.vue';
 import ActivityComponent from '@/components/ActivityComponent.vue';
 
+// ↑ ↑ ↓ ↓ ← → ← → B A, which leads from the overview to the leaderboard
+const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
 // The yaml of a code block on the page, null if it is none. The wiki puts a
 // "Copy" button into code blocks in newer releases, whose text is not part of it.
 const codeYaml = (element) => {
@@ -84,6 +87,8 @@ export default {
     tableTarget: null,
     // where the leaderboard goes, only on its page
     activityTarget: null,
+    // the last keys pressed on the overview, as many as the Konami code has
+    konamiKeys: [],
     loading: false
   }),
 
@@ -152,6 +157,7 @@ export default {
 
     // only when the page is shown, not while it is edited, previewed or the like
     if (this.indexPage) {
+      document.addEventListener('keydown', this.konami);
       document.querySelector('.plugin_nspages > ul')?.classList?.add?.('invwiki');
       for (const e of document.querySelectorAll('a.wikilink1')) {
         if (e.dataset.wikiId.startsWith('inventar:')) {
@@ -249,6 +255,19 @@ export default {
   },
 
   methods: {
+    // not while typing, where arrows and letters are meant for the field
+    konami(e) {
+      if (e.target.closest?.('input, textarea, select, [contenteditable]')) {
+        return;
+      }
+      const key = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      this.konamiKeys = [...this.konamiKeys, key].slice(-KONAMI.length);
+      if (this.konamiKeys.join() === KONAMI.join()) {
+        this.konamiKeys = [];
+        location.href = `/${PREFIX}/rangliste`;
+      }
+    },
+
     // (un)select the given inventory ids from the table, as if their boxes in
     // the list were clicked, also those that have no box on this page
     toggleItems(ids, value) {
