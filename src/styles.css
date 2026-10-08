@@ -1076,7 +1076,8 @@ button.invwiki-container.expanded {
   margin: 0;
 }
 
-/* one card per item on narrow screens */
+/* one card per item on narrow screens; by the id of the table's place, so
+   that a wiki template's borders and padding of table cells do not win */
 @media only screen and (max-width: 768px) {
   .invwiki-table-controls .invwiki-table-filters {
     display: block;
@@ -1088,40 +1089,47 @@ button.invwiki-container.expanded {
     margin: 0 0 .5em;
   }
 
-  .invwiki .invwiki-table thead {
+  #invwiki-table .invwiki-table thead {
     display: none;
   }
 
-  .invwiki .invwiki-table,
-  .invwiki .invwiki-table tbody,
-  .invwiki .invwiki-table tr,
-  .invwiki .invwiki-table td {
+  #invwiki-table .invwiki-table,
+  #invwiki-table .invwiki-table tbody,
+  #invwiki-table .invwiki-table tr,
+  #invwiki-table .invwiki-table td {
     display: block;
   }
 
-  .invwiki .invwiki-table tr {
+  #invwiki-table .invwiki-table tr {
     position: relative;
     padding: .5em 2.5em .5em .5em;
     border-bottom: 1px solid var(--selection);
   }
 
-  .invwiki .invwiki-table td {
+  #invwiki-table .invwiki-table td {
     border: none;
     padding: .1em 0;
+    background: none;
   }
 
-  .invwiki .invwiki-table td:first-child {
+  #invwiki-table .invwiki-table td:first-child {
     position: absolute;
     top: .5em;
-    right: 0;
+    right: .5em;
+    width: auto;
+    padding: 0;
   }
 
-  .invwiki .invwiki-table td[data-label]:not(.invwiki-table-id)::before {
+  #invwiki-table .invwiki-table td:first-child input {
+    margin: 0;
+  }
+
+  #invwiki-table .invwiki-table td[data-label]:not(.invwiki-table-id)::before {
     content: attr(data-label) ": ";
     font-weight: bold;
   }
 
-  .invwiki .invwiki-table td:empty {
+  #invwiki-table .invwiki-table td:empty {
     display: none;
   }
 }
