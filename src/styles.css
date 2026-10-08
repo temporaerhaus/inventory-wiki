@@ -83,7 +83,8 @@
   margin-left: .5em;
 
   display: grid;
-  grid-template-columns: 3em 1fr;
+  /* the text column no wider than the list, however long its words */
+  grid-template-columns: 3em minmax(0, 1fr);
   grid-template-rows: 1fr;
   grid-column-gap: 0px;
   grid-row-gap: 0px;
@@ -121,9 +122,14 @@
 
 .invwiki-autocomplete-result > div {
   flex-grow: 1;
+  min-width: 0;
+  /* long compounds break where they must, with hyphens where the browser knows them */
+  overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
-.invwiki-autocomplete-result > pre {
+.invwiki-autocomplete-result pre {
+  white-space: pre-wrap;
   clear: both;
   font-size: 80%;
   margin: 0;
