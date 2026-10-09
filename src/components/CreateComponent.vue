@@ -99,7 +99,14 @@
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
         Seriennummer
       </label>
-      <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" autocomplete="off" />
+      <div class="invwiki-autocomplete-field">
+        <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" autocomplete="off" />
+        <span class="invwiki-autocomplete-action">
+          <button type="button" title="Seriennummer scannen" aria-label="Seriennummer scannen" @click="$refs.serialScanner.startScan()">
+            <mdi-icon icon="barcode-scan" title="Seriennummer scannen" />
+          </button>
+        </span>
+      </div>
 
       <template v-if="!edit">
         <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="subItem" />
@@ -224,10 +231,13 @@
       </button>
     </template>
   </x-dialog>
+
+  <scan-component pick barcodes title="Seriennummer Scannen" ref="serialScanner" @scan="serial = $event" />
 </template>
 
 <script>
 import SearchAutocomplete from '@/components/SearchAutocomplete.vue';
+import ScanComponent from '@/components/ScanComponent.vue';
 import MarkdownEditor from '@/components/MarkdownEditor.vue';
 import LabelDescriptionInput from '@/components/LabelDescriptionInput.vue';
 import categories from '@/utils/categories.js';
@@ -250,6 +260,7 @@ export default {
 
   components: {
     SearchAutocomplete,
+    ScanComponent,
     MarkdownEditor,
     LabelDescriptionInput
   },

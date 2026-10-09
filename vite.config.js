@@ -4,6 +4,23 @@ import vue from '@vitejs/plugin-vue';
 // Utilities
 import { defineConfig } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
+import { readFileSync } from 'node:fs';
+
+// the barcode reader (see src/utils/barcode.js) next to the bundle, which
+// cannot inline it without growing by a megabyte
+function zxingWasm() {
+  return {
+    name: 'zxing-wasm',
+    apply: 'build',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: 'zxing_reader.wasm',
+        source: readFileSync(fileURLToPath(new URL('./node_modules/zxing-wasm/dist/reader/zxing_reader.wasm', import.meta.url)))
+      });
+    }
+  };
+}
 
 function handleAuthenticatedProxy(proxy) {
   proxy.on('proxyReq', (proxyReq, req) => {
@@ -28,6 +45,7 @@ export default defineConfig({
   plugins: [
     vue({
     }),
+    zxingWasm(),
   ],
   build: {
     lib: {

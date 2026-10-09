@@ -8,7 +8,7 @@
     <span class="invwiki-toolbar-label">Inventaraufkleber Scannen</span>
   </button>
 
-  <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" icon="qrcode-scan" ref="dialog" @close="onClose()" @open="focusInput()" @keydown.enter="onScanSuccess($refs.scan.value)">
+  <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" :icon="barcodes ? 'barcode-scan' : 'qrcode-scan'" ref="dialog" @close="onClose()" @open="focusInput()" @keydown.enter="onScanSuccess($refs.scan.value)">
     <!-- what to do with a scanned item -->
     <div class="invwiki-scan-result" v-if="scanned && !direct">
       <p>
@@ -94,7 +94,7 @@
         </button>
       </div>
 
-      <input type="text" class="invwiki-scan-input" placeholder="V-XX012345..." ref="scan" autocomplete="off" />
+      <input type="text" class="invwiki-scan-input" :placeholder="barcodes ? '' : 'V-XX012345...'" ref="scan" autocomplete="off" />
       <!-- framed green or red for a moment after each scan -->
       <div :class="['invwiki-scan-video', signal ? `is-${signal}` : '']">
         <video ref="scanner"></video>
@@ -109,6 +109,7 @@
 
 <script>
 import QrScanner from 'qr-scanner';
+import BarcodeScanner from '@/utils/barcode.js';
 
 import {
   PREFIX, LOCATION_CURRENT, LOCATION_REGULAR,
@@ -125,6 +126,9 @@ export default {
     // hand the scanned inventory number to the parent ("scan" event) instead
     // of asking what to do with it; the parent opens the scanner with startScan()
     pick: Boolean,
+    // read any kind of barcode, not only QR codes, and hand over what it
+    // holds as it is (with pick), e.g. for a serial number
+    barcodes: Boolean,
     title: String,
     // the inventory number of the page's item, if it is a container, which
     // scanned items can then be put into
@@ -235,11 +239,14 @@ export default {
       this.showHistory = false;
       this.changedContainer = false;
       await this.$refs.dialog.show();
-      this.scanner = new QrScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true), {
-        highlightScanRegion: true
-      });
+      const Scanner = this.barcodes ? BarcodeScanner : QrScanner;
+      this.scanner = this.barcodes
+        ? new BarcodeScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true))
+        : new QrScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true), {
+          highlightScanRegion: true
+        });
       await this.scanner.start();
-      this.cameras = await QrScanner.listCameras();
+      this.cameras = await Scanner.listCameras();
       this.hasFlash = await this.scanner.hasFlash();
       this.flash = await this.scanner.isFlashOn();
     },
@@ -275,8 +282,11 @@ export default {
         return;
       }
 
-      // a label holds the inventory number, possibly as the address of its page
-      const id = decodeURIComponent(String(decodedText).trim().replace(/\/+$/, '').split('/').pop());
+      // a label holds the inventory number, possibly as the address of its
+      // page; any other code is taken as it is
+      const id = this.barcodes
+        ? String(decodedText).trim()
+        : decodeURIComponent(String(decodedText).trim().replace(/\/+$/, '').split('/').pop());
 
       if (this.pick) {
         // the scanner reports every frame it reads, only the first one counts

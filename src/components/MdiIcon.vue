@@ -9,6 +9,7 @@
 import {
   mdiClose,
   mdiBarcode,
+  mdiBarcodeScan,
   mdiPrinter,
   mdiCalendar,
   mdiEyeOutline,
@@ -89,6 +90,7 @@ export default {
     icons: {
       mdiClose,
       mdiBarcode,
+      mdiBarcodeScan,
       mdiPrinter,
       mdiCalendar,
       mdiEyeOutline,
