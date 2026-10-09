@@ -8,7 +8,7 @@
     <span class="invwiki-toolbar-label">Inventaraufkleber Scannen</span>
   </button>
 
-  <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" :icon="barcodes ? 'barcode-scan' : 'qrcode-scan'" ref="dialog" @close="onClose()" @open="focusInput()" @keydown.enter="onScanSuccess($refs.scan.value)">
+  <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" :icon="barcodes ? 'barcode-scan' : 'qrcode-scan'" ref="dialog" @close="onClose()" @open="focusInput()" @keydown.enter="onScanSuccess($refs.scan.value)" :loading="loading">
     <!-- what to do with a scanned item -->
     <div class="invwiki-scan-result" v-if="scanned && !direct">
       <p>
@@ -109,7 +109,7 @@
 
 <script>
 import QrScanner from 'qr-scanner';
-import BarcodeScanner from '@/utils/barcode.js';
+// BarcodeScanner loaded dynamically
 
 import {
   PREFIX, LOCATION_CURRENT, LOCATION_REGULAR,
@@ -154,6 +154,7 @@ export default {
       { value: LOCATION_CURRENT, label: 'Aktueller Ort', icon: 'map-clock-outline' },
       { value: LOCATION_REGULAR, label: 'Regulärer Ort', icon: 'content-save-alert-outline' },
     ],
+    loading: false,
     scanner: null,
     cameras: null,
     current: null,
@@ -238,17 +239,28 @@ export default {
       this.log = [];
       this.showHistory = false;
       this.changedContainer = false;
+      this.loading = true;
       await this.$refs.dialog.show();
-      const Scanner = this.barcodes ? BarcodeScanner : QrScanner;
-      this.scanner = this.barcodes
-        ? new BarcodeScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true))
-        : new QrScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true), {
-          highlightScanRegion: true
-        });
-      await this.scanner.start();
-      this.cameras = await Scanner.listCameras();
-      this.hasFlash = await this.scanner.hasFlash();
-      this.flash = await this.scanner.isFlashOn();
+
+      try {
+        let BarcodeScanner = null;
+        if (this.barcodes) {
+          BarcodeScanner = (await import('@/utils/barcode.js')).default;
+        }
+        const Scanner = this.barcodes ? BarcodeScanner : QrScanner;
+
+        this.scanner = this.barcodes
+          ? new BarcodeScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true))
+          : new QrScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true), {
+            highlightScanRegion: true
+          });
+        await this.scanner.start();
+        this.cameras = await Scanner.listCameras();
+        this.hasFlash = await this.scanner.hasFlash();
+        this.flash = await this.scanner.isFlashOn();
+      } finally {
+        this.loading = false;
+      }
     },
 
     stopScan() {
@@ -268,6 +280,7 @@ export default {
     },
 
     onClose() {
+      this.loading = false;
       this.stopScan();
       this.scanned = null;
       // its list of contents is part of the page

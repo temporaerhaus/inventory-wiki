@@ -1,22 +1,45 @@
 import { BarcodeDetector, prepareZXingModule } from 'barcode-detector/ponyfill';
 
-// The reader is served next to the bundle (see vite.config.js), or from the
-// package by the vite dev server, rather than from a CDN
-prepareZXingModule({
-  overrides: {
-    locateFile: (path, prefix) => {
-      if (!path.endsWith('.wasm')) {
-        return prefix + path;
+let prepared = false;
+function initBarcodeModule() {
+  if (prepared) return;
+  prepared = true;
+  // The reader is served next to the bundle (see vite.config.js), or from the
+  // package by the vite dev server, rather than from a CDN
+  prepareZXingModule({
+    overrides: {
+      locateFile: (path, prefix) => {
+        if (!path.endsWith('.wasm')) {
+          return prefix + path;
+        }
+        return import.meta.env.DEV
+          ? new URL(`/node_modules/zxing-wasm/dist/reader/${path}`, location.href).href
+          : new URL(path, import.meta.url).href;
       }
-      return import.meta.env.DEV
-        ? new URL(`/node_modules/zxing-wasm/dist/reader/${path}`, location.href).href
-        : new URL(path, import.meta.url).href;
     }
-  }
-});
+  });
+}
 
 // time between two frames that are read, so that a phone does not run hot
 const INTERVAL = 150;
+
+// Reading all ~40 formats by default is too heavy for mobile CPUs and triggers
+// slow-script timeouts. Restrict detection to standard 1D and 2D formats.
+const FORMATS = [
+  'aztec',
+  'code_128',
+  'code_39',
+  'code_93',
+  'codabar',
+  'data_matrix',
+  'ean_13',
+  'ean_8',
+  'itf',
+  'pdf417',
+  'qr_code',
+  'upc_a',
+  'upc_e'
+];
 
 // A camera scanner for every kind of code: barcodes (EAN, UPC, Code 128, 39
 // and 93, Codabar, ITF, …) as well as 2D codes (QR, Data Matrix, Aztec,
@@ -26,8 +49,7 @@ export default class BarcodeScanner {
   constructor(video, onDecode) {
     this.video = video;
     this.onDecode = onDecode;
-    // without formats, it reads all it knows
-    this.detector = new BarcodeDetector();
+    this.detector = null;
     this.stream = null;
     this.timer = null;
     this.running = false;
@@ -46,6 +68,10 @@ export default class BarcodeScanner {
   }
 
   async start(camera = null) {
+    initBarcodeModule();
+    if (!this.detector) {
+      this.detector = new BarcodeDetector({ formats: FORMATS });
+    }
     this.running = true;
     await this.openCamera(camera ? { deviceId: { exact: camera } } : { facingMode: 'environment' });
     this.tick();
@@ -75,8 +101,11 @@ export default class BarcodeScanner {
           this.onDecode({ data: code.rawValue, format: code.format });
         }
       }
-    } catch {
+    } catch (err) {
       // a frame that cannot be read, the next one may
+      if (import.meta.env.DEV) {
+        console.warn('Barcode decode frame error:', err);
+      }
     }
     if (this.running) {
       this.timer = setTimeout(() => this.tick(), INTERVAL);
