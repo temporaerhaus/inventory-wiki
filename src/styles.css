@@ -831,19 +831,19 @@ button.invwiki-container.expanded {
   opacity: .7;
 }
 
+/* the whole description and examples, over several lines where needed */
 .invwiki-suggestion-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .invwiki-suggestion-items {
   grid-column: 1 / 4;
   font-size: 85%;
   opacity: .7;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .invwiki.invwiki-table-view {
