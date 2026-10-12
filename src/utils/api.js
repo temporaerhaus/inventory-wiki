@@ -1,8 +1,7 @@
 import YAML from 'yaml';
 import { v4 as uuidv4 } from 'uuid';
+import { YAML_REGEX, TAG_BLOCK_REGEX, withTag } from '@/utils/page.js';
 
-// lazy, so that code blocks in the content below the yaml block are not swallowed
-const YAML_REGEX = /```yaml\n(.*?)\n```/s;
 // marks a page for the commonmark plugin, every item page should start with it
 const DOCTYPE = '<!DOCTYPE markdown>';
 const REGEX = new RegExp(`^[SVL]-[A-Z]{2}([0-9]{6})-?[A-Z]?$`);
@@ -515,7 +514,7 @@ const cleanContent = (content) => content.replace(/^\s*\n/, '').trimEnd();
 export async function fetchItemContent(path) {
   const wikitext = (await rpc('core.getPage', { page: pageId(path) })).replaceAll('\r\n', '\n');
   const match = YAML_REGEX.exec(wikitext);
-  return match ? cleanContent(wikitext.slice(match.index + match[0].length)) : '';
+  return match ? cleanContent(wikitext.slice(match.index + match[0].length).replace(TAG_BLOCK_REGEX, '')) : '';
 }
 
 // security token of the reader's session, the API does not need it, the preview does
@@ -886,6 +885,8 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
       }
     }
 
+    wikitext = withTag(wikitext, yaml.category);
+
     // fails loudly, e.g. when somebody else has the page open in the wiki's editor
     await rpc('core.savePage', { page, text: wikitext, summary: opts.summary || 'edit metadata' });
     window.dispatchEvent(new CustomEvent(ITEM_SAVED_EVENT, { detail: { page } }));
@@ -904,10 +905,12 @@ export async function trashItem(path) {
   const name = page.split(':').pop();
   const token = await lock();
   try {
-    const text = await rpc('core.getPage', { page });
+    let text = await rpc('core.getPage', { page });
     if (!YAML_REGEX.test(text.replaceAll('\r\n', '\n'))) {
       throw new Error('Kein gültiger YAML-Block gefunden');
     }
+    // a deleted item is no longer listed under its Schlagwort
+    text = withTag(text.replaceAll('\r\n', '\n'), '');
 
     let trash = `${TRASH}:${name}`;
     for (let i = 2; await pageExists(trash); i++) {

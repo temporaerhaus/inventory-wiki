@@ -114,7 +114,7 @@ const COLUMNS = [
   { key: 'serial', label: 'Seriennummer' },
   { key: 'invoice', label: 'Rechnung' },
   { key: 'date', label: 'Anschaffungsdatum' },
-  { key: 'category', label: 'Kategorie' },
+  { key: 'category', label: 'Schlagwort' },
   { key: 'origin', label: 'Ursprung' },
   { key: 'owner', label: 'Eigentümer*in' },
   // the temporary location if there is one, the nominal one otherwise, which is what "location" holds

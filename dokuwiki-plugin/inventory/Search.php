@@ -23,7 +23,7 @@ class Search
         'description' => 'Kurzbeschreibung',
         'serial' => 'Seriennummer',
         'invoice' => 'Rechnung',
-        'category' => 'Kategorie',
+        'category' => 'Schlagwort',
         'origin' => 'Ursprung',
         'owner' => 'Eigentümer*in',
         'location' => 'Aufenthaltsort',

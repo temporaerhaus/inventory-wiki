@@ -217,8 +217,8 @@
           <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" autocomplete="off" />
           
           <label :for="`invwiki-form-category-${nonce}`">
-            <mdi-icon icon="tag-outline" left title="Kategorie" />
-            Kategorie
+            <mdi-icon icon="tag-outline" left title="Schlagwort" />
+            Schlagwort
           </label>
           <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" autocomplete="off" />          
         </div>

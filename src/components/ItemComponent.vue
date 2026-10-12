@@ -84,8 +84,8 @@
             </li>
           </ul>
         </li>
-        <li title="Kategorie" v-if="category">
-          <mdi-icon icon="tag-outline" left title="Kategorie" />
+        <li title="Schlagwort" v-if="category">
+          <mdi-icon icon="tag-outline" left title="Schlagwort" />
           {{ category }}
         </li>
         <li title="Ursprung" v-if="origin">

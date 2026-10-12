@@ -36,7 +36,7 @@ import { progressText, settleWithProgress, writeItem } from '@/utils/api.js';
 
 const FIELDS = [
   { key: 'description', label: 'Kurzbeschreibung', icon: 'clipboard-text-outline', type: 'textarea' },
-  { key: 'category', label: 'Kategorie', icon: 'tag-outline', type: 'text' },
+  { key: 'category', label: 'Schlagwort', icon: 'tag-outline', type: 'text' },
   { key: 'origin', label: 'Ursprung', icon: 'basket-unfill', type: 'text' },
   { key: 'owner', label: 'Eigentümer*in', icon: 'account-question-outline', type: 'text' },
   { key: 'date', label: 'Anschaffungsdatum', icon: 'calendar', type: 'date' },
