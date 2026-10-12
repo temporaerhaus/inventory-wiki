@@ -61,11 +61,14 @@ const SWIPE_DISTANCE = 40;
 
 // The yaml of a code block on the page, null if it is none. The wiki puts a
 // "Copy" button into code blocks in newer releases, whose text is not part of it.
+// It also renders an empty line as a non-breaking space, which in a value of
+// several lines (a description with an empty line in it) is no indentation
+// to yaml, so that the whole block would not parse; such lines are empty again.
 const codeYaml = (element) => {
   const copy = element.cloneNode(true);
   copy.querySelectorAll('button').forEach(e => e.remove());
   try {
-    return YAML.parse(copy.textContent);
+    return YAML.parse(copy.textContent.replace(/^[ \t\u00a0]+$/gm, ''));
   } catch {
     return null;
   }
