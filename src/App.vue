@@ -54,6 +54,10 @@ import ActivityComponent from '@/components/ActivityComponent.vue';
 
 // ↑ ↑ ↓ ↓ ← → ← → B A, which leads from the overview to the leaderboard
 const KONAMI = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+// on a touch screen, the arrows are swipes, and there are no keys for B A
+const KONAMI_SWIPES = KONAMI.slice(0, 8);
+// how far a finger has to move to count as a swipe, in pixels
+const SWIPE_DISTANCE = 40;
 
 // The yaml of a code block on the page, null if it is none. The wiki puts a
 // "Copy" button into code blocks in newer releases, whose text is not part of it.
@@ -89,6 +93,9 @@ export default {
     activityTarget: null,
     // the last keys pressed on the overview, as many as the Konami code has
     konamiKeys: [],
+    // the same for swipes, and where the finger of the current one went down
+    konamiSwipes: [],
+    swipeStart: null,
     loading: false
   }),
 
@@ -158,6 +165,8 @@ export default {
     // only when the page is shown, not while it is edited, previewed or the like
     if (this.indexPage) {
       document.addEventListener('keydown', this.konami);
+      document.addEventListener('touchstart', this.konamiTouchStart, { passive: true });
+      document.addEventListener('touchend', this.konamiTouchEnd, { passive: true });
       document.querySelector('.plugin_nspages > ul')?.classList?.add?.('invwiki');
       for (const e of document.querySelectorAll('a.wikilink1')) {
         if (e.dataset.wikiId.startsWith('inventar:')) {
@@ -264,7 +273,38 @@ export default {
       this.konamiKeys = [...this.konamiKeys, key].slice(-KONAMI.length);
       if (this.konamiKeys.join() === KONAMI.join()) {
         this.konamiKeys = [];
-        location.href = `/${PREFIX}/rangliste`;
+        this.toLeaderboard();
+      }
+    },
+
+    toLeaderboard() {
+      location.href = `/${PREFIX}/rangliste`;
+    },
+
+    // one finger only, so that zooming with two is no swipe
+    konamiTouchStart(e) {
+      this.swipeStart = e.touches.length === 1 ? { x: e.touches[0].clientX, y: e.touches[0].clientY } : null;
+    },
+
+    // the direction the finger moved in most, as the arrow key for it
+    konamiTouchEnd(e) {
+      const start = this.swipeStart;
+      this.swipeStart = null;
+      if (!start || e.changedTouches.length !== 1) {
+        return;
+      }
+      const dx = e.changedTouches[0].clientX - start.x;
+      const dy = e.changedTouches[0].clientY - start.y;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < SWIPE_DISTANCE) {
+        return;
+      }
+      const swipe = Math.abs(dx) > Math.abs(dy)
+        ? (dx > 0 ? 'ArrowRight' : 'ArrowLeft')
+        : (dy > 0 ? 'ArrowDown' : 'ArrowUp');
+      this.konamiSwipes = [...this.konamiSwipes, swipe].slice(-KONAMI_SWIPES.length);
+      if (this.konamiSwipes.join() === KONAMI_SWIPES.join()) {
+        this.konamiSwipes = [];
+        this.toLeaderboard();
       }
     },
 
