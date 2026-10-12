@@ -22,9 +22,10 @@ function initBarcodeModule() {
 
 // time between two frames that are read, so that a phone does not run hot
 const INTERVAL = 150;
-// thin bars need more pixels than a QR code; as wished for, not required,
-// so that a camera that cannot is still opened
-const RESOLUTION = { width: { ideal: 1920 }, height: { ideal: 1080 } };
+// thin bars need more pixels than a QR code, but the reader takes about five
+// times as long on 1080p as on 640x480, too long on a phone to catch a sharp
+// frame; as wished for, not required, so that a camera that cannot is still opened
+const RESOLUTION = { width: { ideal: 1280 }, height: { ideal: 720 } };
 
 // Reading all ~40 formats by default is too heavy for mobile CPUs and triggers
 // slow-script timeouts. Restrict detection to standard 1D and 2D formats.
@@ -43,6 +44,25 @@ const FORMATS = [
   'upc_a',
   'upc_e'
 ];
+
+// The browser's own reader (Chrome on Android, Safari on macOS) is much faster
+// than the WebAssembly one and made for camera images; the WebAssembly reader
+// is for browsers without one (Firefox, Safari on iOS), or without EAN in it
+async function createDetector() {
+  if ('BarcodeDetector' in globalThis) {
+    try {
+      const supported = await globalThis.BarcodeDetector.getSupportedFormats();
+      const formats = FORMATS.filter(e => supported.includes(e));
+      if (formats.includes('ean_13')) {
+        return new globalThis.BarcodeDetector({ formats });
+      }
+    } catch {
+      // the WebAssembly reader then
+    }
+  }
+  initBarcodeModule();
+  return new BarcodeDetector({ formats: FORMATS });
+}
 
 // A camera scanner for every kind of code: barcodes (EAN, UPC, Code 128, 39
 // and 93, Codabar, ITF, …) as well as 2D codes (QR, Data Matrix, Aztec,
@@ -73,10 +93,7 @@ export default class BarcodeScanner {
   }
 
   async start(camera = null) {
-    initBarcodeModule();
-    if (!this.detector) {
-      this.detector = new BarcodeDetector({ formats: FORMATS });
-    }
+    this.detector ??= await createDetector();
     this.running = true;
     await this.openCamera(camera ? { deviceId: { exact: camera } } : { facingMode: 'environment' });
     this.tick();
