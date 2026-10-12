@@ -242,7 +242,8 @@ class remote_plugin_inventory extends RemotePlugin
      *
      * Counted from the change logs of the item pages: a creation, a change of
      * the location or the "seen" timestamp (by the summaries the frontend
-     * writes), or any other change. Changes without a user, e.g. by readers
+     * writes), or any other change, except for minor edits, which are upkeep
+     * such as adding tags by a script. Changes without a user, e.g. by readers
      * allowed in by their address, are counted under an empty user, without
      * the address.
      *
@@ -325,14 +326,14 @@ class remote_plugin_inventory extends RemotePlugin
     /**
      * What a change log entry counts as: created, located (a new location or
      * "seen"), edited, or null for what is no work on the item (deleting it,
-     * undoing a location update)
+     * undoing a location update, a minor edit)
      */
     private static function activityKind($type, $summary)
     {
         if ($type === DOKU_CHANGE_TYPE_CREATE) {
             return 'created';
         }
-        if ($type === DOKU_CHANGE_TYPE_DELETE || $summary === 'location update undone') {
+        if ($type === DOKU_CHANGE_TYPE_DELETE || $type === DOKU_CHANGE_TYPE_MINOR_EDIT || $summary === 'location update undone') {
             return null;
         }
         if ($summary === 'seen' || str_starts_with($summary, 'location update')) {
