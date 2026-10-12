@@ -253,6 +253,15 @@
   border-left-color: #d9534f;
 }
 
+.invwiki blockquote.invwiki-warning {
+  border-left-color: #f0ad4e;
+}
+
+/* an inventory number in one piece, not broken at its hyphen */
+.invwiki blockquote.invwiki-warning a {
+  white-space: nowrap;
+}
+
 .invwiki button, .invwiki input[type='submit'], .invwiki input[type='button'] {
   padding-right: 16px;
   padding-left: 16px;

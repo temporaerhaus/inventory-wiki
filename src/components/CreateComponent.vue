@@ -107,6 +107,15 @@
           </button>
         </span>
       </div>
+      <!-- not in the way of saving: the same model can have one serial number
+           for several parts, or a typo be in the other item -->
+      <blockquote class="invwiki-warning" v-if="serialTaken.length">
+        Diese Seriennummer hat bereits
+        <template v-for="(item, i) in serialTaken" :key="item.id">
+          <template v-if="i > 0">, </template>
+          <a :href="`/${PREFIX}/${item.id.toLowerCase()}`" target="_blank">{{ item.id }}</a><template v-if="item.title"> ({{ item.title }})</template>
+        </template>.
+      </blockquote>
 
       <template v-if="!edit">
         <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="subItem" />
@@ -244,12 +253,14 @@ import categories from '@/utils/categories.js';
 import { buildIndex, suggest } from '@/utils/suggest.js';
 import { itemText, loadEnrichment } from '@/utils/enrichment.js';
 
-import { SEP, PREFIX, TRASH, nextNumber, takenSuffixes, writeItem, trashItem, fetchInventory, fetchItemContent } from '@/utils/api.js';
+import { SEP, PREFIX, TRASH, nextNumber, takenSuffixes, writeItem, trashItem, fetchInventory, fetchItemContent, queryItems } from '@/utils/api.js';
 
 const ID_REGEX = new RegExp(`^([SVL])-([A-Z]{2})([0-9]{6})-?([A-Z])?$`);
 // names of power supplies, which get the suffix N, all other accessories get Z
 const POWER_SUPPLY_REGEX = /netz(teil|gerät|adapter)|lade(gerät|adapter)|power ?supply|\bpsu\b|charger|trafo|transformator|stromversorgung|\b(ac|dc|usb)[- ]?adapter/i;
 const SUGGEST_DEBOUNCE = 150;
+// the serial number is looked up once typing pauses, not for every letter
+const SERIAL_DEBOUNCE = 300;
 
 export default {
   props: {
@@ -266,6 +277,7 @@ export default {
   },
 
   data: () => ({
+    PREFIX,
     categories: categories(),
 
     loading: true,
@@ -291,6 +303,11 @@ export default {
     inventoryId: '',
     description: '',
     serial: '',
+    // [{id, title}] of the other items that have the same serial number
+    serialTaken: [],
+    serialTimeout: null,
+    // which lookup is the latest, whose answer is the one shown
+    serialLookup: 0,
     invoice: '',
     date: null,
     category: '',
@@ -320,10 +337,36 @@ export default {
 
     description() {
       this.scheduleSuggestions();
+    },
+
+    serial() {
+      clearTimeout(this.serialTimeout);
+      this.serialTimeout = setTimeout(() => this.checkSerial(), SERIAL_DEBOUNCE);
     }
   },
 
   methods: {
+    // The plugin finds the serial number anywhere in the field, ignoring case,
+    // of which only the same number counts. The item being edited does not,
+    // while the one being duplicated does. Without the plugin, nothing is shown.
+    async checkSerial() {
+      const serial = this.serial.trim().toUpperCase();
+      const lookup = ++this.serialLookup;
+      let taken = [];
+      if (serial) {
+        try {
+          const { items } = await queryItems({ filters: { serial }, columns: ['title', 'serial'], limit: 0 });
+          const own = this.edit ? this.inventoryId.toUpperCase() : null;
+          taken = items.filter(e => String(e.serial).trim().toUpperCase() === serial && e.id !== own);
+        } catch {
+          // no warning, rather than an error about a check that is only a help
+        }
+      }
+      if (lookup === this.serialLookup) {
+        this.serialTaken = taken;
+      }
+    },
+
     scheduleSuggestions() {
       if (this.edit || this.subItem) {
         return;
