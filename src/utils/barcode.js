@@ -22,6 +22,9 @@ function initBarcodeModule() {
 
 // time between two frames that are read, so that a phone does not run hot
 const INTERVAL = 150;
+// thin bars need more pixels than a QR code; as wished for, not required,
+// so that a camera that cannot is still opened
+const RESOLUTION = { width: { ideal: 1920 }, height: { ideal: 1080 } };
 
 // Reading all ~40 formats by default is too heavy for mobile CPUs and triggers
 // slow-script timeouts. Restrict detection to standard 1D and 2D formats.
@@ -53,6 +56,8 @@ export default class BarcodeScanner {
     this.stream = null;
     this.timer = null;
     this.running = false;
+    // only the first error is logged, rather than one for every frame
+    this.failed = false;
 
     // iOS shows the camera inline only with these
     video.muted = true;
@@ -79,7 +84,7 @@ export default class BarcodeScanner {
 
   async openCamera(constraints) {
     this.closeCamera();
-    this.stream = await navigator.mediaDevices.getUserMedia({ video: constraints, audio: false });
+    this.stream = await navigator.mediaDevices.getUserMedia({ video: { ...constraints, ...RESOLUTION }, audio: false });
     this.video.srcObject = this.stream;
     await this.video.play();
   }
@@ -102,8 +107,10 @@ export default class BarcodeScanner {
         }
       }
     } catch (err) {
-      // a frame that cannot be read, the next one may
-      if (import.meta.env.DEV) {
+      // a frame that cannot be read, the next one may; logged also in
+      // production, where an error on every frame would go unnoticed otherwise
+      if (!this.failed) {
+        this.failed = true;
         console.warn('Barcode decode frame error:', err);
       }
     }

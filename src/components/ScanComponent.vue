@@ -108,6 +108,7 @@
 </template>
 
 <script>
+import { markRaw } from 'vue';
 import QrScanner from 'qr-scanner';
 // BarcodeScanner loaded dynamically
 
@@ -249,15 +250,21 @@ export default {
         }
         const Scanner = this.barcodes ? BarcodeScanner : QrScanner;
 
-        this.scanner = this.barcodes
+        // not made reactive: the barcode reader keeps its state in private
+        // fields, which a reactive proxy has no access to
+        const scanner = this.scanner = markRaw(this.barcodes
           ? new BarcodeScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true))
           : new QrScanner(this.$refs.scanner, e => this.onScanSuccess(e?.data, true), {
             highlightScanRegion: true
-          });
-        await this.scanner.start();
+          }));
+        await scanner.start();
+        // a code read right away (with pick) has closed the dialog already
+        if (this.scanner !== scanner) {
+          return;
+        }
         this.cameras = await Scanner.listCameras();
-        this.hasFlash = await this.scanner.hasFlash();
-        this.flash = await this.scanner.isFlashOn();
+        this.hasFlash = await scanner.hasFlash();
+        this.flash = await scanner.isFlashOn();
       } finally {
         this.loading = false;
       }
