@@ -15,6 +15,10 @@
         <mdi-icon icon="format-list-checks" left />
         Inhaltslisten drucken
       </button>
+      <button @click="run(() => $refs.checklist.open())">
+        <mdi-icon icon="format-list-checks" left />
+        Checkliste erstellen
+      </button>
       <button @click="run(() => $refs.location.open())">
         <mdi-icon icon="home-map-marker" left />
         Aufenthaltsort zuweisen
@@ -70,18 +74,21 @@
   <!-- their dialogs, opened from the menu -->
   <location-component :selected="selected" ref="location" />
   <bulk-edit-component :selected="selected" ref="edit" />
+  <checklist-component :selected="selected" ref="checklist" />
 </template>
 
 <script>
 import LocationComponent from '@/components/LocationComponent.vue';
 import BulkEditComponent from '@/components/BulkEditComponent.vue';
+import ChecklistComponent from '@/components/ChecklistComponent.vue';
 import { MAX_CONTENTS_LEVELS, containersAmong, remotePrintContentsLists, remotePrintSigns } from '@/utils/api.js';
 
 // The actions for the selected items, behind one button
 export default {
   components: {
     LocationComponent,
-    BulkEditComponent
+    BulkEditComponent,
+    ChecklistComponent
   },
 
   props: {
