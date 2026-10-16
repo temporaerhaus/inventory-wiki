@@ -77,8 +77,9 @@
         <input :id="`invwiki-form-owner-${nonce}`" type="text" v-model="owner" @focus="$refs.c?.close?.()" autocomplete="off" />
       </template>
 
-      <!-- the number the owner has the item under; like the owner, it stays to be seen when set -->
-      <template v-if="lended || (edit && externalId)">
+      <!-- the number the owner has the item under, also for items numbered outside
+           the regular scheme; like the owner, it stays to be seen when set -->
+      <template v-if="lended || (edit && (externalId || !regularId))">
         <label :for="`invwiki-form-external-id-${nonce}`">
           <mdi-icon icon="card-account-details-outline" left title="Externe Inventarnummer" />
           Externe Inventarnummer (optional)
@@ -619,6 +620,11 @@ export default {
     // as a duplicate of a sub-item that belongs to the same item
     subItem() {
       return this.sub || (this.clone && this.cloneAsSub);
+    },
+
+    // the page's item is numbered in the regular scheme, e.g. V-GM000123
+    regularId() {
+      return ID_REGEX.test(this.inventoryId || '');
     },
 
     // the item the page's item belongs to, if it is a sub-item
