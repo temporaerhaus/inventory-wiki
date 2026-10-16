@@ -96,6 +96,10 @@
           <mdi-icon icon="account-question-outline" left title="Eigentümer*in" />
           {{ owner }}
         </li>
+        <li title="Externe Inventarnummer" v-if="externalId">
+          <mdi-icon icon="card-account-details-outline" left title="Externe Inventarnummer" />
+          {{ externalId }}
+        </li>
         <li title="Anschaffungsdatum" v-if="date">
           <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
           {{ date }}
@@ -181,6 +185,7 @@ export default {
     category: String,
     origin: String,
     owner: String,
+    externalId: String,
     small: Boolean,
     container: Boolean,
     date: String,

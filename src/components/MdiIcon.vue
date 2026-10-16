@@ -75,6 +75,7 @@ import {
   mdiAlertCircleOutline,
   mdiCheckboxMarkedOutline,
   mdiEyeCheckOutline,
+  mdiCardAccountDetailsOutline,
 } from '@mdi/js';
 
 export default {
@@ -156,6 +157,7 @@ export default {
       mdiAlertCircleOutline,
       mdiCheckboxMarkedOutline,
       mdiEyeCheckOutline,
+      mdiCardAccountDetailsOutline,
     }
   }),
 

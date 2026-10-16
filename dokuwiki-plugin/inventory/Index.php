@@ -21,7 +21,7 @@ class Index
     public const NS = 'inventar';
 
     // bump to rebuild the database after a change of the schema or the parsing
-    private const VERSION = 4;
+    private const VERSION = 5;
 
     // same as YAML_REGEX in src/utils/api.js
     private const YAML_REGEX = '/```yaml\n(.*?)\n```/s';
@@ -43,6 +43,7 @@ class Index
         'category' => 'category',
         'origin' => 'origin',
         'owner' => 'owner',
+        'externalId' => 'external_id',
         // where the item is right now, as on the item page
         'location' => 'location',
         'nominal' => 'nominal',
@@ -258,6 +259,7 @@ class Index
             'category' => self::text($data['category'] ?? ''),
             'origin' => self::text($data['origin'] ?? ''),
             'owner' => self::text($data['owner'] ?? ''),
+            'externalId' => self::text($data['externalId'] ?? ''),
             'location' => $temporary !== '' ? $temporary : $nominal,
             'nominal' => $nominal,
             'temporary' => $temporary,

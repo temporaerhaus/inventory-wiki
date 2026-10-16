@@ -66,6 +66,7 @@ const inventorySyntaxOrder = Object.fromEntries([
   'category',
   'origin',
   'owner',
+  'externalId',
   'small',
   'container',
   'nominal',
@@ -842,6 +843,7 @@ export async function writeItem(path, entry = { }, opts = { create: false, summa
     yaml.category = entry.category ?? yaml.category ?? '';
     yaml.origin = entry.origin ?? yaml.origin ?? '';
     yaml.owner = entry.owner ?? yaml.owner ?? '';
+    yaml.externalId = entry.externalId ?? yaml.externalId ?? '';
     yaml.small = entry.small ?? yaml.small ?? false;
     yaml.container = entry.container ?? yaml.container ?? false;
     yaml.nominal = entry.nominal ?? yaml.nominal ?? {};

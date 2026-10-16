@@ -117,6 +117,7 @@ const COLUMNS = [
   { key: 'category', label: 'Schlagwort' },
   { key: 'origin', label: 'Ursprung' },
   { key: 'owner', label: 'Eigentümer*in' },
+  { key: 'externalId', label: 'Externe Inventarnummer' },
   // the temporary location if there is one, the nominal one otherwise, which is what "location" holds
   { key: 'place', label: 'Aufenthaltsort', field: 'location', needs: ['nominal', 'temporary'] },
   { key: 'location', label: 'Aktueller Aufenthaltsort' },

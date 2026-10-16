@@ -26,6 +26,7 @@ class Search
         'category' => 'Schlagwort',
         'origin' => 'Ursprung',
         'owner' => 'Eigentümer*in',
+        'externalId' => 'Externe Inventarnummer',
         'location' => 'Aufenthaltsort',
     ];
 

@@ -77,6 +77,15 @@
         <input :id="`invwiki-form-owner-${nonce}`" type="text" v-model="owner" @focus="$refs.c?.close?.()" autocomplete="off" />
       </template>
 
+      <!-- the number the owner has the item under; like the owner, it stays to be seen when set -->
+      <template v-if="lended || (edit && externalId)">
+        <label :for="`invwiki-form-external-id-${nonce}`">
+          <mdi-icon icon="card-account-details-outline" left title="Externe Inventarnummer" />
+          Externe Inventarnummer (optional)
+        </label>
+        <input :id="`invwiki-form-external-id-${nonce}`" type="text" v-model="externalId" @focus="$refs.c?.close?.()" autocomplete="off" />
+      </template>
+
       <label :for="`invwiki-form-description-${nonce}`">
         <mdi-icon icon="clipboard-text-outline" left title="Kurzbeschreibung" />
         Kurzbeschreibung
@@ -313,6 +322,7 @@ export default {
     category: '',
     origin: '',
     owner: '',
+    externalId: '',
     lended: null,
     small: null,
     container: null,
@@ -487,6 +497,7 @@ export default {
       this.category = this.$parent.category || '';
       this.origin = this.$parent.origin || '';
       this.owner = this.$parent.owner || '';
+      this.externalId = this.$parent.externalId || '';
       this.small = this.$parent.small || null;
       this.container = this.$parent.container || null;
       this.content = '';
@@ -545,6 +556,7 @@ export default {
           origin: this.origin || '',
           // what was typed before "Leihgabe" was unticked again goes with it
           owner: (this.edit || this.lended) && this.owner || '',
+          externalId: (this.edit || this.lended) && this.externalId || '',
           small: this.small || false,
           container: this.container || false,
         }, {
