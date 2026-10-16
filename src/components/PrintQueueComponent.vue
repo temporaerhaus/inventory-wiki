@@ -16,8 +16,14 @@
       <li v-for="entry in rows" :key="entry.entry">
         <mdi-icon :icon="KINDS[entry.kind].icon" :title="KINDS[entry.kind].title" left />
         <div>
-          <a :href="`/${PREFIX}/${entry.id}`"><b>{{ entry.id }}</b></a><template v-if="entry.title">: {{ entry.title }}</template>
-          <small v-if="entry.kind === 'sign'">Große Aufkleber, 4 auf einer A4-Seite</small>
+          <b v-if="entry.kind === 'checklist'">{{ entry.title }}</b>
+          <template v-else>
+            <a :href="`/${PREFIX}/${entry.id}`"><b>{{ entry.id }}</b></a><template v-if="entry.title">: {{ entry.title }}</template>
+          </template>
+          <small v-if="entry.kind === 'checklist'" :title="entry.ids.join(', ')">
+            Checkliste, {{ entry.ids.length }} {{ entry.ids.length === 1 ? 'Gegenstand' : 'Gegenstände' }}
+          </small>
+          <small v-else-if="entry.kind === 'sign'">Große Aufkleber, 4 auf einer A4-Seite</small>
           <small v-else-if="entry.kind === 'contents'">
             Inhaltsliste{{ entry.levels > 0 ? `, Unter-Behälter ${entry.levels} ${entry.levels === 1 ? 'Ebene' : 'Ebenen'} tief` : '' }}
           </small>
@@ -66,10 +72,21 @@ const REFRESH_BUTTON = 30 * 1000;
 const CONTENTS_REGEX = /^inhaltsliste:([^:]+)(?::([0-9]+))?$/i;
 // an A4 page of large labels of an item, see utils/sign.js
 const SIGN_REGEX = /^schild:([^:\s]+)$/i;
+// selected items to tick off, with an optional heading, see utils/api.js
+const CHECKLIST_REGEX = /^checkliste:([^:\s]+)(?::(\S*))?$/i;
+const CHECKLIST_HEADING = 'Ausgewählte Gegenstände';
+const decodeHeading = (s) => {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return s;
+  }
+};
 const KINDS = {
   label: { icon: 'qrcode', title: 'Inventaraufkleber' },
   contents: { icon: 'format-list-checks', title: 'Inhaltsliste' },
   sign: { icon: 'image-size-select-large', title: 'Große Aufkleber' },
+  checklist: { icon: 'format-list-checks', title: 'Checkliste' },
 };
 
 export default {
@@ -114,6 +131,11 @@ export default {
         icon: 'image-size-select-large',
         count: this.rows.filter(e => e.kind === 'sign').length,
         title: (n) => `${n} ${n === 1 ? 'Seite' : 'Seiten'} große Aufkleber`,
+      }, {
+        key: 'checklist',
+        icon: 'format-list-checks',
+        count: this.rows.filter(e => e.kind === 'checklist').length,
+        title: (n) => `${n} ${n === 1 ? 'Checkliste' : 'Checklisten'}`,
       }];
       return parts.filter(e => e.count > 0).map(e => ({ ...e, title: e.title(e.count) }));
     },
@@ -121,6 +143,18 @@ export default {
     // one row per entry, in the order of the queue
     rows() {
       return this.entries.map(({ entry, count }) => {
+        const checklist = CHECKLIST_REGEX.exec(entry);
+        if (checklist) {
+          return {
+            entry,
+            count,
+            id: null,
+            title: decodeHeading(checklist[2] || '') || CHECKLIST_HEADING,
+            kind: 'checklist',
+            ids: checklist[1].toUpperCase().split(',').filter(Boolean),
+          };
+        }
+
         const contents = CONTENTS_REGEX.exec(entry);
         const sign = SIGN_REGEX.exec(entry);
         const id = (contents?.[1] ?? sign?.[1] ?? entry).toUpperCase();
@@ -152,7 +186,7 @@ export default {
     // are only for display, the queue does without them
     loadItems() {
       for (const { id } of this.rows) {
-        if (id in this.items) {
+        if (!id || id in this.items) {
           continue;
         }
 

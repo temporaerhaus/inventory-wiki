@@ -1,5 +1,5 @@
 <template>
-  <x-dialog title="Checkliste" icon="format-list-checks" ref="dialog" :loading="loading">
+  <x-dialog title="Checkliste" icon="format-list-checks" ref="dialog" :loading="loading || printing">
     <label :for="`${uid}-heading`">
       <mdi-icon icon="text-box-outline" left title="Überschrift" />
       Überschrift
@@ -23,6 +23,11 @@
         <mdi-icon icon="printer" />
         Drucken
       </a>
+
+      <a @click.prevent="printRemote()" href="#" :disabled="printing" v-if="rows.length > 0">
+        <mdi-icon icon="cloud-print-outline" />
+        Remote Drucken
+      </a>
     </template>
   </x-dialog>
 </template>
@@ -32,7 +37,7 @@ import { markRaw } from 'vue';
 
 import pdfMake from '@/utils/pdf.js';
 import { contentsDocument } from '@/utils/contents.js';
-import { fetchInventoryItem } from '@/utils/api.js';
+import { fetchInventoryItem, remotePrintChecklist } from '@/utils/api.js';
 
 const DEFAULT_HEADING = 'Ausgewählte Gegenstände';
 
@@ -49,6 +54,7 @@ export default {
     uid: `invwiki-checklist-${Math.round(Math.random() * 10000)}`,
     heading: '',
     loading: false,
+    printing: false,
     error: '',
     rows: [],
     // selected pages that turned out to be no item
@@ -109,6 +115,25 @@ export default {
     print() {
       const win = window.open('', '_blank');
       this.pdf?.print?.({}, win);
+    },
+
+    // the print station builds the list itself, from the items that were found
+    async printRemote() {
+      if (this.printing) {
+        return;
+      }
+
+      this.printing = true;
+      try {
+        if (!await remotePrintChecklist(this.rows.map(e => e.id), this.heading)) {
+          alert('Diese Checkliste ist schon in der Druckwarteschlange.');
+        }
+        this.$refs.dialog.close();
+      } catch (e) {
+        alert(`Fehler: ${e.message}`);
+      } finally {
+        this.printing = false;
+      }
     }
   }
 }

@@ -580,6 +580,9 @@ export async function renderPreview(path, content) {
 //   * V-GM000376              a label for that item
 //   * inhaltsliste:39C3       an A4 contents list of that container, direct contents only
 //   * inhaltsliste:39C3:2     the same, including the contents of sub containers 2 levels deep
+//   * schild:39C3             an A4 page of large labels of that item
+//   * checkliste:V-GM000376,V-TM000012:Sommerfest%202026
+//                             an A4 list of these items to tick off, with an optional heading
 // fired on window whenever the print queue was changed from here, so that
 // what shows it (the print queue button) can load it again
 export const PRINT_QUEUE_CHANGED_EVENT = 'invwiki-print-queue-changed';
@@ -630,6 +633,19 @@ export async function remotePrintSigns(inventoryIds) {
   return await queuePrint(inventoryIds.map(e => `schild:${e}`));
 }
 
+// A checklist of items (see components/ChecklistComponent.vue), their numbers
+// sorted and the heading URI-encoded, which keeps colons, line breaks and a
+// count (" x 2") out of it
+const checklistEntry = (inventoryIds, heading = '') => {
+  const ids = [...new Set(inventoryIds.map(e => String(e).toUpperCase()))].sort((a, b) => a.localeCompare(b));
+  return `checkliste:${ids.join(',')}${heading.trim() ? `:${encodeURIComponent(heading.trim())}` : ''}`;
+};
+
+// whether it was not queued yet
+export async function remotePrintChecklist(inventoryIds, heading = '') {
+  return (await queuePrint([checklistEntry(inventoryIds, heading)])).length > 0;
+}
+
 // the containers among inventory numbers, in their order: from the wiki
 // plugin in one request, or from the item pages where it is not installed
 export async function containersAmong(inventoryIds) {
@@ -654,7 +670,8 @@ export async function remotePrintSign(inventoryId) {
 }
 
 // The entries of the print queue, "  * <entry>" lines on its page: inventory
-// numbers, and "inhaltsliste:<number>[:<levels>]" for contents lists, followed
+// numbers, "inhaltsliste:<number>[:<levels>]" for contents lists, "schild:<number>"
+// for large labels and "checkliste:<numbers>[:<heading>]" for checklists, followed
 // by " x <count>" for more than one label. The label printer takes them off
 // once they are printed (see the label-terminal repository, which reads and
 // writes them the same way), so the queue shows what is still to be printed.
