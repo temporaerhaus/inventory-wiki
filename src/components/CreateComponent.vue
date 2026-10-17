@@ -1,23 +1,23 @@
 <template>
   <button @click="editItem" v-if="sub">
     <mdi-icon icon="subdirectory-arrow-right" left />
-    Zugehörigen Gegenstand Hinzufügen
+    Zugehörigen Gegenstand hinzufügen
   </button>
   <button @click="startClone" v-else-if="clone">
     <mdi-icon icon="content-duplicate" left />
-    Gegenstand Duplizieren
+    Gegenstand duplizieren
   </button>
   <button @click="editItem" v-else-if="edit">
     <mdi-icon icon="square-edit-outline" left />
-    Gegenstand Bearbeiten
+    Gegenstand bearbeiten
   </button>
-  <button @click="createItem" v-else title="Neuen Gegenstand Anlegen" aria-label="Neuen Gegenstand Anlegen">
+  <button @click="createItem" v-else title="Neuen Gegenstand anlegen" aria-label="Neuen Gegenstand anlegen">
     <mdi-icon icon="toy-brick-plus-outline" left />
-    <span class="invwiki-toolbar-label">Neuen Gegenstand Anlegen</span>
+    <span class="invwiki-toolbar-label">Neuen Gegenstand anlegen</span>
   </button>
 
   <!-- a sub-item can be duplicated as an item of its own or as another sub-item -->
-  <x-dialog v-if="clone" title="Gegenstand Duplizieren" icon="content-duplicate" ref="cloneChoice">
+  <x-dialog v-if="clone" title="Gegenstand duplizieren" icon="content-duplicate" ref="cloneChoice">
     <p>{{ $parent.inventoryId }} gehört zu {{ mainItemId }}. Wie soll das Duplikat angelegt werden?</p>
     <div class="invwiki-clone-choice">
       <button @click="cloneAs(false)">
@@ -37,7 +37,7 @@
     </div>
   </x-dialog>
 
-  <x-dialog :title="edit ? 'Gegenstand Bearbeiten' : 'Neuen Gegenstand Anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
+  <x-dialog :title="edit ? 'Gegenstand bearbeiten' : 'Neuen Gegenstand anlegen'" :icon="edit ? 'square-edit-outline' : 'toy-brick-plus-outline'" ref="dialog" :loading="loading">
     <div>
       <label :for="`invwiki-form-title-${nonce}`">
         <mdi-icon icon="toy-brick-outline" left title="Gegenstand" />

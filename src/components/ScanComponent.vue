@@ -5,7 +5,7 @@
   </button>
   <button @click="startScan()" v-else-if="!pick" title="Inventaraufkleber Scannen" aria-label="Inventaraufkleber Scannen">
     <mdi-icon icon="qrcode-scan" left />
-    <span class="invwiki-toolbar-label">Inventaraufkleber Scannen</span>
+    <span class="invwiki-toolbar-label">Inventaraufkleber scannen</span>
   </button>
 
   <x-dialog :title="title || (direct ? `In ${container} legen` : 'Inventaraufkleber Scannen')" :icon="barcodes ? 'barcode-scan' : 'qrcode-scan'" ref="dialog" @close="onClose()" @open="focusInput()" @keydown.enter="onScanSuccess($refs.scan.value)" :loading="loading">
