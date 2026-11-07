@@ -32,21 +32,17 @@ const resolution = () => window.matchMedia('(hover: none) and (pointer: coarse)'
   : { width: { ideal: 1920 }, height: { ideal: 1080 } };
 
 // Reading all ~40 formats by default is too heavy for mobile CPUs and triggers
-// slow-script timeouts. Restrict detection to standard 1D and 2D formats.
+// slow-script timeouts. Every format read costs time on each frame, so only
+// those that serial numbers and inventory labels come in are read. The
+// WebAssembly reader still reads UPC-A codes, as EAN-13 with a leading zero.
 const FORMATS = [
-  'aztec',
   'code_128',
   'code_39',
   'code_93',
-  'codabar',
   'data_matrix',
   'ean_13',
   'ean_8',
-  'itf',
-  'pdf417',
-  'qr_code',
-  'upc_a',
-  'upc_e'
+  'qr_code'
 ];
 
 // The browser's own reader (Chrome on Android, Safari on macOS) is much faster
@@ -68,10 +64,9 @@ async function createDetector() {
   return new BarcodeDetector({ formats: FORMATS });
 }
 
-// A camera scanner for every kind of code: barcodes (EAN, UPC, Code 128, 39
-// and 93, Codabar, ITF, …) as well as 2D codes (QR, Data Matrix, Aztec,
-// PDF417), which qr-scanner cannot. It offers what ScanComponent uses of
-// qr-scanner, and reports codes the same way, as { data }.
+// A camera scanner for barcodes (EAN, Code 128, 39 and 93) as well as 2D
+// codes (QR, Data Matrix), which qr-scanner cannot. It offers what
+// ScanComponent uses of qr-scanner, and reports codes the same way, as { data }.
 export default class BarcodeScanner {
   constructor(video, onDecode) {
     this.video = video;
