@@ -1,7 +1,9 @@
 // A list of items to tick off, on A4 landscape pages in two columns: the
 // contents list of a container (ContentsListComponent) and the checklist of
 // selected items (ChecklistComponent). Each row has a box to tick, the
-// inventory number, and the title and description of the item.
+// inventory number, and the title and description of the item. A contents
+// list also carries the short description of its container in the header and
+// the free content of its page below the items.
 import QRCode from 'qrcode';
 
 import logo from '@/assets/logo-full.svg?raw';
@@ -20,7 +22,9 @@ const titleCell = (row, fit, width) => ({ stack: [
 // kind is what the list is, above the heading; inventoryId, if there is one,
 // is the container the list belongs to, with its QR code in the header.
 // url is linked in the footer, empty is what the page says without rows.
-export async function contentsDocument({ kind, heading, subheading = '', inventoryId = '', rows, url = '', empty }) {
+// description is shown in the header, next to the heading, and content (from
+// markdownContent in src/utils/markdown.js) below the items.
+export async function contentsDocument({ kind, heading, subheading = '', description = '', inventoryId = '', rows, url = '', empty, content = null }) {
   const created = new Date().toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
   const qr = inventoryId ? await qrCode(inventoryId) : null;
 
@@ -41,6 +45,37 @@ export async function contentsDocument({ kind, heading, subheading = '', invento
   const fit = (text, width, fontSize) => {
     const max = Math.floor(width / charWidth(fontSize));
     return text.length > max ? `${text.slice(0, Math.max(max - 1, 0))}…` : text;
+  };
+
+  // the description in the header has the height of the QR code: its lines
+  // are wrapped here, at spaces like pdfmake would, and cut after the last
+  // one that fits
+  const descriptionBox = { width: mm2pt(95), margin: mm2pt(4) };
+  const descriptionLines = (text, width, fontSize, count) => {
+    const max = Math.max(1, Math.floor(width / charWidth(fontSize)));
+    const lines = [];
+    for (const paragraph of text.trim().split(/\s*\n\s*/)) {
+      let current = '';
+      for (let word of paragraph.split(/\s+/).filter(Boolean)) {
+        while (word.length > max) {
+          if (current) {
+            lines.push(current);
+            current = '';
+          }
+          lines.push(word.slice(0, max));
+          word = word.slice(max);
+        }
+        if (current && current.length + 1 + word.length > max) {
+          lines.push(current);
+          current = '';
+        }
+        current = current ? `${current} ${word}` : word;
+      }
+      lines.push(current);
+    }
+    return lines.length > count
+      ? [...lines.slice(0, count - 1), fit(`${lines[count - 1]}…`, width, fontSize)].join('\n')
+      : lines.join('\n');
   };
 
   const titleWidth = column - widths.box - widths.id - 6 * padding - 4 * line;
@@ -108,6 +143,12 @@ export async function contentsDocument({ kind, heading, subheading = '', invento
     info: { title: [kind, inventoryId || heading].filter(Boolean).join(' ') },
     defaultStyle: { font: 'Roboto', fontSize: 9 },
 
+    // a heading of the page content never ends a page, it moves on to the next
+    // with its text; the nodes of header and footer count as on the page too,
+    // only what follows between the heading and the footer counts
+    pageBreakBefore: (node, followingNodesOnPage) => Boolean(node.headlineLevel)
+      && !followingNodesOnPage.some(e => e.startPosition.top > node.startPosition.top && e.startPosition.top < page.height - margin.bottom),
+
     header: () => ({
       columns: [
         ...(qr ? [{
@@ -122,7 +163,14 @@ export async function contentsDocument({ kind, heading, subheading = '', invento
             { text: subheading, fontSize: 10 },
             { text: `${rows.length} ${rows.length === 1 ? 'Gegenstand' : 'Gegenstände'} · Stand ${created}`, fontSize: 7, color: '#666666' }
           ]
-        }, {
+        }, ...(description.trim() ? [{
+          width: descriptionBox.width,
+          margin: [descriptionBox.margin, 0, descriptionBox.margin, 0],
+          text: descriptionLines(description, descriptionBox.width - 2 * descriptionBox.margin, 8, 5),
+          fontSize: 8,
+          lineHeight: 1,
+          color: '#333333'
+        }] : []), {
           // 910 × 380, at the height of the QR code
           svg: logo,
           width: mm2pt(18) * 910 / 380
@@ -140,15 +188,22 @@ export async function contentsDocument({ kind, heading, subheading = '', invento
       margin: [margin.side, mm2pt(5), margin.side, 0]
     }),
 
-    content: pages.length ? pages.map(([left, right], i) => ({
-      columns: [
-        { width: column, ...table(left) },
-        right.length ? { width: column, ...table(right) } : { width: column, text: '' }
-      ],
-      columnGap: gap,
-      ...(i > 0 ? { pageBreak: 'before' } : {})
-    })) : [{
-      text: empty, color: '#666666'
-    }]
+    content: [
+      ...(pages.length ? pages.map(([left, right], i) => ({
+        columns: [
+          { width: column, ...table(left) },
+          right.length ? { width: column, ...table(right) } : { width: column, text: '' }
+        ],
+        columnGap: gap,
+        ...(i > 0 ? { pageBreak: 'before' } : {})
+      })) : [{
+        text: empty, color: '#666666'
+      }]),
+      // the page content flows on below the last items, over the whole width
+      ...(content && !content.empty ? [{
+        stack: content.nodes(page.width - 2 * margin.side),
+        margin: [0, mm2pt(6), 0, 0]
+      }] : [])
+    ]
   };
 }

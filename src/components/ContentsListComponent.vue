@@ -60,7 +60,8 @@ import { markRaw } from 'vue';
 
 import pdfMake from '@/utils/pdf.js';
 import { contentsDocument } from '@/utils/contents.js';
-import { PREFIX, MAX_CONTENTS_LEVELS, fetchInventoryItem, remotePrintContents, remotePrintSign, searchItems } from '@/utils/api.js';
+import { markdownContent } from '@/utils/markdown.js';
+import { PREFIX, MAX_CONTENTS_LEVELS, fetchInventoryItem, fetchItemContent, remotePrintContents, remotePrintSign, searchItems } from '@/utils/api.js';
 import { labelDescription } from '@/utils/label.js';
 import { signDocument } from '@/utils/sign.js';
 
@@ -121,15 +122,22 @@ export default {
       return rows;
     },
 
-    createPDF() {
+    // the container's short description and the free content of its page, as saved
+    async createPDF() {
+      const path = `/${PREFIX}/${this.inventoryId.toLowerCase()}`;
+      const [item, markdown] = await Promise.all([fetchInventoryItem(this.inventoryId), fetchItemContent(path)]);
+
       return contentsDocument({
         kind: 'Inhaltsliste',
         heading: this.inventoryId,
-        subheading: this.title || '',
+        subheading: item?.title || this.title || '',
+        description: String(item?.description || ''),
         inventoryId: this.inventoryId,
         rows: this.rows,
-        url: `${WIKI_ORIGIN}/${PREFIX}/${this.inventoryId.toLowerCase()}`,
+        url: `${WIKI_ORIGIN}${path}`,
         empty: 'Keine Gegenstände an diesem Aufenthaltsort.',
+        // images are loaded through this page, which the dev server proxies
+        content: await markdownContent(markdown, { wiki: WIKI_ORIGIN, media: '' }),
       });
     },
 
