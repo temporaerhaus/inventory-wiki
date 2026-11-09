@@ -4,9 +4,12 @@
       <mdi-icon :icon="icon" left :title="label" v-if="icon" />
       {{ label }}
     </label>
-    <div class="invwiki-autocomplete-field" :class="{ 'has-action': $slots.action }">
+    <div class="invwiki-autocomplete-field" :class="{ 'has-action': $slots.action || clearButton }">
       <input :id="id" type="text" @input="onChange" v-model="search" @keydown.down="onArrowDown" @keydown.up="onArrowUp" @keydown.escape="isOpen = false" @keydown.enter="onEnter" :autofocus="autofocus" :disabled="disabled" @focus="onFocus" ref="input" autocomplete="off" />
       <span class="invwiki-autocomplete-action">
+        <button type="button" class="invwiki-field-clear" :title="`${label} leeren`" :aria-label="`${label} leeren`" @click="clear()" v-if="clearButton">
+          <mdi-icon icon="close" />
+        </button>
         <!-- e.g. a button that fills the field in another way -->
         <slot name="action"></slot>
         <!-- what tells it from a plain text field: it has a list to choose from -->
@@ -55,6 +58,8 @@ export default {
     serializer: Function,
     autofocus: Boolean,
     disabled: Boolean,
+    // a button to empty the field, shown while there is something in it
+    clearable: Boolean,
     // only allow existing items as value: typed text is emitted as the item it
     // matches exactly, otherwise as null
     restrict: Boolean,
@@ -141,6 +146,13 @@ export default {
       if (this.modelValue) {
         this.search = this.serializer ? this.serializer(this.modelValue) : this.modelValue;
       }
+    },
+
+    clear() {
+      this.search = '';
+      this.isOpen = false;
+      this.arrowCounter = -1;
+      this.$emit('update:modelValue', null);
     },
 
     setResult(result) {
@@ -246,6 +258,10 @@ export default {
   },
 
   computed: {
+    clearButton() {
+      return this.clearable && !this.disabled && Boolean(this.search);
+    },
+
     filteredResults() {
       if (!this.fuse) {
         return [];

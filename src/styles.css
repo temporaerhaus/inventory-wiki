@@ -1232,6 +1232,12 @@ button.invwiki-container.expanded {
   padding: 0 .5em;
 }
 
+/* empties the field, as narrow as the toggle; in a date field it sits in
+   the padding, to the right of the browser's own calendar button */
+.invwiki .invwiki-autocomplete-action .invwiki-field-clear {
+  padding: 0 .5em;
+}
+
 /* shown to readers who are not logged in, see App.vue */
 .invwiki.invwiki-login-warning {
   display: flex;

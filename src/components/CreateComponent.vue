@@ -109,9 +109,12 @@
         <mdi-icon icon="pound-box-outline" left title="Seriennummer" />
         Seriennummer
       </label>
-      <div class="invwiki-autocomplete-field">
+      <div class="invwiki-autocomplete-field" :class="{ 'has-action': serial }">
         <input :id="`invwiki-form-serial-${nonce}`" type="text" v-model="serial" @focus="$refs.c?.close?.()" autocomplete="off" />
         <span class="invwiki-autocomplete-action">
+          <button type="button" class="invwiki-field-clear" title="Seriennummer leeren" aria-label="Seriennummer leeren" @click="serial = ''" v-if="serial">
+            <mdi-icon icon="close" title="Seriennummer leeren" />
+          </button>
           <button type="button" title="Seriennummer scannen" aria-label="Seriennummer scannen" @click="$refs.serialScanner.startScan()">
             <mdi-icon icon="barcode-scan" title="Seriennummer scannen" />
           </button>
@@ -128,7 +131,7 @@
       </blockquote>
 
       <template v-if="!edit">
-        <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="subItem" />
+        <search-autocomplete v-model="classification" :items="categories" label="Kennbuchstabe" icon="shape-outline" grouped :keys="weights" :serializer="(e) => e.value" ref="c" :disabled="subItem" clearable />
         <label v-if="suggestionsVisible">
           <mdi-icon icon="lightbulb-on-outline" left title="Vorschläge" />
           Vorschläge
@@ -212,25 +215,53 @@
             <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
             Anschaffungsdatum
           </label>
-          <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" autocomplete="off" />
+          <div class="invwiki-autocomplete-field">
+            <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" autocomplete="off" />
+            <span class="invwiki-autocomplete-action" v-if="date">
+              <button type="button" class="invwiki-field-clear" title="Anschaffungsdatum leeren" aria-label="Anschaffungsdatum leeren" @click="date = ''">
+                <mdi-icon icon="close" title="Anschaffungsdatum leeren" />
+              </button>
+            </span>
+          </div>
 
           <label :for="`invwiki-form-origin-${nonce}`">
             <mdi-icon icon="basket-unfill" left title="Ursprung" />
             Ursprung
           </label>
-          <input :id="`invwiki-form-origin-${nonce}`" type="text" v-model="origin" @focus="$refs.c?.close?.()" autocomplete="off" />
+          <div class="invwiki-autocomplete-field">
+            <input :id="`invwiki-form-origin-${nonce}`" type="text" v-model="origin" @focus="$refs.c?.close?.()" autocomplete="off" />
+            <span class="invwiki-autocomplete-action" v-if="origin">
+              <button type="button" class="invwiki-field-clear" title="Ursprung leeren" aria-label="Ursprung leeren" @click="origin = ''">
+                <mdi-icon icon="close" title="Ursprung leeren" />
+              </button>
+            </span>
+          </div>
        
           <label :for="`invwiki-form-invoice-${nonce}`">
             <mdi-icon icon="file-document-outline" left title="Rechnung" />
             Rechnung
           </label>
-          <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" autocomplete="off" />
+          <div class="invwiki-autocomplete-field">
+            <input :id="`invwiki-form-invoice-${nonce}`" type="text" v-model="invoice" @focus="$refs.c?.close?.()" autocomplete="off" />
+            <span class="invwiki-autocomplete-action" v-if="invoice">
+              <button type="button" class="invwiki-field-clear" title="Rechnung leeren" aria-label="Rechnung leeren" @click="invoice = ''">
+                <mdi-icon icon="close" title="Rechnung leeren" />
+              </button>
+            </span>
+          </div>
           
           <label :for="`invwiki-form-category-${nonce}`">
             <mdi-icon icon="tag-outline" left title="Schlagwort" />
             Schlagwort
           </label>
-          <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" autocomplete="off" />          
+          <div class="invwiki-autocomplete-field">
+            <input :id="`invwiki-form-category-${nonce}`" type="text" v-model="category" @focus="$refs.c?.close?.()" autocomplete="off" />
+            <span class="invwiki-autocomplete-action" v-if="category">
+              <button type="button" class="invwiki-field-clear" title="Schlagwort leeren" aria-label="Schlagwort leeren" @click="category = ''">
+                <mdi-icon icon="close" title="Schlagwort leeren" />
+              </button>
+            </span>
+          </div>          
         </div>
       </div>
     </div>
