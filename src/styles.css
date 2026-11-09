@@ -1189,15 +1189,19 @@ button.invwiki-container.expanded {
   fill: white;
 }
 
-/* a field with a button inside it, at its right end */
+/* a field with a button inside it, at its right end; the field keeps the
+   space below the input, so that the buttons span exactly the input's height
+   (the input's own margin would collapse through the field) */
 .invwiki-autocomplete-field {
   position: relative;
   width: calc(100% - 1.5em);
+  margin-bottom: 6px;
 }
 
 .invwiki .invwiki-autocomplete-field input {
   width: 100%;
   box-sizing: border-box;
+  margin-bottom: 0;
   padding-right: 2.5em;
 }
 
@@ -1209,12 +1213,14 @@ button.invwiki-container.expanded {
   position: absolute;
   top: 0;
   right: 0;
-  bottom: 6px;
+  bottom: 0;
   display: flex;
   align-items: center;
 }
 
 .invwiki .invwiki-autocomplete-action button {
+  display: flex;
+  align-items: center;
   margin: 0;
   padding: 0 .75em;
   height: 100%;
@@ -1222,8 +1228,11 @@ button.invwiki-container.expanded {
   background: transparent;
 }
 
+/* centered in the button, rather than on the line of text: MdiIcon moves
+   icons down a bit with an inline margin, to sit well within text */
 .invwiki .invwiki-autocomplete-action svg {
-  margin: 0;
+  display: block;
+  margin: 0 !important;
   width: 1.4em;
   height: 1.4em;
 }
@@ -1232,10 +1241,24 @@ button.invwiki-container.expanded {
   padding: 0 .5em;
 }
 
-/* empties the field, as narrow as the toggle; in a date field it sits in
-   the padding, to the right of the browser's own calendar button */
+/* empties the field, as narrow as the toggle, left of any other button */
 .invwiki .invwiki-autocomplete-action .invwiki-field-clear {
   padding: 0 .5em;
+}
+
+/* A date field keeps the browser's own calendar button at its right end. The
+   clear button goes left of it, into a gap kept free between the date and the
+   calendar button, so that the two never overlap. */
+.invwiki .invwiki-date-field input {
+  padding-right: 10px;
+}
+
+.invwiki .invwiki-date-field input::-webkit-calendar-picker-indicator {
+  margin-left: 2.4em;
+}
+
+.invwiki .invwiki-date-field .invwiki-autocomplete-action {
+  right: calc(10px + 1.4em);
 }
 
 /* shown to readers who are not logged in, see App.vue */

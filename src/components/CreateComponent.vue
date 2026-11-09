@@ -215,7 +215,7 @@
             <mdi-icon icon="calendar" left title="Anschaffungsdatum" />
             Anschaffungsdatum
           </label>
-          <div class="invwiki-autocomplete-field">
+          <div class="invwiki-autocomplete-field invwiki-date-field">
             <input :id="`invwiki-form-date-${nonce}`" type="date" v-model="date" @focus="$refs.c?.close?.()" autocomplete="off" />
             <span class="invwiki-autocomplete-action" v-if="date">
               <button type="button" class="invwiki-field-clear" title="Anschaffungsdatum leeren" aria-label="Anschaffungsdatum leeren" @click="date = ''">
